@@ -16,6 +16,9 @@ knitr::opts_chunk$set(
 # coursekata <img src='man/figures/logo.png' align="right" height="138.5" />
 
 <!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata)
+[![R build status](https://github.com/UCLATALL/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/UCLATALL/coursekata-r/actions)
+[![Codecov test coverage](https://codecov.io/gh/UCLATALL/coursekata-r/branch/master/graph/badge.svg)](https://codecov.io/gh/UCLATALL/coursekata-r?branch=master)
 <!-- badges: end -->
 
 
