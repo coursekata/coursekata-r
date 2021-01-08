@@ -1,6 +1,6 @@
 
 detacher <- function(pkg) {
-  detach(paste0('package:', pkg), unload = TRUE, character.only = TRUE)
+  try(detach(paste0('package:', pkg), unload = TRUE, character.only = TRUE), silent = TRUE)
 }
 
 attacher <- function(pkg) {

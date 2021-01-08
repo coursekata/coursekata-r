@@ -15,7 +15,8 @@ coursekata_packages <- function() {
   data.frame(
     package = pkgs,
     version = pkg_version(pkgs),
-    attached = pkg_is_attached(pkgs)
+    attached = pkg_is_attached(pkgs),
+    stringsAsFactors = FALSE
   )
 }
 
