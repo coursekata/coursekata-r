@@ -4,10 +4,7 @@
 \alias{coursekata_attached}
 \title{List all currently attached CourseKata course packages}
 \usage{
-coursekata_attached(core_only = FALSE)
-}
-\arguments{
-\item{core_only}{Optionally suppress the data packages.}
+coursekata_attached()
 }
 \value{
 A character vector of the course packages that have been attached.

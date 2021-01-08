@@ -4,10 +4,7 @@
 \alias{coursekata_detached}
 \title{List all currently NOT attached CourseKata course packages}
 \usage{
-coursekata_detached(core_only = FALSE)
-}
-\arguments{
-\item{core_only}{Optionally suppress the data packages.}
+coursekata_detached()
 }
 \value{
 A character vector of the course packages that are not attached.

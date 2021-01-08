@@ -26,16 +26,16 @@ functions, and data used in the book and supplementary materials.
 Learn more about CourseKata and its free services and materials at
 [CourseKata.org](https://coursekata.org/).
 
-This package was inspired by the
-[tidyverse](https://tidyverse.tidyverse.org) meta-package.
+This package makes it easy to install and load all packages and
+functions used in CourseKata courses. It additionally provides a handful
+of helper functions and augments some generic functions to provide
+cohesion between the network of packages. This package was inspired by
+the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 
 ## Installation
 
 ``` r
-# Install from CRAN
-install.packages("coursekata")
-
-# Or the development version from GitHub
+# Install the development version from GitHub
 # install.packages("remotes")
 remotes::install_github("UCLATALL/coursekata")
 ```
@@ -46,11 +46,14 @@ remotes::install_github("UCLATALL/coursekata")
 
 ``` r
 library(coursekata)
-#> -- CourseKata course packages -------------------------------------------------------------------------------------------------------
-#> supernova           2.3.0       fivethirtyeightdata 0.1.0
-#> mosaic              1.8.2       Lock5withR          1.2.2
-#> lsr                 0.5         okcupiddata         0.1.0
-#> fivethirtyeight     0.6.1       dslabs              0.7.3
+#> Registered S3 method overwritten by 'mosaic':
+#>   method                           from   
+#>   fortify.SpatialPolygonsDataFrame ggplot2
+#> -- CourseKata course packages --------------------------------------------------
+#> x supernova           2.2.3       x fivethirtyeightdata 0.1.0
+#> x mosaic              1.8.2       x Lock5withR          1.2.2
+#> x lsr                 0.5         x okcupiddata         0.1.0
+#> x fivethirtyeight     0.6.1       x dslabs              0.7.3
 ```
 
 -   [coursekata\_core](https://github.com/UCLATALL/coursekata_core), for

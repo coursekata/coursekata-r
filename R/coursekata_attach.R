@@ -1,83 +1,74 @@
 #' @keywords internal
+.onLoad <- function(...) {
+  # this is needed because of the way mosaic loads packages
+  # gets rid of "Registered S3 method overwritten by 'mosaic'" message
+  suppressMessages(pkg_require('mosaic', TRUE))
+}
+
+
+#' @keywords internal
 .onAttach <- function(...) {
   crayon::num_colors(TRUE)
-  coursekata_attach()
+  coursekata_attach(TRUE)
 }
 
 
 #' Attach the CourseKata course packages
 #'
-#' @keywords internal
-coursekata_attach <- function() {
-  versions <- purrr::map_chr(coursekata_packages(), package_version)
-  packages <- paste(
-    crayon::blue(format(coursekata_packages())),
-    crayon::col_align(versions, max(crayon::col_nchar(versions)))
-  )
+#' @param startup Is this being run at start-up?
+#'
+#' @return A coursekata attachments object with info about which course packages are installed and
+#'   attached.
+#' @export
+#'
+#' @examples
+#' coursekata_attach()
+coursekata_attach <- function(startup = FALSE) {
+  to_attach <- coursekata_detached()
+  if (length(to_attach)) {
+    suppressPackageStartupMessages(purrr::walk(to_attach, pkg_require))
+  }
 
-  packageStartupMessage(
+  coursekata_attachments(TRUE)
+}
+
+
+#' Information about CourseKata packages.
+#'
+#' @param startup Is this being run at start-up?
+#'
+#' @return A coursekata_attachments object, also of class data.frame with a row for each course
+#'   package and a column for each of the \code{package} name, \code{version}, and whether it is
+#'   currently \code{attached}.
+#' @keywords internal
+coursekata_attachments <- function(startup = FALSE) {
+  info <- coursekata_packages()
+  msg <- coursekata_attachments_message(info)
+  if (startup) packageStartupMessage(msg)
+  else message(msg)
+
+  invisible(info)
+}
+
+
+#' Pretty console printing when attaching packages
+#'
+#' @param pkg_info The package information to print.
+#'
+#' @return A string that has been formatted to print to console.
+#' @keywords internal
+coursekata_attachments_message <- function(pkg_info) {
+  pkg_info$version <- ifelse(is.na(pkg_info$version), "", pkg_info$version)
+
+  packages <- crayon::blue(paste(
+    ifelse(pkg_info$attached, crayon::green(cli::symbol$tick), crayon::red('x')),
+    format(pkg_info$package),
+    crayon::col_align(pkg_info$version, max(crayon::col_nchar(pkg_info$version)))
+  ))
+
+  paste0(
+    "\n",
     cli::rule(left = crayon::magenta(crayon::bold("CourseKata course packages"))), "\n",
     to_cols(packages, 2), "\n"
   )
-
-  to_attach <- coursekata_detached()
-  if (length(to_attach)) {
-    invisible(suppressPackageStartupMessages(
-      purrr::map(to_attach, load_package)
-    ))
-  }
-}
-
-
-#' Load the package, making sure to load from the correct location. Sometimes people have different
-#' versions of packages installed, so if the package is currently loaded, make sure to load from the
-#' place it was already loaded from.
-#' @keywords internal
-load_package <- function(package) {
-  location <- library_location(package)
-  library(package, lib.loc = location, character.only = TRUE, warn.conflicts = FALSE)
-}
-
-
-#' Get a package's version
-#'
-#' @param package The package name string.
-#'
-#' @return The version of the package as a character string. If the package is already loaded, this
-#'   is pulled from the library the package was loaded from, else the default library location.
-#' @keywords internal
-package_version <- function(package) {
-  location <- library_location(package)
-  as.character(utils::packageVersion(package, lib.loc = location))
-}
-
-
-#' Determine which library a package was loaded from
-#'
-#' @param package The package name string.
-#'
-#' @return If the package is loaded, the location it was loaded from, else NULL
-#' @keywords internal
-library_location <- function(package) {
-  if (package %in% loadedNamespaces()) dirname(getNamespaceInfo(package, "path"))
-}
-
-
-#' Split a character into columns for terminal output
-#'
-#' Split the string into \code{n} columns, then glue the columns together row-wise with
-#' \code{space_between}, then glue the rows together with new line characters.
-#'
-#' @param strings The strings to divide into columns.
-#' @param n_cols The number of columns.
-#' @param space_between What to put between the columns.
-#'
-#' @return A string that prints to the terminal as columns.
-#' @keywords internal
-to_cols <- function(strings, n_cols = 2, space_between = '       ') {
-  items_per_col <- ceiling(length(strings) / n_cols)
-  spacers <- rep("", items_per_col * n_cols - length(strings))
-  strings <- append(strings, spacers)
-  cols <- purrr::map(seq_len(n_cols), ~ strings[seq_len(items_per_col) + items_per_col * (.x - 1)])
-  paste(purrr::reduce(cols, ~ paste0(.x, space_between, .y)), collapse = "\n")
 }

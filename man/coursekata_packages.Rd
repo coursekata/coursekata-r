@@ -4,13 +4,11 @@
 \alias{coursekata_packages}
 \title{List all CourseKata course packages}
 \usage{
-coursekata_packages(core_only = FALSE)
-}
-\arguments{
-\item{core_only}{Optionally suppress the data packages.}
+coursekata_packages()
 }
 \value{
-A character vector of the names of the course packages.
+A data frame with three variables: the name of the package \code{package}, the
+\code{version}, and whether it is currently \code{attached}.
 }
 \description{
 List all CourseKata course packages
