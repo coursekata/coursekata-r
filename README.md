@@ -46,27 +46,25 @@ remotes::install_github("UCLATALL/coursekata")
 
 ``` r
 library(coursekata)
-#> Registered S3 method overwritten by 'mosaic':
-#>   method                           from   
-#>   fortify.SpatialPolygonsDataFrame ggplot2
+#> 
 #> -- CourseKata course packages --------------------------------------------------
-#> x supernova           2.2.3       x fivethirtyeightdata 0.1.0
-#> x mosaic              1.8.2       x Lock5withR          1.2.2
-#> x lsr                 0.5         x okcupiddata         0.1.0
-#> x fivethirtyeight     0.6.1       x dslabs              0.7.3
+#> v supernova           2.2.3       v fivethirtyeightdata 0.1.0
+#> v mosaic              1.8.2       v Lock5withR          1.2.2
+#> v lsr                 0.5         v okcupiddata         0.1.0
+#> v fivethirtyeight     0.6.1       v dslabs              0.7.3
 ```
 
--   [coursekata\_core](https://github.com/UCLATALL/coursekata_core), for
+-   [coursekata](https://github.com/UCLATALL/coursekata_core), for
     various helpers like
     -   `middle()`, `upper()`, and `lower()` to facilitate shading
         proportions of plots
+-   [supernova](https://github.com/UCLATALL/supernova), for
+    -   creating ANOVA tables.
     -   an augmented `print.lm()` which prints the fitted equation as
         well
     -   tools for extracting information from fitted models (`b0()`,
         `b1()`, `PRE()`, `fVal()`)
     -   … and more!
--   [supernova](https://github.com/UCLATALL/supernova), for creating
-    ANOVA tables.
 -   [mosaic](https://projectmosaic.github.io/mosaic/), for a unified
     interface to most statistical tools.
 -   [ggformula](https://projectmosaic.github.io/ggformula/), for a

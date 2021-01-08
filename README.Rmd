@@ -47,12 +47,13 @@ remotes::install_github("UCLATALL/coursekata")
 library(coursekata)
 ```
 
-* [coursekata_core](https://github.com/UCLATALL/coursekata_core), for various helpers like 
+* [coursekata](https://github.com/UCLATALL/coursekata_core), for various helpers like
   - `middle()`, `upper()`, and `lower()` to facilitate shading proportions of plots
+* [supernova](https://github.com/UCLATALL/supernova), for 
+  - creating ANOVA tables.
   - an augmented `print.lm()` which prints the fitted equation as well
   - tools for extracting information from fitted models (`b0()`, `b1()`, `PRE()`, `fVal()`)
   - … and more!
-* [supernova](https://github.com/UCLATALL/supernova), for creating ANOVA tables.
 * [mosaic](https://projectmosaic.github.io/mosaic/), for a unified interface to most statistical tools.
 * [ggformula](https://projectmosaic.github.io/ggformula/), for a formula interface to ggplot2.
 * [dplyr](https://dplyr.tidyverse.org), for data manipulation.
