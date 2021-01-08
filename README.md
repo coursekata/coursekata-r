@@ -37,7 +37,7 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 ``` r
 # Install the development version from GitHub
 # install.packages("remotes")
-remotes::install_github("UCLATALL/coursekata")
+remotes::install_github("UCLATALL/coursekata-r")
 ```
 
 ## Usage
