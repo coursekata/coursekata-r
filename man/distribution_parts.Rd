@@ -6,16 +6,18 @@
 \alias{upper}
 \title{Find a percentage of a distribution}
 \usage{
-middle(x, prop = 0.95)
+middle(x, prop = 0.95, greedy = TRUE)
 
-lower(x, prop = 0.025)
+lower(x, prop = 0.025, greedy = TRUE)
 
-upper(x, prop = 0.025)
+upper(x, prop = 0.025, greedy = TRUE)
 }
 \arguments{
 \item{x}{The distribution of values to check.}
 
 \item{prop}{The proportion of values to find.}
+
+\item{greedy}{Whether the function should be greedy, as per the description above.}
 }
 \value{
 A logical vector indicating which values are in the specified region.

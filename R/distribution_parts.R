@@ -8,6 +8,7 @@
 #'
 #' @param x The distribution of values to check.
 #' @param prop The proportion of values to find.
+#' @param greedy Whether the function should be greedy, as per the description above.
 #'
 #' @return A logical vector indicating which values are in the specified region.
 #'
@@ -24,24 +25,35 @@
 #' sampling_distribution %>%
 #'   gf_histogram(~ mean, data = sampling_distribution, fill = ~ middle(mean, .68)) %>%
 #'   gf_refine(scale_fill_manual(values = c("blue", "coral")))
-middle <- function(x, prop = .95) {
+middle <- function(x, prop = .95, greedy = TRUE) {
   tail_prop <- (1 - prop) / 2
-  tail_size <- floor(tail_prop * length(x))
-  (order(x) > tail_size) + (order(x, decreasing = TRUE) > tail_size) == 2
+  in_upper <- upper(x, tail_prop, !greedy)
+  in_lower <- lower(x, tail_prop, !greedy)
+  !in_upper & !in_lower
 }
 
 
 #' @rdname distribution_parts
 #' @export
-lower <- function(x, prop = .025) {
-  tail_size <- ceiling(length(x) * prop)
-  order(x) <= tail_size
+lower <- function(x, prop = .025, greedy = TRUE) {
+  tail_size <- if (greedy) ceiling(length(x) * prop) else floor(length(x) * prop)
+
+  values <- data.frame(x = x, original_pos = seq_along(x))
+  values <- values[order(x), , drop = FALSE]
+  values$in_zone <- seq_along(x) <= tail_size
+
+  values[order(values$original_pos), 'in_zone', drop = TRUE]
 }
 
 
 #' @rdname distribution_parts
 #' @export
-upper <- function(x, prop = .025) {
-  tail_size <- ceiling(length(x) * prop)
-  order(x, decreasing = TRUE) <= tail_size
+upper <- function(x, prop = .025, greedy = TRUE) {
+  tail_size <- if (greedy) ceiling(length(x) * prop) else floor(length(x) * prop)
+
+  values <- data.frame(x = x, original_pos = seq_along(x))
+  values <- values[order(x, decreasing = TRUE), , drop = FALSE]
+  values$in_zone <- seq_along(x) <= tail_size
+
+  values[order(values$original_pos), 'in_zone', drop = TRUE]
 }

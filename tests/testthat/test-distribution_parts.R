@@ -28,3 +28,10 @@ test_that("upper, lower, and middle are greedy for when the cutoff is not clean"
   expect_identical(middle(1:5, .3), c(FALSE, TRUE, TRUE, TRUE, FALSE))
   expect_identical(upper(1:5, .7), c(FALSE, TRUE, TRUE, TRUE, TRUE))
 })
+
+
+test_that("the values do not need to be pre-arranged", {
+  expect_identical(lower(c(2, 1, 3, 4), .25), c(FALSE, TRUE, FALSE, FALSE))
+  expect_identical(upper(c(2, 1, 3, 4), .25), c(FALSE, FALSE, FALSE, TRUE))
+  expect_identical(middle(c(2, 1, 3, 4), .5), c(TRUE, FALSE, TRUE, FALSE))
+})
