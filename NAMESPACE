@@ -2,7 +2,10 @@
 
 export("%>%")
 export(coursekata_attach)
+export(coursekata_install)
 export(coursekata_packages)
+export(coursekata_repos)
+export(coursekata_update)
 export(lower)
 export(middle)
 export(upper)

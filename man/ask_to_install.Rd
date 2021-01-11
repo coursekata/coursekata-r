@@ -4,10 +4,10 @@
 \alias{ask_to_install}
 \title{Ask the user if they want to install packages}
 \usage{
-ask_to_install(missing)
+ask_to_install(pkgs)
 }
 \arguments{
-\item{missing}{Packages to ask about.}
+\item{pkgs}{A character vector of packages to ask about.}
 }
 \value{
 A logical indicating whether the use answered yes or no.

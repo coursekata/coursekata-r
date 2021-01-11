@@ -10,6 +10,7 @@ attacher <- function(pkg) {
 
 test_that('it determines whether a package is attached or not', {
   pkgs <- c('supernova', 'okcupiddata')
+
   purrr::walk(pkgs, detacher)
   expect_vector(pkg_is_attached(pkgs), logical(), length(pkgs))
   expect_true(all(!pkg_is_attached(pkgs)))
@@ -19,11 +20,13 @@ test_that('it determines whether a package is attached or not', {
 })
 
 
-test_that('it retrieves the library location for currently loaded packages, or NA', {
-  pkgs <- c('supernova', 'okcupiddata')
-  purrr::walk(pkgs, ~ library(.x, character.only = TRUE))
-  withr::defer(purrr::walk(pkgs, detacher))
-  expect_true(all(dir.exists(pkg_library_location(pkgs))))
+test_that('it retrieves the library location for currently installed packages, or NA', {
+  pkgs <- c('supernova', 'okcupiddata', 'does_not_exist')
+
+  locations <- pkg_library_location(pkgs)
+  expect_vector(locations, character(), 3)
+  expect_identical(locations[3], NA_character_)
+  expect_true(all(dir.exists(locations[1:2])))
 })
 
 
@@ -36,20 +39,20 @@ test_that('it retrieves the package version for currently installed packages, or
 
 test_that('requiring a package is vectorized', {
   pkgs <- c('supernova', 'okcupiddata')
-  withr::defer(purrr::walk(pkgs, detacher))
+  purrr::walk(pkgs, detacher)
   expect_identical(pkg_require(pkgs), rep(TRUE, length(pkgs)))
 })
 
 
 test_that('requiring a package is quiet', {
   pkgs <- c('supernova', 'okcupiddata')
-  withr::defer(purrr::walk(pkgs, detacher))
+  purrr::walk(pkgs, detacher)
+  expect_message(pkg_require(pkgs), NA)
   expect_message(pkg_require(pkgs), NA)
 })
 
 
 test_that('requiring a missing package calmly asks if you want to install it', {
-  skip_on_cran()
   skip('Make sure to run this when testing locally.')
 
   menu_mock <- mockery::mock(FALSE)
@@ -65,9 +68,9 @@ test_that('requiring a missing package calmly asks if you want to install it', {
 
 
 test_that('installing fivethirtyeightdata works as intended', {
-  skip_on_cran()
-  skip_if_offline()
   skip('Make sure to run this when testing locally.')
+
+  detacher('fivethirtyeightdata')
 
   tryCatch(
     suppressMessages(remove.packages('fivethirtyeightdata')),

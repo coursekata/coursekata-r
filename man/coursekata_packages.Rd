@@ -4,7 +4,11 @@
 \alias{coursekata_packages}
 \title{List all CourseKata course packages}
 \usage{
-coursekata_packages()
+coursekata_packages(check_remote_version = FALSE)
+}
+\arguments{
+\item{check_remote_version}{Should the remote version number be checked? Requires internet, and
+will take longer.}
 }
 \value{
 A data frame with three variables: the name of the package \code{package}, the

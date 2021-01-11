@@ -4,13 +4,14 @@
 \alias{pkg_library_location}
 \title{Determine which libraries packages were loaded from}
 \usage{
-pkg_library_location(pkg)
+pkg_library_location(pkgs)
 }
 \arguments{
-\item{pkg}{A character vector of packages to check.}
+\item{pkgs}{A character vector of packages to check.}
 }
 \value{
-A character vector of library directory paths, or NA if the package is not loaded.
+A character vector of library directory paths the packages were loaded from, the default
+location if the package is not loaded but is installed, or NA if the package is not installed.
 }
 \description{
 Determine which libraries packages were loaded from

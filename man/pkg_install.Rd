@@ -2,14 +2,14 @@
 % Please edit documentation in R/utils-pkg.R
 \name{pkg_install}
 \alias{pkg_install}
-\title{Install packages, but intercept for fivethirtyeightdata}
+\title{Install packages using appropriate repositories.}
 \usage{
-pkg_install(pkg)
+pkg_install(pkgs)
 }
 \arguments{
-\item{pkg}{A character vector of the packages to install.}
+\item{pkgs}{A character vector of the packages to install.}
 }
 \description{
-fivethirtyeight data needs to be loaded from an alternate repo.
+Install packages using appropriate repositories.
 }
 \keyword{internal}

@@ -6,7 +6,7 @@
 versions of packages installed, so if the package is currently loaded, make sure to load from the
 place it was already loaded from.}
 \usage{
-pkg_require(pkg, do_not_ask = FALSE)
+pkg_require(pkgs, do_not_ask = FALSE)
 }
 \description{
 Load the package, making sure to load from the correct location. Sometimes people have different

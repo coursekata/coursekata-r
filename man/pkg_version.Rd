@@ -2,18 +2,18 @@
 % Please edit documentation in R/utils-pkg.R
 \name{pkg_version}
 \alias{pkg_version}
-\title{Get package versions.}
+\title{Get the local package version numbers.}
 \usage{
-pkg_version(pkg)
+pkg_version(pkgs)
 }
 \arguments{
-\item{pkg}{A character vector of packages to look up.}
+\item{pkgs}{A character vector of packages to look up.}
 }
 \value{
 A character vector of the package versions. If the package is already loaded, this is
 pulled from the library the package was loaded from, else the default library location.
 }
 \description{
-Get package versions.
+Get the local package version numbers.
 }
 \keyword{internal}
