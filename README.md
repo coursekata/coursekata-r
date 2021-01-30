@@ -15,7 +15,7 @@ coverage](https://codecov.io/gh/UCLATALL/coursekata-r/branch/master/graph/badge.
 
 ## Overview
 
-*CourseKata Statistics and Data Science*, is an innovative interactive
+*Statistics and Data Science: A Modeling Approach*, is an innovative interactive
 online textbook for teaching introductory statistics and data science in
 colleges, universities, and high schools. Part of CourseKata’s *Better
 Book* Project, we are leveraging research and student data to guide
