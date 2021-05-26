@@ -4,5 +4,5 @@ test_that("the fivethirtyeightdata repo is included", {
 
 
 test_that('a default CRAN mirror is selected if one is not given', {
-  expect_true("http://cran.rstudio.com" %in% coursekata_repos(repos = character(0)))
+  expect_true("https://cran.rstudio.com" %in% coursekata_repos(repos = character(0)))
 })
