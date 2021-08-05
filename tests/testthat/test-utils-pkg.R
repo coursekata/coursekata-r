@@ -9,7 +9,7 @@ attacher <- function(pkg) {
 
 
 test_that('it determines whether a package is attached or not', {
-  pkgs <- c('supernova', 'okcupiddata')
+  pkgs <- c('supernova', 'lsr')
 
   purrr::walk(pkgs, detacher)
   expect_vector(pkg_is_attached(pkgs), logical(), length(pkgs))
@@ -21,7 +21,7 @@ test_that('it determines whether a package is attached or not', {
 
 
 test_that('it retrieves the library location for currently installed packages, or NA', {
-  pkgs <- c('supernova', 'okcupiddata', 'does_not_exist')
+  pkgs <- c('supernova', 'lsr', 'does_not_exist')
 
   locations <- pkg_library_location(pkgs)
   expect_vector(locations, character(), 3)
@@ -31,21 +31,21 @@ test_that('it retrieves the library location for currently installed packages, o
 
 
 test_that('it retrieves the package version for currently installed packages, or NA', {
-  pkgs <- c('supernova', 'okcupiddata', 'does-not-exist')
+  pkgs <- c('supernova', 'lsr', 'does-not-exist')
   expect_vector(pkg_version(pkgs), character(), length(pkgs))
   expect_identical(pkg_version(pkgs)[[3]], NA_character_)
 })
 
 
 test_that('requiring a package is vectorized', {
-  pkgs <- c('supernova', 'okcupiddata')
+  pkgs <- c('supernova', 'lsr')
   purrr::walk(pkgs, detacher)
   expect_identical(pkg_require(pkgs), rep(TRUE, length(pkgs)))
 })
 
 
 test_that('requiring a package is quiet', {
-  pkgs <- c('supernova', 'okcupiddata')
+  pkgs <- c('supernova', 'lsr')
   purrr::walk(pkgs, detacher)
   expect_message(pkg_require(pkgs), NA)
   expect_message(pkg_require(pkgs), NA)

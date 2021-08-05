@@ -15,7 +15,7 @@ coverage](https://codecov.io/gh/UCLATALL/coursekata-r/branch/master/graph/badge.
 
 ## Overview
 
-*Statistics and Data Science: A Modeling Approach*, is an innovative interactive
+*CourseKata Statistics and Data Science*, is an innovative interactive
 online textbook for teaching introductory statistics and data science in
 colleges, universities, and high schools. Part of CourseKata’s *Better
 Book* Project, we are leveraging research and student data to guide
@@ -47,11 +47,11 @@ remotes::install_github("UCLATALL/coursekata-r")
 ``` r
 library(coursekata)
 #> 
-#> -- CourseKata course packages --------------------------------------------------
-#> v supernova           2.2.3       v fivethirtyeightdata 0.1.0
-#> v mosaic              1.8.2       v Lock5withR          1.2.2
-#> v lsr                 0.5         v okcupiddata         0.1.0
-#> v fivethirtyeight     0.6.1       v dslabs              0.7.3
+#> ── CourseKata course packages ──────────────────────────────────────────────────
+#> ✓ supernova           2.4.2       ✓ fivethirtyeightdata 0.1.0
+#> ✓ mosaic              1.8.3       ✓ Lock5withR          1.2.2
+#> ✓ lsr                 0.5         ✓ dslabs              0.7.4
+#> ✓ fivethirtyeight     0.6.1
 ```
 
 -   [coursekata](https://github.com/UCLATALL/coursekata_core), for
@@ -78,7 +78,6 @@ instructors who teach the course. This package installs these:
     fivethirtyeightdata](https://cran.r-project.org/web/packages/fivethirtyeight/vignettes/fivethirtyeight.html)
 -   [Lock5withR](https://github.com/rpruim/Lock5withR)
 -   [dslabs](https://github.com/rafalab/dslabs)
--   [okcupiddata](https://github.com/rudeboybert/okcupiddata)
 
 # Contributing
 

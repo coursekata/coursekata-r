@@ -64,7 +64,6 @@ In addition to useful functions, a great deal of data sets are used by instructo
 * [fivethirtyeight and fivethirtyeightdata](https://cran.r-project.org/web/packages/fivethirtyeight/vignettes/fivethirtyeight.html)
 * [Lock5withR](https://github.com/rpruim/Lock5withR)
 * [dslabs](https://github.com/rafalab/dslabs)
-* [okcupiddata](https://github.com/rudeboybert/okcupiddata)
 
 
 # Contributing

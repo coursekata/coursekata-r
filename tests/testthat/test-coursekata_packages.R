@@ -1,6 +1,6 @@
 pkgs <- c(
   'supernova', 'mosaic', 'lsr',
-  'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'okcupiddata', 'dslabs'
+  'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'dslabs'
 )
 
 

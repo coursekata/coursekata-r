@@ -12,7 +12,7 @@
 coursekata_packages <- function(check_remote_version = FALSE) {
   pkgs <- c(
     'supernova', 'mosaic', 'lsr',
-    'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'okcupiddata', 'dslabs'
+    'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'dslabs'
   )
 
   info <- data.frame(
