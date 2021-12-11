@@ -10,6 +10,7 @@
 .onAttach <- function(...) {
   crayon::num_colors(TRUE)
   coursekata_attach(TRUE)
+  load_coursekata_themes()
 }
 
 
