@@ -4,13 +4,11 @@
 # coursekata <img src='man/figures/logo.png' align="right" height="138.5" />
 
 <!-- badges: start -->
+<!-- [![CRAN status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata) -->
 
-[![CRAN
-status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata)
 [![R build
 status](https://github.com/UCLATALL/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/UCLATALL/coursekata-r/actions)
-[![Codecov test
-coverage](https://codecov.io/gh/UCLATALL/coursekata-r/branch/master/graph/badge.svg)](https://codecov.io/gh/UCLATALL/coursekata-r?branch=master)
+[![codecov](https://codecov.io/gh/uclatall/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://app.codecov.io/gh/uclatall/coursekata-r)
 <!-- badges: end -->
 
 ## Overview
@@ -42,28 +40,42 @@ remotes::install_github("UCLATALL/coursekata-r")
 
 ## Usage
 
-`library(coursekata)` will load these core packages:
+`library(coursekata)` will load these core packages, including the
+functions and themes included in this package:
 
 ``` r
 library(coursekata)
 #> 
 #> ── CourseKata course packages ──────────────────────────────────────────────────
-#> ✓ supernova           2.4.2       ✓ fivethirtyeightdata 0.1.0
+#> ✓ supernova           2.4.4       ✓ fivethirtyeightdata 0.1.0
 #> ✓ mosaic              1.8.3       ✓ Lock5withR          1.2.2
-#> ✓ lsr                 0.5         ✓ dslabs              0.7.4
-#> ✓ fivethirtyeight     0.6.1
+#> ✓ lsr                 0.5.2       ✓ dslabs              0.7.4
+#> ✓ fivethirtyeight     0.6.2
+#> 
+#> Attaching package: 'coursekata'
+#> The following objects are masked _by_ 'package:supernova':
+#> 
+#>     b0, b1, f, fVal, pre, PRE, sse, SSE, ssm, SSM, ssr, SSR
 ```
 
 -   [coursekata](https://github.com/UCLATALL/coursekata_core), for
     various helpers like
     -   `middle()`, `upper()`, and `lower()` to facilitate shading
         proportions of plots
+    -   an automatically set `ggplot2` theme complete with
+        colorblind-friendly palettes and other improvements to aid
+        perception and clarity of plots. These are loaded by default but
+        can be toggled on and off via `load_coursekata_themes()` and
+        `restore_default_themes()`. The actual plot theme and scale
+        components are also provided for advanced users as
+        `theme_coursekata()` and `scale_discrete_coursekata()`
+        (`viridis` is used for continuous color scales).
 -   [supernova](https://github.com/UCLATALL/supernova), for
     -   creating ANOVA tables.
-    -   an augmented `print.lm()` which prints the fitted equation as
-        well
     -   tools for extracting information from fitted models (`b0()`,
         `b1()`, `PRE()`, `fVal()`)
+    -   an augmented `print.lm()` which prints the fitted equation as
+        well
     -   … and more!
 -   [mosaic](https://projectmosaic.github.io/mosaic/), for a unified
     interface to most statistical tools.

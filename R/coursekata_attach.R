@@ -10,6 +10,7 @@
 .onAttach <- function(...) {
   crayon::num_colors(TRUE)
   coursekata_attach(TRUE)
+  load_coursekata_themes()
 }
 
 
@@ -29,7 +30,7 @@ coursekata_attach <- function(startup = FALSE) {
     suppressPackageStartupMessages(purrr::walk(to_attach, pkg_require))
   }
 
-  coursekata_attachments(TRUE)
+  coursekata_attachments(startup)
 }
 
 
