@@ -62,8 +62,6 @@ library(coursekata)
     various helpers like
     -   `middle()`, `upper()`, and `lower()` to facilitate shading
         proportions of plots
-    -   tools for extracting information from fitted models (`b0()`,
-        `b1()`, `PRE()`, `fVal()`)
     -   an automatically set `ggplot2` theme complete with
         colorblind-friendly palettes and other improvements to aid
         perception and clarity of plots. These are loaded by default but
@@ -74,6 +72,8 @@ library(coursekata)
         (`viridis` is used for continuous color scales).
 -   [supernova](https://github.com/UCLATALL/supernova), for
     -   creating ANOVA tables.
+    -   tools for extracting information from fitted models (`b0()`,
+        `b1()`, `PRE()`, `fVal()`)
     -   an augmented `print.lm()` which prints the fitted equation as
         well
     -   … and more!

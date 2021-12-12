@@ -50,10 +50,10 @@ library(coursekata)
 
 * [coursekata](https://github.com/UCLATALL/coursekata_core), for various helpers like
   - `middle()`, `upper()`, and `lower()` to facilitate shading proportions of plots
-  - tools for extracting information from fitted models (`b0()`, `b1()`, `PRE()`, `fVal()`)
   - an automatically set `ggplot2` theme complete with colorblind-friendly palettes and other improvements to aid perception and clarity of plots. These are loaded by default but can be toggled on and off via `load_coursekata_themes()` and `restore_default_themes()`. The actual plot theme and scale components are also provided for advanced users as `theme_coursekata()` and `scale_discrete_coursekata()` (`viridis` is used for continuous color scales).
 * [supernova](https://github.com/UCLATALL/supernova), for 
   - creating ANOVA tables.
+  - tools for extracting information from fitted models (`b0()`, `b1()`, `PRE()`, `fVal()`)
   - an augmented `print.lm()` which prints the fitted equation as well
   - … and more!
 * [mosaic](https://projectmosaic.github.io/mosaic/), for a unified interface to most statistical tools.

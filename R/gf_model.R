@@ -95,7 +95,7 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
   if (inherits(gformula, 'formula') && inherits(data, 'data.frame')) {
     if (is.null(model)) {
       # construct the model so that we can guess what kind of plot we need
-      model <- lm(gformula, data = data)
+      model <- stats::lm(gformula, data = data)
     }
   } else {
     rlang::abort("You must supply a `model` or a `gformula` and `data`.")
