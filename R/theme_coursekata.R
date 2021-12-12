@@ -34,14 +34,13 @@ theme_coursekata <- function() {
 
 #' The color palettes used in our theme system
 #'
-#' There are four main color palettes used in our theme system:
-#'  - **single-color**: for plots with one color, the CourseKata blue from the website is used
-#'  - **eight-color**: for plots with up to eight colors, the colors from
-#'    `ggtheme::scale_color_colorblind` are used, but the orders of some of the colors are swapped
-#'  - **fifteen-color**: when a broader palette of up to 15 colors is needed, a different
-#'    colorblind-friendly palette is used, from [http://mkweb.bcgsc.ca/biovis2012/].
-#'  - **continuous**: for plots with continuous colorspaces, the [`viridisLite::viridis()`] palette
-#'    is used
+#' There are four main color palettes used in our theme system: - **single-color**: for plots with
+#' one color, the CourseKata blue from the website is used - **eight-color**: for plots with up to
+#' eight colors, the colors from `ggtheme::scale_color_colorblind` are used, but the orders of some
+#' of the colors are swapped - **fifteen-color**: when a broader palette of up to 15 colors is
+#' needed, a different colorblind-friendly palette is used, from [this academic
+#' poster](http://mkweb.bcgsc.ca/biovis2012/). - **continuous**: for plots with continuous
+#' colorspaces, the [`viridisLite::viridis()`] palette is used
 #'
 #' @return A named list of the different color palettes used is returned with the exception of the
 #'   continuous palette. The continuous palette can be accessed by calling `viridisLite::viridis(n)`
