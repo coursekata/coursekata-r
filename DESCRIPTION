@@ -28,7 +28,11 @@ Imports:
     cli,
     purrr,
     magrittr,
-    yesno
+    yesno,
+    vdiffr,
+    ggformula,
+    ggplot2,
+    rlang
 Suggests: 
     testthat,
     covr,

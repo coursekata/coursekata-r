@@ -12,14 +12,10 @@ continuous palette. The continuous palette can be accessed by calling \code{viri
 where \code{n} is the number of colors to retrieve.
 }
 \description{
-There are four main color palettes used in our theme system:
-\itemize{
-\item \strong{single-color}: for plots with one color, the CourseKata blue from the website is used
-\item \strong{eight-color}: for plots with up to eight colors, the colors from
-\code{ggtheme::scale_color_colorblind} are used, but the orders of some of the colors are swapped
-\item \strong{fifteen-color}: when a broader palette of up to 15 colors is needed, a different
-colorblind-friendly palette is used, from \link{http://mkweb.bcgsc.ca/biovis2012/}.
-\item \strong{continuous}: for plots with continuous colorspaces, the \code{\link[viridisLite:viridis]{viridisLite::viridis()}} palette
-is used
-}
+There are four main color palettes used in our theme system: - \strong{single-color}: for plots with
+one color, the CourseKata blue from the website is used - \strong{eight-color}: for plots with up to
+eight colors, the colors from \code{ggtheme::scale_color_colorblind} are used, but the orders of some
+of the colors are swapped - \strong{fifteen-color}: when a broader palette of up to 15 colors is
+needed, a different colorblind-friendly palette is used, from \href{http://mkweb.bcgsc.ca/biovis2012/}{this academic poster}. - \strong{continuous}: for plots with continuous
+colorspaces, the \code{\link[viridisLite:viridis]{viridisLite::viridis()}} palette is used
 }
