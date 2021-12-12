@@ -1,6 +1,6 @@
 Package: coursekata
 Title: Packages and Functions for CourseKata Courses
-Version: 0.0.3
+Version: 0.1.0
 Authors@R: c(
     person("Adam", "Blake", email = "theadamattack@gmail.com", role = c("cre", "aut"), comment = c(ORCID = "0000-0001-7881-8652")),
     person("Ji", "Son", email = "json2@calstatela.edu", role = "aut", comment = c(ORCID = "0000-0002-4258-4791")),
@@ -29,7 +29,6 @@ Imports:
     purrr,
     magrittr,
     yesno,
-    vdiffr,
     ggformula,
     ggplot2,
     rlang
@@ -38,5 +37,6 @@ Suggests:
     covr,
     withr,
     mockr,
-    mockery
+    mockery,
+    vdiffr
 Config/testthat/edition: 3
