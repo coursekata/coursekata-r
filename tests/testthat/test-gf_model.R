@@ -130,6 +130,22 @@ test_that("it can chain to itself", {
   )
 })
 
+test_that("it respects ... options from up the chain", {
+  vdiffr::expect_doppelganger(
+    'color-through-chain',
+    gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
+      gf_model()
+  )
+})
+
+test_that("it can modify ... options from up the chain", {
+  vdiffr::expect_doppelganger(
+    'override-color-from-chain',
+    gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
+      gf_model(color = ~"red")
+  )
+})
+
 
 # Alternate formula specification -------------------------------------------------------------
 
