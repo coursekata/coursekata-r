@@ -143,15 +143,35 @@ scale_discrete_coursekata <- function(...) {
 #' @export
 load_coursekata_themes <- function() {
   ggplot2::update_geom_defaults("bar", list(
+    colour = "black",
     fill = coursekata_palettes()$single_color,
-    color = "black",
     size = .3
   ))
 
   ggplot2::update_geom_defaults("boxplot", list(
-    fill = coursekata_palettes()$single_color,
     color = "black",
+    fill = coursekata_palettes()$single_color,
     alpha = .5
+  ))
+
+  ggplot2::update_geom_defaults("lm", list(
+    colour = coursekata_palettes()$single_color,
+    size = .8
+  ))
+
+  ggplot2::update_geom_defaults("hline", list(
+    colour = coursekata_palettes()$single_color,
+    size = .8
+  ))
+
+  ggplot2::update_geom_defaults("vline", list(
+    colour = coursekata_palettes()$single_color,
+    size = .8
+  ))
+
+  ggplot2::update_geom_defaults("segment", list(
+    colour = coursekata_palettes()$single_color,
+    size = .8
   ))
 
   ggplot2::theme_set(theme_coursekata())
@@ -181,19 +201,29 @@ restore_default_themes <- function() {
   ggplot2::update_geom_defaults("bar", list(
     colour = NA,
     fill = 'grey35',
-    size = .5,
-    linetype = 1,
-    alpha = NA
+    size = .5
   ))
 
   ggplot2::update_geom_defaults("boxplot", list(
-    weight = 1,
     colour = "grey20",
     fill = "white",
-    size = .5,
-    alpha = NA,
-    shape = 19,
-    linetype = "solid"
+    alpha = NA
+  ))
+
+  ggplot2::update_geom_defaults("lm", list(
+    colour = "#3366FF"
+  ))
+
+  ggplot2::update_geom_defaults("hline", list(
+    colour = "black"
+  ))
+
+  ggplot2::update_geom_defaults("vline", list(
+    colour = "black"
+  ))
+
+  ggplot2::update_geom_defaults("segment", list(
+    colour = "black"
   ))
 
   ggplot2::theme_set(theme_grey())

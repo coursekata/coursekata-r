@@ -177,9 +177,9 @@
 <circle cx='585.78' cy='231.19' r='1.95' style='stroke-width: 0.71; stroke: none;' />
 <circle cx='585.78' cy='270.76' r='1.95' style='stroke-width: 0.71; stroke: none;' />
 <circle cx='585.78' cy='310.33' r='1.95' style='stroke-width: 0.71; stroke: none;' />
-<line x1='92.27' y1='428.25' x2='221.01' y2='428.25' style='stroke-width: 1.07; stroke: #19ABED; stroke-linecap: butt;' />
-<line x1='306.84' y1='305.58' x2='435.58' y2='305.58' style='stroke-width: 1.07; stroke: #19ABED; stroke-linecap: butt;' />
-<line x1='521.41' y1='219.58' x2='650.15' y2='219.58' style='stroke-width: 1.07; stroke: #19ABED; stroke-linecap: butt;' />
+<line x1='92.27' y1='428.25' x2='221.01' y2='428.25' style='stroke-width: 1.71; stroke: #19ABED; stroke-linecap: butt;' />
+<line x1='306.84' y1='305.58' x2='435.58' y2='305.58' style='stroke-width: 1.71; stroke: #19ABED; stroke-linecap: butt;' />
+<line x1='521.41' y1='219.58' x2='650.15' y2='219.58' style='stroke-width: 1.71; stroke: #19ABED; stroke-linecap: butt;' />
 <rect x='27.90' y='22.78' width='686.62' height='522.33' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>

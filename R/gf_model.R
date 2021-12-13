@@ -39,12 +39,6 @@
 #'   gf_model() %>%
 #'   gf_model(Thumb ~ NULL)
 gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, width = .3, ...) {
-  # change the default color to our themed color
-  color <- list(...)$color
-  if (is.null(color)) {
-    color <- coursekata_palettes()$single_color
-  }
-
   # handle out-of-order arguments: the strategy here is to extract a model, either a fitted model or
   # a formula and data for one
   if (inherits(object, 'formula')) {
@@ -103,12 +97,12 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
 
   variables <- supernova::variables(model)
   if (length(variables$predictor) == 0) {
-    add_empty_model(object, model, color = color, ...)
+    add_empty_model(object, model, ...)
   } else if (is.factor(data[[variables$predictor]]) || is.factor(data[[variables$predictor]])) {
     # TODO: documentation -- group model does not support formulae with facets
-    add_group_model(object, gformula, data, width = .3, color = color, ...)
+    add_group_model(object, gformula, data, width = .3, ...)
   } else {
-    ggformula::gf_lm(object, gformula, data, color = color, ...)
+    ggformula::gf_lm(object, gformula, data, ...)
   }
 }
 
