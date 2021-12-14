@@ -140,10 +140,9 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
 add_empty_model <- function(object, model, ...) {
   if (is.null(object)) {
     # build a blank plot so that the y-axis is informative
-    # TODO use gf_blank()
     outcome <- supernova::variables(model)$outcome
     frm <- stats::as.formula(paste(outcome, "~ 1"))
-    object <- ggformula::gf_point(gformula = frm, data = model$model, alpha = 0)
+    object <- ggformula::gf_blank(gformula = frm, data = model$model)
   }
 
   ggformula::gf_hline(object, yintercept = ~b0(model), ...)
@@ -166,9 +165,8 @@ add_empty_model <- function(object, model, ...) {
 #' @keywords internal
 add_group_model <- function(object, gformula, data, width = .3, ...) {
   if (is.null(object)) {
-    # build a blank point plot so that the axes are informative
-    # TODO use gf_blank()
-    object <- ggformula::gf_point(gformula = gformula, data = data, alpha = 0)
+    # build a blank plot so that the axes are informative
+    object <- ggformula::gf_blank(gformula = gformula, data = data)
   }
 
   five_num <- mosaic::favstats(gformula, data = data)
