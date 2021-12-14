@@ -21,11 +21,17 @@ test_that("it wraps gf_hline() to add the empty model as a line", {
   )
 })
 
-test_that("it draws gf_segments() to add the group model", {
+test_that("it draws gf_segment()s to add the group model", {
   vdiffr::expect_doppelganger(
     'group--data-formula',
     gf_model(gformula = Sepal.Length ~ Species, data = iris)
   )
+})
+
+test_that("it draws gf_vline()s on histograms", {
+  skip("Not implemented")
+  # gf_histogram(~mpg, data = mtcars) %>%
+  #   gf_model()
 })
 
 test_that("it accepts a fitted model in place of a formula and data", {
@@ -100,6 +106,10 @@ test_that("an informative error is given if new data is passed to it", {
   )
 })
 
+test_that("it doesn't complain about new data if the original plot had no data", {
+  expect_error(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ hp, data = mtcars), NA)
+})
+
 test_that("model can be first argument when chaining", {
   vdiffr::expect_doppelganger(
     'regression--chained--formula-in-data-arg',
@@ -144,6 +154,25 @@ test_that("it can modify ... options from up the chain", {
     gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
       gf_model(color = ~"red")
   )
+})
+
+test_that("it throws a warning when trying to chain to something it can't work with", {
+  # taking a white list approach, so only testing one unsupported here which will error by default,
+  # and then all explicitly supported below with no error
+
+  # unsupported
+  expect_warning(gf_density_2d(eruptions ~ waiting, data = faithful) %>% gf_model())
+
+  # supported
+  expect_warning(gf_point(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
+  expect_warning(gf_lm(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
+  expect_warning(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+  expect_warning(gf_vline(xintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+  expect_warning(gf_abline(slope = ~3, intercept = ~2) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+  # expect_warning(gf_histogram(~mpg, data = mtcars) %>% gf_model(), NA)
+  # expect_warning(gf_density(~mpg, data = mtcars) %>% gf_model(), NA)
+  # expect_warning(gf_boxplot(~mpg, data = mtcars) %>% gf_model(), NA)
+  # expect_warning(gf_violin(~mpg, data = mtcars) %>% gf_model(), NA)
 })
 
 

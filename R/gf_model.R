@@ -57,14 +57,32 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
   }
 
   if (inherits(object, 'gg')) {
-    if (!is.null(data) && !identical(data, object$data)) {
+    is_supported <- purrr::map_lgl(object$layers, ~inherits(.x$geom, c(
+      'GeomPoint', 'GeomBar', "GeomLm", "GeomSmooth", "GeomHline", "GeomVline", "GeomAbline",
+      "GeomBlank"
+    )))
+
+    if (!any(is_supported)) {
+      rlang::warn(c(
+        "`gf_model()` is only (currently) supported for the following, and others may not work:",
+        "point (and jitter) plots",
+        "lm (and smooth) plots",
+        "ablines, hlines, and vlines",
+        "blank plots"
+      ))
+    }
+
+    if (!is.null(data) && !inherits(object$data, 'waiver') && !identical(data, object$data)) {
       rlang::abort(paste(
         "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
         "compared to the previous function in the chain."
       ))
     }
 
-    data <- object$data
+    # only use the original data if there was some, waiver means no data argument was passed
+    if (!inherits(object$data, 'waiver')) {
+      data <- object$data
+    }
 
     if (inherits(gformula, 'lm')) {
       model <- gformula
@@ -122,6 +140,7 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
 add_empty_model <- function(object, model, ...) {
   if (is.null(object)) {
     # build a blank plot so that the y-axis is informative
+    # TODO use gf_blank()
     outcome <- supernova::variables(model)$outcome
     frm <- stats::as.formula(paste(outcome, "~ 1"))
     object <- ggformula::gf_point(gformula = frm, data = model$model, alpha = 0)
@@ -148,6 +167,7 @@ add_empty_model <- function(object, model, ...) {
 add_group_model <- function(object, gformula, data, width = .3, ...) {
   if (is.null(object)) {
     # build a blank point plot so that the axes are informative
+    # TODO use gf_blank()
     object <- ggformula::gf_point(gformula = gformula, data = data, alpha = 0)
   }
 
