@@ -52,8 +52,8 @@ coursekata_palettes <- function() {
     eight_color = list(
       # blue = "#56B4E9",
       blue = "#19ABED",
-      green ="#009E73",
       orange = "#E69F00",
+      green ="#009E73",
       dark_blue = "#0072B2",
       red = "#D55E00",
       pink = "#CC79A7",
