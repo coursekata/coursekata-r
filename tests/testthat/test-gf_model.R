@@ -28,12 +28,6 @@ test_that("it draws gf_segment()s to add the group model", {
   )
 })
 
-test_that("it draws gf_vline()s on histograms", {
-  skip("Not implemented")
-  # gf_histogram(~mpg, data = mtcars) %>%
-  #   gf_model()
-})
-
 test_that("it accepts a fitted model in place of a formula and data", {
   vdiffr::expect_doppelganger(
     'regression--lm',
@@ -50,13 +44,16 @@ test_that("it accepts a fitted model in place of a formula and data", {
 })
 
 test_that("using a model supsersedes the formula and data arguments", {
+  expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
   vdiffr::expect_doppelganger(
     'regression--model-supersedes-formula',
-    gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL)
+    suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
   )
+
+  expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
   vdiffr::expect_doppelganger(
     'regression--model-supersedes-data',
-    gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris)
+    suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
   )
 })
 
@@ -156,24 +153,39 @@ test_that("it can modify ... options from up the chain", {
   )
 })
 
-test_that("it throws a warning when trying to chain to something it can't work with", {
-  # taking a white list approach, so only testing one unsupported here which will error by default,
-  # and then all explicitly supported below with no error
-
-  # unsupported
-  expect_warning(gf_density_2d(eruptions ~ waiting, data = faithful) %>% gf_model())
-
-  # supported
-  expect_warning(gf_point(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
-  expect_warning(gf_lm(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
-  expect_warning(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
-  expect_warning(gf_vline(xintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
-  expect_warning(gf_abline(slope = ~3, intercept = ~2) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
-  # expect_warning(gf_histogram(~mpg, data = mtcars) %>% gf_model(), NA)
-  # expect_warning(gf_density(~mpg, data = mtcars) %>% gf_model(), NA)
-  # expect_warning(gf_boxplot(~mpg, data = mtcars) %>% gf_model(), NA)
-  # expect_warning(gf_violin(~mpg, data = mtcars) %>% gf_model(), NA)
-})
+# test_that("it draws gf_vline()s on histograms", {
+#   vdiffr::expect_doppelganger(
+#     'histogram',
+#     gf_histogram(~mpg, data = mtcars) %>%
+#       gf_model()
+#   )
+#
+#   vdiffr::expect_doppelganger(
+#     'histogram-faceted',
+#     gf_histogram(~mpg, data = mtcars) %>%
+#       gf_facet_grid(cyl ~ .) %>%
+#       gf_model()
+#   )
+# })
+#
+# test_that("it throws a warning when trying to chain to something it can't work with", {
+#   # taking a white list approach, so only testing one unsupported here which will error by default,
+#   # and then all explicitly supported below with no error
+#
+#   # unsupported
+#   expect_warning(gf_density_2d(eruptions ~ waiting, data = faithful) %>% gf_model())
+#
+#   # supported
+#   expect_warning(gf_point(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
+#   expect_warning(gf_lm(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
+#   expect_warning(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+#   expect_warning(gf_vline(xintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+#   expect_warning(gf_abline(slope = ~3, intercept = ~2) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+#   expect_warning(gf_histogram(~mpg, data = mtcars) %>% gf_model(), NA)
+#   # expect_warning(gf_density(~mpg, data = mtcars) %>% gf_model(), NA)
+#   # expect_warning(gf_boxplot(~mpg, data = mtcars) %>% gf_model(), NA)
+#   # expect_warning(gf_violin(~mpg, data = mtcars) %>% gf_model(), NA)
+# })
 
 
 # Alternate formula specification -------------------------------------------------------------

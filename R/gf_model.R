@@ -39,8 +39,7 @@
 #'   gf_model() %>%
 #'   gf_model(Thumb ~ NULL)
 gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, width = .3, ...) {
-  # handle out-of-order arguments: the strategy here is to extract a model, either a fitted model or
-  # a formula and data for one
+  # phase 1: handle arguments in different positions
   if (inherits(object, 'formula')) {
     gformula <- object
     object <- NULL
@@ -56,51 +55,55 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
     object <- NULL
   }
 
+  if (inherits(gformula, 'lm')) {
+    model <- gformula
+    gformula <- NULL
+  }
+
+  # phase 2: find the formula and data
+  if (inherits(model, 'lm')) {
+    if (!is.null(gformula) || !is.null(data)) {
+      rlang::warn(paste(
+        'You have passed both a `model` and a `gformula` and/or `data` to `gf_model()`.',
+        'The formula and data from the `model` will be used and the others ignored.'
+      ))
+    }
+
+    gformula <- stats::as.formula(model)
+    data <- if (is.null(model$call$data)) {
+      model$model
+    } else {
+      rlang::env_get(rlang::f_env(gformula), rlang::as_string(model$call$data), inherit = TRUE)
+    }
+  }
+
   if (inherits(object, 'gg')) {
-    is_supported <- purrr::map_lgl(object$layers, ~inherits(.x$geom, c(
-      'GeomPoint', 'GeomBar', "GeomLm", "GeomSmooth", "GeomHline", "GeomVline", "GeomAbline",
-      "GeomBlank"
-    )))
-
-    if (!any(is_supported)) {
-      rlang::warn(c(
-        "`gf_model()` is only (currently) supported for the following, and others may not work:",
-        "point (and jitter) plots",
-        "lm (and smooth) plots",
-        "ablines, hlines, and vlines",
-        "blank plots"
-      ))
-    }
-
-    if (!is.null(data) && !inherits(object$data, 'waiver') && !identical(data, object$data)) {
-      rlang::abort(paste(
-        "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
-        "compared to the previous function in the chain."
-      ))
-    }
-
-    # only use the original data if there was some, waiver means no data argument was passed
-    if (!inherits(object$data, 'waiver')) {
-      data <- object$data
-    }
-
-    if (inherits(gformula, 'lm')) {
-      model <- gformula
-    } else if (is.null(model) && is.null(gformula)) {
+    if (is.null(model) && is.null(gformula)) {
+      # we don't have the model or formula yet, so we need to get it from up the chain
+      # if the previous layers have variables on both the x and y axes, the formula is y ~ x
       y <- object$mapping[['y']]
       x <- object$mapping[['x']]
       gformula <- stats::as.formula(
         paste(rlang::as_name(y), "~", rlang::as_name(x)),
         rlang::quo_get_env(object$mapping[['y']])
       )
-    }
-  }
 
-  # by this point we should have the gformula and data if it was given, otherwise we need the model
-  # the order matters because having a model should supersede formula and data
-  if (inherits(model, 'lm')) {
-    gformula <- stats::as.formula(model)
-    data <- model$model
+      # if the previous layers use faceting to introduce the second variable, we have to determine
+      # what axis the outcome is on (either x or y) and what the faceting variable is, then the
+      # formula is outcome ~ facet
+    }
+
+    object_has_data <- !inherits(object$data, 'waiver')
+    if (!is.null(data) && object_has_data && !identical(data, object$data)) {
+      rlang::abort(paste(
+        "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
+        "compared to the previous function in the chain."
+      ))
+    }
+
+    if (object_has_data) {
+      data <- object$data
+    }
   }
 
   # TODO: for now, data is required with a formula, in the future allow data$var syntax
