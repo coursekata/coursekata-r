@@ -21,7 +21,7 @@ test_that("it wraps gf_hline() to add the empty model as a line", {
   )
 })
 
-test_that("it draws gf_segments() to add the group model", {
+test_that("it draws gf_segment()s to add the group model", {
   vdiffr::expect_doppelganger(
     'group--data-formula',
     gf_model(gformula = Sepal.Length ~ Species, data = iris)
@@ -44,13 +44,16 @@ test_that("it accepts a fitted model in place of a formula and data", {
 })
 
 test_that("using a model supsersedes the formula and data arguments", {
+  expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
   vdiffr::expect_doppelganger(
     'regression--model-supersedes-formula',
-    gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL)
+    suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
   )
+
+  expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
   vdiffr::expect_doppelganger(
     'regression--model-supersedes-data',
-    gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris)
+    suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
   )
 })
 
@@ -100,6 +103,10 @@ test_that("an informative error is given if new data is passed to it", {
   )
 })
 
+test_that("it doesn't complain about new data if the original plot had no data", {
+  expect_error(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ hp, data = mtcars), NA)
+})
+
 test_that("model can be first argument when chaining", {
   vdiffr::expect_doppelganger(
     'regression--chained--formula-in-data-arg',
@@ -145,6 +152,107 @@ test_that("it can modify ... options from up the chain", {
       gf_model(color = ~"red")
   )
 })
+
+
+# Histograms ----------------------------------------------------------------------------------
+
+test_that("it draws gf_vline()s on faceted histograms", {
+  vdiffr::expect_doppelganger(
+    'histogram',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model()
+  )
+
+  vdiffr::expect_doppelganger(
+    'dhistogram',
+    gf_dhistogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model()
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-null-specified',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ NULL)
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-group-specified',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-group-inferred',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+})
+
+test_that("it draws the empty model on non-faceted histograms", {
+  vdiffr::expect_doppelganger(
+    'histogram-empty-inferred',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_model()
+  )
+})
+
+test_that("it works with rotated histograms", {
+  vdiffr::expect_doppelganger(
+    'histogram-rotated',
+    gf_histogramh(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+})
+
+test_that("it works with other single variable models", {
+  vdiffr::expect_doppelganger(
+    'density',
+    gf_density(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+
+  vdiffr::expect_doppelganger(
+    'dot',
+    gf_dotplot(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+})
+
+test_that("it will fail if it can't determine the formula based on the plot and facets", {
+  expect_error(
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_grid(am ~ cyl) %>%
+      gf_model(),
+    ".*be more specific.*"
+  )
+})
+
+# test_that("it throws a warning when trying to chain to something it can't work with", {
+#   # taking a white list approach, so only testing one unsupported here which will error by default,
+#   # and then all explicitly supported below with no error
+#
+#   # unsupported
+#   expect_warning(gf_density_2d(eruptions ~ waiting, data = faithful) %>% gf_model())
+#
+#   # supported
+#   expect_warning(gf_point(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
+#   expect_warning(gf_lm(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
+#   expect_warning(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+#   expect_warning(gf_vline(xintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+#   expect_warning(gf_abline(slope = ~3, intercept = ~2) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
+#   expect_warning(gf_histogram(~mpg, data = mtcars) %>% gf_model(), NA)
+#   # expect_warning(gf_density(~mpg, data = mtcars) %>% gf_model(), NA)
+#   # expect_warning(gf_boxplot(~mpg, data = mtcars) %>% gf_model(), NA)
+#   # expect_warning(gf_violin(~mpg, data = mtcars) %>% gf_model(), NA)
+# })
 
 
 # Alternate formula specification -------------------------------------------------------------
