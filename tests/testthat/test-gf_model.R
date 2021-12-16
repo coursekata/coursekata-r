@@ -210,14 +210,21 @@ test_that("it works with rotated histograms", {
   )
 })
 
-# test_that("it works with other single variable models", {
-#   vdiffr::expect_doppelganger(
-#     'density',
-#     gf_density(~mpg, data = mtcars) %>%
-#       gf_facet_wrap(~cyl) %>%
-#       gf_model(mpg ~ cyl)
-#   )
-# })
+test_that("it works with other single variable models", {
+  vdiffr::expect_doppelganger(
+    'density',
+    gf_density(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+
+  vdiffr::expect_doppelganger(
+    'dot',
+    gf_dotplot(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+})
 
 test_that("it will fail if it can't determine the formula based on the plot and facets", {
   expect_error(
