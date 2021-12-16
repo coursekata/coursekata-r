@@ -48,19 +48,9 @@ theme_coursekata <- function() {
 #' @export
 coursekata_palettes <- function() {
   list(
-    single_color = "#19ABED",
-    eight_color = list(
-      # blue = "#56B4E9",
-      blue = "#19ABED",
-      orange = "#E69F00",
-      green ="#009E73",
-      dark_blue = "#0072B2",
-      red = "#D55E00",
-      pink = "#CC79A7",
-      black = "#000000",
-      yellow = "#F0E442"
-    ),
-    fifteen_color = list(
+    single = ggsci::pal_locuszoom()(2)[[2]],
+    small = ggsci::pal_locuszoom()(7),
+    large = list(
       black = "#000000",
       dark_green = "#004949",
       green = "#009292",
@@ -86,11 +76,11 @@ coursekata_palettes <- function() {
 #'   in the plot. This function is used by scales like `scale_color_discrete` to provide colorblind-
 #'   safe palettes. See [`scale_discrete_coursekata`] for more information.
 #' @export
-colorblind_palette_provider <- function() {
+coursekata_palette_provider <- function() {
   unwrap <- function(x) x %>% unname() %>% unlist() %>% force()
   palettes <- coursekata_palettes()
-  small_palette <- unwrap(palettes$eight_color)
-  large_palette <- unwrap(palettes$fifteen_color)
+  small_palette <- unwrap(palettes$small)
+  large_palette <- unwrap(palettes$large)
   max_values <- length(large_palette)
 
   provider <- function(n) {
@@ -124,7 +114,7 @@ scale_discrete_coursekata <- function(...) {
   ggplot2::discrete_scale(
     c("colour", "fill"),
     "coursekata",
-    colorblind_palette_provider(),
+    coursekata_palette_provider(),
     ...
   )
 }
@@ -144,45 +134,47 @@ scale_discrete_coursekata <- function(...) {
 load_coursekata_themes <- function() {
   ggplot2::update_geom_defaults("bar", list(
     colour = "black",
-    fill = coursekata_palettes()$single_color,
+    fill = coursekata_palettes()$single,
+    alpha = .8,
     size = .1
   ))
 
   ggplot2::update_geom_defaults("barh", list(
     colour = "black",
-    fill = coursekata_palettes()$single_color,
+    fill = coursekata_palettes()$single,
+    alpha = .8,
     size = .1
   ))
 
   ggplot2::update_geom_defaults("boxplot", list(
     color = "black",
-    fill = coursekata_palettes()$single_color,
-    alpha = .5
+    fill = coursekata_palettes()$single,
+    alpha = .6
   ))
 
   ggplot2::update_geom_defaults("boxploth", list(
     color = "black",
-    fill = coursekata_palettes()$single_color,
-    alpha = .5
+    fill = coursekata_palettes()$single,
+    alpha = .6
   ))
 
   ggplot2::update_geom_defaults("lm", list(
-    colour = coursekata_palettes()$eight_color$dark_blue,
+    colour = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
   ggplot2::update_geom_defaults("hline", list(
-    colour = coursekata_palettes()$eight_color$dark_blue,
+    colour = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
   ggplot2::update_geom_defaults("vline", list(
-    colour = coursekata_palettes()$eight_color$dark_blue,
+    colour = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
   ggplot2::update_geom_defaults("segment", list(
-    colour = coursekata_palettes()$eight_color$dark_blue,
+    colour = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
