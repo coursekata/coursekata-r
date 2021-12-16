@@ -153,21 +153,81 @@ test_that("it can modify ... options from up the chain", {
   )
 })
 
-# test_that("it draws gf_vline()s on histograms", {
+
+# Histograms ----------------------------------------------------------------------------------
+
+test_that("it draws gf_vline()s on faceted histograms", {
+  vdiffr::expect_doppelganger(
+    'histogram',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model()
+  )
+
+  vdiffr::expect_doppelganger(
+    'dhistogram',
+    gf_dhistogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model()
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-null-specified',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ NULL)
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-group-specified',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-group-inferred',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+})
+
+test_that("it draws the empty model on non-faceted histograms", {
+  vdiffr::expect_doppelganger(
+    'histogram-empty-inferred',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_model()
+  )
+})
+
+test_that("it works with rotated histograms", {
+  vdiffr::expect_doppelganger(
+    'histogram-rotated',
+    gf_histogramh(~mpg, data = mtcars) %>%
+      gf_facet_wrap(~cyl) %>%
+      gf_model(mpg ~ cyl)
+  )
+})
+
+# test_that("it works with other single variable models", {
 #   vdiffr::expect_doppelganger(
-#     'histogram',
-#     gf_histogram(~mpg, data = mtcars) %>%
-#       gf_model()
-#   )
-#
-#   vdiffr::expect_doppelganger(
-#     'histogram-faceted',
-#     gf_histogram(~mpg, data = mtcars) %>%
-#       gf_facet_grid(cyl ~ .) %>%
-#       gf_model()
+#     'density',
+#     gf_density(~mpg, data = mtcars) %>%
+#       gf_facet_wrap(~cyl) %>%
+#       gf_model(mpg ~ cyl)
 #   )
 # })
-#
+
+test_that("it will fail if it can't determine the formula based on the plot and facets", {
+  expect_error(
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_grid(am ~ cyl) %>%
+      gf_model(),
+    ".*be more specific.*"
+  )
+})
+
 # test_that("it throws a warning when trying to chain to something it can't work with", {
 #   # taking a white list approach, so only testing one unsupported here which will error by default,
 #   # and then all explicitly supported below with no error

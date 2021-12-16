@@ -78,31 +78,41 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
   }
 
   if (inherits(object, 'gg')) {
-    if (is.null(model) && is.null(gformula)) {
-      # we don't have the model or formula yet, so we need to get it from up the chain
-      # if the previous layers have variables on both the x and y axes, the formula is y ~ x
-      y <- object$mapping[['y']]
-      x <- object$mapping[['x']]
+    if (!inherits(object$data, 'waiver')) {
+      if (!is.null(data) && !identical(data, object$data)) {
+        rlang::abort(paste(
+          "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
+          "compared to the previous function in the chain."
+        ))
+      }
+      data <- object$data
+    }
+
+    # the rest of if-block has two main functions:
+    # 1. determine if we are adding to a single-variable plot (like a histogram), and if so, return
+    #    the appropriate vline/hline
+    # 2. otherwise, if we don't already know the formula, infer it using the chained plot's axes
+    y <- object$mapping[['y']]
+    x <- object$mapping[['x']]
+
+    # short-circuit for single-variable plots (incl. with facets)
+    if (is.null(y) || is.null(x)) {
+      return(gf_model_single_variable(object, gformula, data, ...))
+    }
+
+    # check for density plots
+    if (deparse(rlang::get_expr(y)) == "stat(density)" ||
+        deparse(rlang::get_expr(x)) == "stat(density)"
+    ) {
+      return(gf_model_single_variable(object, gformula, data, ..., .density = TRUE))
+    }
+
+    # we don't know the formula but have both axes, the formula is y ~ x
+    if (is.null(gformula)) {
       gformula <- stats::as.formula(
         paste(rlang::as_name(y), "~", rlang::as_name(x)),
-        rlang::quo_get_env(object$mapping[['y']])
+        rlang::quo_get_env(y)
       )
-
-      # if the previous layers use faceting to introduce the second variable, we have to determine
-      # what axis the outcome is on (either x or y) and what the faceting variable is, then the
-      # formula is outcome ~ facet
-    }
-
-    object_has_data <- !inherits(object$data, 'waiver')
-    if (!is.null(data) && object_has_data && !identical(data, object$data)) {
-      rlang::abort(paste(
-        "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
-        "compared to the previous function in the chain."
-      ))
-    }
-
-    if (object_has_data) {
-      data <- object$data
     }
   }
 
@@ -116,6 +126,7 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
     rlang::abort("You must supply a `model` or a `gformula` and `data`.")
   }
 
+  # phase 3: plot the model
   variables <- supernova::variables(model)
   if (length(variables$predictor) == 0) {
     add_empty_model(object, model, ...)
@@ -176,5 +187,43 @@ add_group_model <- function(object, gformula, data, width = .3, ...) {
   five_num$x_min <- seq_along(five_num$mean) - width
   five_num$x_max <- seq_along(five_num$mean) + width
   gf_segment(object, mean + mean ~ x_min + x_max, data = five_num, ...)
+}
+
+gf_model_single_variable <- function(object, gformula, data, ..., .density = FALSE) {
+  y <- object$mapping[['y']]
+  x <- object$mapping[['x']]
+
+  outcome <- if (.density) {
+    if (deparse(rlang::get_expr(y)) == "stat(density)") x else y
+  } else {
+    if (is.null(y)) x else y
+  }
+
+  if (is.null(gformula)) {
+    # if there is only one variable and no facets, it's the empty model
+    # otherwise we can pull the other variable from the facets
+    if (inherits(object$facet, "FacetNull")) {
+      gformula <- stats::as.formula(
+        paste(rlang::as_name(outcome), "~ NULL"),
+        rlang::quo_get_env(outcome)
+      )
+    } else if (length(object$facet$vars()) > 1) {
+      rlang::abort("Cannot determine what model to plot. Please be more specific.")
+    } else {
+      explanatory <- object$facet$params$facets[[1]]
+      gformula <- stats::as.formula(
+        paste(rlang::as_name(outcome), "~", rlang::as_name(explanatory)),
+        rlang::quo_get_env(outcome)
+      )
+    }
+  }
+
+  # we should have the formula by now: time to use it and return
+  stats <- mosaic::favstats(gformula, data = data)
+  if (identical(outcome, x)) {
+    return(ggformula::gf_vline(object, xintercept = ~mean, data = stats, ...))
+  } else {
+    return(ggformula::gf_hline(object, yintercept = ~mean, data = stats, ...))
+  }
 }
 
