@@ -158,9 +158,16 @@ test_that("it can modify ... options from up the chain", {
 
 test_that("it draws gf_vline()s on faceted histograms", {
   vdiffr::expect_doppelganger(
-    'histogram',
+    'histogram-wrap',
     gf_histogram(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
+      gf_model()
+  )
+
+  vdiffr::expect_doppelganger(
+    'histogram-grid',
+    gf_histogram(~mpg, data = mtcars) %>%
+      gf_facet_grid(cyl ~ .) %>%
       gf_model()
   )
 

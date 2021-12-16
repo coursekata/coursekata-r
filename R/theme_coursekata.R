@@ -167,22 +167,22 @@ load_coursekata_themes <- function() {
   ))
 
   ggplot2::update_geom_defaults("lm", list(
-    colour = coursekata_palettes()$single_color,
+    colour = coursekata_palettes()$eight_color$dark_blue,
     size = .8
   ))
 
   ggplot2::update_geom_defaults("hline", list(
-    colour = coursekata_palettes()$single_color,
+    colour = coursekata_palettes()$eight_color$dark_blue,
     size = .8
   ))
 
   ggplot2::update_geom_defaults("vline", list(
-    colour = coursekata_palettes()$single_color,
+    colour = coursekata_palettes()$eight_color$dark_blue,
     size = .8
   ))
 
   ggplot2::update_geom_defaults("segment", list(
-    colour = coursekata_palettes()$single_color,
+    colour = coursekata_palettes()$eight_color$dark_blue,
     size = .8
   ))
 
