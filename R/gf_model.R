@@ -207,10 +207,12 @@ gf_model_single_variable <- function(object, gformula, data, ..., .density = FAL
         paste(rlang::as_name(outcome), "~ NULL"),
         rlang::quo_get_env(outcome)
       )
-    } else if (length(object$facet$vars()) > 1) {
+    }
+    else if (length(object$facet$vars()) > 1) {
       rlang::abort("Cannot determine what model to plot. Please be more specific.")
     } else {
-      explanatory <- object$facet$params$facets[[1]]
+      possible <- c(object$facet$params$facets, object$facet$params$rows, object$facet$params$cols)
+      explanatory <- purrr::reduce(possible, c)
       gformula <- stats::as.formula(
         paste(rlang::as_name(outcome), "~", rlang::as_name(explanatory)),
         rlang::quo_get_env(outcome)
