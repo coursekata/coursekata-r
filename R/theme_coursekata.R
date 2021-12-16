@@ -145,10 +145,22 @@ load_coursekata_themes <- function() {
   ggplot2::update_geom_defaults("bar", list(
     colour = "black",
     fill = coursekata_palettes()$single_color,
-    size = .3
+    size = .1
+  ))
+
+  ggplot2::update_geom_defaults("barh", list(
+    colour = "black",
+    fill = coursekata_palettes()$single_color,
+    size = .1
   ))
 
   ggplot2::update_geom_defaults("boxplot", list(
+    color = "black",
+    fill = coursekata_palettes()$single_color,
+    alpha = .5
+  ))
+
+  ggplot2::update_geom_defaults("boxploth", list(
     color = "black",
     fill = coursekata_palettes()$single_color,
     alpha = .5
@@ -204,7 +216,19 @@ restore_default_themes <- function() {
     size = .5
   ))
 
+  ggplot2::update_geom_defaults("barh", list(
+    colour = NA,
+    fill = 'grey35',
+    size = .5
+  ))
+
   ggplot2::update_geom_defaults("boxplot", list(
+    colour = "grey20",
+    fill = "white",
+    alpha = NA
+  ))
+
+  ggplot2::update_geom_defaults("boxploth", list(
     colour = "grey20",
     fill = "white",
     alpha = NA
