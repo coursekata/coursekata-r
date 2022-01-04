@@ -10,7 +10,7 @@ ask_to_install(pkgs)
 \item{pkgs}{A character vector of packages to ask about.}
 }
 \value{
-A logical indicating whether the use answered yes or no.
+A logical indicating whether the user answered yes or no.
 }
 \description{
 Ask the user if they want to install packages
