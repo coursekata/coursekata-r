@@ -8,6 +8,11 @@ place it was already loaded from.}
 \usage{
 pkg_require(pkgs, do_not_ask = FALSE)
 }
+\arguments{
+\item{pkgs}{A character vector of packages to load.}
+
+\item{do_not_ask}{Prevent asking the user to install missing packages (they are skipped).}
+}
 \description{
 Load the package, making sure to load from the correct location. Sometimes people have different
 versions of packages installed, so if the package is currently loaded, make sure to load from the

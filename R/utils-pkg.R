@@ -72,6 +72,9 @@ pkg_remote_version <- function(pkgs) {
 #' versions of packages installed, so if the package is currently loaded, make sure to load from the
 #' place it was already loaded from.
 #'
+#' @param pkgs A character vector of packages to load.
+#' @param do_not_ask Prevent asking the user to install missing packages (they are skipped).
+#'
 #' @keywords internal
 pkg_require <- function(pkgs, do_not_ask = FALSE) {
   loader <- function(pkg) {
@@ -102,7 +105,7 @@ pkg_require <- function(pkgs, do_not_ask = FALSE) {
 #'
 #' @param pkgs A character vector of packages to ask about.
 #'
-#' @return A logical indicating whether the use answered yes or no.
+#' @return A logical indicating whether the user answered yes or no.
 #' @keywords internal
 ask_to_install <- function(pkgs) {
   if (!interactive()) return(FALSE)
