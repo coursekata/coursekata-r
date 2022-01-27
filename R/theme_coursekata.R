@@ -112,7 +112,7 @@ coursekata_palette_provider <- function() {
 #' @export
 scale_discrete_coursekata <- function(...) {
   ggplot2::discrete_scale(
-    c("colour", "fill"),
+    c("color", "fill"),
     "coursekata",
     coursekata_palette_provider(),
     ...
@@ -133,14 +133,14 @@ scale_discrete_coursekata <- function(...) {
 #' @export
 load_coursekata_themes <- function() {
   ggplot2::update_geom_defaults("bar", list(
-    colour = "black",
+    color = "black",
     fill = coursekata_palettes()$single,
     alpha = .8,
     size = .1
   ))
 
   ggplot2::update_geom_defaults("barh", list(
-    colour = "black",
+    color = "black",
     fill = coursekata_palettes()$single,
     alpha = .8,
     size = .1
@@ -159,22 +159,22 @@ load_coursekata_themes <- function() {
   ))
 
   ggplot2::update_geom_defaults("lm", list(
-    colour = coursekata_palettes()$small[[5]],
+    color = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
   ggplot2::update_geom_defaults("hline", list(
-    colour = coursekata_palettes()$small[[5]],
+    color = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
   ggplot2::update_geom_defaults("vline", list(
-    colour = coursekata_palettes()$small[[5]],
+    color = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
   ggplot2::update_geom_defaults("segment", list(
-    colour = coursekata_palettes()$small[[5]],
+    color = coursekata_palettes()$small[[5]],
     size = .8
   ))
 
@@ -184,9 +184,9 @@ load_coursekata_themes <- function() {
     repr.plot.width = 6,
     repr.plot.height = 4,
     ggplot2.discrete.fill = scale_discrete_coursekata,
-    ggplot2.discrete.colour = scale_discrete_coursekata,
+    ggplot2.discrete.color = scale_discrete_coursekata,
     ggplot2.continuous.fill = 'viridis',
-    ggplot2.continuous.colour = 'viridis'
+    ggplot2.continuous.color = 'viridis'
   )
 }
 
@@ -203,43 +203,43 @@ restore_default_themes <- function() {
   # find these values by creating a plot, storing it to a variable, and, e.g.
   # p$layers[[1]]$geom$default_aes
   ggplot2::update_geom_defaults("bar", list(
-    colour = NA,
+    color = NA,
     fill = 'grey35',
     size = .5
   ))
 
   ggplot2::update_geom_defaults("barh", list(
-    colour = NA,
+    color = NA,
     fill = 'grey35',
     size = .5
   ))
 
   ggplot2::update_geom_defaults("boxplot", list(
-    colour = "grey20",
+    color = "grey20",
     fill = "white",
     alpha = NA
   ))
 
   ggplot2::update_geom_defaults("boxploth", list(
-    colour = "grey20",
+    color = "grey20",
     fill = "white",
     alpha = NA
   ))
 
   ggplot2::update_geom_defaults("lm", list(
-    colour = "#3366FF"
+    color = "#3366FF"
   ))
 
   ggplot2::update_geom_defaults("hline", list(
-    colour = "black"
+    color = "black"
   ))
 
   ggplot2::update_geom_defaults("vline", list(
-    colour = "black"
+    color = "black"
   ))
 
   ggplot2::update_geom_defaults("segment", list(
-    colour = "black"
+    color = "black"
   ))
 
   ggplot2::theme_set(theme_grey())
@@ -248,8 +248,8 @@ restore_default_themes <- function() {
     repr.plot.width = NULL,
     repr.plot.height = NULL,
     ggplot2.discrete.fill = NULL,
-    ggplot2.discrete.colour = NULL,
+    ggplot2.discrete.color = NULL,
     ggplot2.continuous.fill = NULL,
-    ggplot2.continuous.colour = NULL
+    ggplot2.continuous.color = NULL
   )
 }
