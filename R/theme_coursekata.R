@@ -17,12 +17,12 @@ theme_coursekata <- function() {
     axis.title = ggplot2::element_text(size = 11),
 
     # Legend
-    legend.background = ggplot2::element_rect(fill = "white", size = 4, color = "white"),
+    legend.background = ggplot2::element_rect(fill = "white", size = 4, colour = "white"),
     legend.position = "right",
 
     # Grid
-    axis.ticks = ggplot2::element_line(color = "grey70", size = 0.2),
-    panel.grid.major = ggplot2::element_line(color = "grey70", size = 0.2),
+    axis.ticks = ggplot2::element_line(colour = "grey70", size = 0.2),
+    panel.grid.major = ggplot2::element_line(colour = "grey70", size = 0.2),
     panel.grid.minor = ggplot2::element_blank(),
 
     # Facet labels
@@ -132,6 +132,10 @@ scale_discrete_coursekata <- function(...) {
 #' @seealso coursekata_palettes theme_coursekata scale_discrete_coursekata restore_default_themes
 #' @export
 load_coursekata_themes <- function() {
+  ggplot2::update_geom_defaults("point", list(
+    colour = coursekata_palettes()$small[[4]]
+  ))
+
   ggplot2::update_geom_defaults("bar", list(
     colour = "black",
     fill = coursekata_palettes()$single,
@@ -147,13 +151,13 @@ load_coursekata_themes <- function() {
   ))
 
   ggplot2::update_geom_defaults("boxplot", list(
-    color = "black",
+    colour = "black",
     fill = coursekata_palettes()$single,
     alpha = .6
   ))
 
   ggplot2::update_geom_defaults("boxploth", list(
-    color = "black",
+    colour = "black",
     fill = coursekata_palettes()$single,
     alpha = .6
   ))
@@ -202,6 +206,10 @@ load_coursekata_themes <- function() {
 restore_default_themes <- function() {
   # find these values by creating a plot, storing it to a variable, and, e.g.
   # p$layers[[1]]$geom$default_aes
+  ggplot2::update_geom_defaults("point", list(
+    colour = "black"
+  ))
+
   ggplot2::update_geom_defaults("bar", list(
     colour = NA,
     fill = 'grey35',
