@@ -29,14 +29,16 @@ middle <- function(x, prop = .95, greedy = TRUE) {
   tail_prop <- (1 - prop) / 2
   in_upper <- upper(x, tail_prop, !greedy)
   in_lower <- lower(x, tail_prop, !greedy)
-  !in_upper & !in_lower
+  is_NA <- is.na(x)
+  
+  !in_upper & !in_lower & !is_NA
 }
 
 
 #' @rdname distribution_parts
 #' @export
 lower <- function(x, prop = .025, greedy = TRUE) {
-  tail_size <- if (greedy) ceiling(length(x) * prop) else floor(length(x) * prop)
+  tail_size <- if (greedy) ceiling(length(na.omit(x)) * prop) else floor(length(na.omit(x)) * prop)
 
   values <- data.frame(x = x, original_pos = seq_along(x))
   values <- values[order(x), , drop = FALSE]
@@ -49,7 +51,7 @@ lower <- function(x, prop = .025, greedy = TRUE) {
 #' @rdname distribution_parts
 #' @export
 upper <- function(x, prop = .025, greedy = TRUE) {
-  tail_size <- if (greedy) ceiling(length(x) * prop) else floor(length(x) * prop)
+  tail_size <- if (greedy) ceiling(length(na.omit(x)) * prop) else floor(length(na.omit(x)) * prop)
 
   values <- data.frame(x = x, original_pos = seq_along(x))
   values <- values[order(x, decreasing = TRUE), , drop = FALSE]
