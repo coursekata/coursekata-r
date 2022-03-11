@@ -35,3 +35,9 @@ test_that("the values do not need to be pre-arranged", {
   expect_identical(upper(c(2, 1, 3, 4), .25), c(FALSE, FALSE, FALSE, TRUE))
   expect_identical(middle(c(2, 1, 3, 4), .5), c(TRUE, FALSE, TRUE, FALSE))
 })
+
+test_that("it ignores NA values", {
+  expect_identical(lower(c(2, 1, 3, 4, NA_real_), .25), c(FALSE, TRUE, FALSE, FALSE, FALSE))
+  expect_identical(upper(c(2, 1, 3, 4, NA_real_), .25), c(FALSE, FALSE, FALSE, TRUE, FALSE))
+  expect_identical(middle(c(2, 1, 3, 4, NA_real_), .5), c(TRUE, FALSE, TRUE, FALSE, FALSE))
+})
