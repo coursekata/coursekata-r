@@ -6,6 +6,8 @@
 #' specified region will suck up the extra space. For example, the requesting the upper 30% of the
 #' \code{[1 2 3 4]} will return \code{[FALSE FALSE TRUE TRUE]} because the 30% was greedy.
 #'
+#' Note that `NA` values are ignored, i.e. they will always return `FALSE`.
+#'
 #' @param x The distribution of values to check.
 #' @param prop The proportion of values to find.
 #' @param greedy Whether the function should be greedy, as per the description above.
@@ -29,20 +31,17 @@ middle <- function(x, prop = .95, greedy = TRUE) {
   tail_prop <- (1 - prop) / 2
   in_upper <- upper(x, tail_prop, !greedy)
   in_lower <- lower(x, tail_prop, !greedy)
-  is_NA <- is.na(x)
-  
-  !in_upper & !in_lower & !is_NA
+
+  !in_upper & !in_lower & !is.na(x)
 }
 
 
 #' @rdname distribution_parts
 #' @export
 lower <- function(x, prop = .025, greedy = TRUE) {
-  tail_size <- if (greedy) ceiling(length(na.omit(x)) * prop) else floor(length(na.omit(x)) * prop)
-
   values <- data.frame(x = x, original_pos = seq_along(x))
   values <- values[order(x), , drop = FALSE]
-  values$in_zone <- seq_along(x) <= tail_size
+  values$in_zone <- seq_along(x) <= tail_size(x, prop, greedy)
 
   values[order(values$original_pos), 'in_zone', drop = TRUE]
 }
@@ -51,11 +50,15 @@ lower <- function(x, prop = .025, greedy = TRUE) {
 #' @rdname distribution_parts
 #' @export
 upper <- function(x, prop = .025, greedy = TRUE) {
-  tail_size <- if (greedy) ceiling(length(na.omit(x)) * prop) else floor(length(na.omit(x)) * prop)
-
   values <- data.frame(x = x, original_pos = seq_along(x))
   values <- values[order(x, decreasing = TRUE), , drop = FALSE]
-  values$in_zone <- seq_along(x) <= tail_size
+  values$in_zone <- seq_along(x) <= tail_size(x, prop, greedy)
 
   values[order(values$original_pos), 'in_zone', drop = TRUE]
+}
+
+tail_size <- function(x, prop, greedy) {
+  na_rm <- stats::na.omit(x)
+  tail_unbiased <- length(na_rm) * prop
+  if (greedy) ceiling(tail_unbiased) else floor(tail_unbiased)
 }
