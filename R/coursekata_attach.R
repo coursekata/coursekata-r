@@ -23,37 +23,48 @@ coursekata_attach <- function(startup = FALSE) {
 #' @param startup Is this being run at start-up?
 #'
 #' @return A coursekata_attachments object, also of class data.frame with a row for each course
-#'   package and a column for each of the \code{package} name, \code{version}, and whether it is
-#'   currently \code{attached}.
+#'   package and a column for each of the `package` name, `version`, and whether it is currently
+#'   `attached`.
 #' @keywords internal
 coursekata_attachments <- function(startup = FALSE) {
+  is_dark_theme <- rstudioapi::isAvailable() &&
+    rstudioapi::hasFun("getThemeInfo") &&
+    rstudioapi::getThemeInfo()$dark
+  theme <- themes[[if (!is_dark_theme) "dark" else "light"]]
+
   info <- coursekata_packages()
-  msg <- coursekata_attachments_message(info)
-  if (startup) packageStartupMessage(msg)
-  else message(msg)
+  version <- ifelse(is.na(info$version), "", info$version)
+  pkgs <- theme$pkg(paste(
+    ifelse(info$attached, theme$good(cli::symbol$tick), theme$bad('x')),
+    theme$text(format(info$package)),
+    cli::ansi_align(version, max(cli::ansi_nchar(version)))
+  ))
+
+  msg <- paste(
+    cli::rule(
+      left = cli::style_bold("CourseKata packages"),
+      right = cli::style_bold("coursekata ", utils::packageVersion("coursekata"))
+    ),
+    to_cols(pkgs, 2),
+    sep = "\n"
+  )
+
+  if (startup) packageStartupMessage(msg) else message(msg)
 
   invisible(info)
 }
 
-
-#' Pretty console printing when attaching packages
-#'
-#' @param pkg_info The package information to print.
-#'
-#' @return A string that has been formatted to print to console.
-#' @keywords internal
-coursekata_attachments_message <- function(pkg_info) {
-  pkg_info$version <- ifelse(is.na(pkg_info$version), "", pkg_info$version)
-
-  packages <- crayon::blue(paste(
-    ifelse(pkg_info$attached, crayon::green(cli::symbol$tick), crayon::red('x')),
-    format(pkg_info$package),
-    crayon::col_align(pkg_info$version, max(crayon::col_nchar(pkg_info$version)))
-  ))
-
-  paste0(
-    "\n",
-    cli::rule(left = crayon::magenta(crayon::bold("CourseKata course packages"))), "\n",
-    to_cols(packages, 2), "\n"
+themes <- list(
+  light = list(
+    text = cli::col_black,
+    pkg = cli::col_blue,
+    good = cli::col_green,
+    bad = cli::col_red
+  ),
+  dark = list(
+    text = cli::col_white,
+    pkg = cli::col_br_blue,
+    good = cli::col_br_green,
+    bad = cli::col_br_red
   )
-}
+)

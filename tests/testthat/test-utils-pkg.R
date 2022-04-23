@@ -4,7 +4,7 @@ detacher <- function(pkg) {
 }
 
 attacher <- function(pkg) {
-  library(pkg, character.only = TRUE)
+  suppressMessages(library(pkg, character.only = TRUE))
 }
 
 
@@ -15,6 +15,7 @@ test_that('it determines whether a package is attached or not', {
   expect_vector(pkg_is_attached(pkgs), logical(), length(pkgs))
   expect_true(all(!pkg_is_attached(pkgs)))
 
+  # reattach for other tests
   purrr::walk(pkgs, attacher)
   expect_true(all(pkg_is_attached(pkgs)))
 })

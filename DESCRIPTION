@@ -7,10 +7,9 @@ Authors@R: c(
     person("Ji", "Son", email = "json2@calstatela.edu", role = "aut", comment = c(ORCID = "0000-0002-4258-4791")),
     person("Jim", "Stigler", email = "jstigler@gmail.com", role = "aut", comment = c(ORCID = "0000-0001-6107-7827"))
   )
-Description: This package makes it easy to install and load all packages and functions used in 
-  CourseKata courses. It additionally provides a handful of helper functions and augments some 
-  generic functions to provide cohesion between the network of packages. Learn more about CourseKata 
-  at <https://www.coursekata.org>.
+Description: Easily install and load all packages and functions used in CourseKata courses. Aid
+  teaching with helper functions and augment generic functions to provide cohesion between the 
+  network of packages. Learn more about CourseKata at <https://www.coursekata.org>.
 URL: https://www.github.com/UCLTALL/coursekata-r
 BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
 License: GPL-3
@@ -19,26 +18,27 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Imports: 
-    supernova,
-    mosaic,
-    lsr,
-    Lock5withR,
+    cli,
+    crayon,
     dslabs,
     fivethirtyeight,
-    crayon,
-    cli,
-    purrr,
-    magrittr,
-    yesno,
     ggformula,
     ggplot2,
+    ggsci,
+    Lock5withR,
+    lsr,
+    magrittr,
+    mosaic,
+    purrr,
     rlang,
-    ggsci
+    supernova,
+    yesno
 Suggests: 
-    testthat,
     covr,
-    withr,
+    testthat,
     mockr,
     mockery,
-    vdiffr
+    rstudioapi,
+    vdiffr,
+    withr
 Config/testthat/edition: 3
