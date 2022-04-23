@@ -1,3 +1,8 @@
+coursekata_pkg_list <- c(
+  'supernova', 'mosaic', 'lsr',
+  'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'dslabs'
+)
+
 #' List all CourseKata course packages
 #'
 #' @param check_remote_version Should the remote version number be checked? Requires internet, and
@@ -10,11 +15,7 @@
 #' @examples
 #' coursekata_packages()
 coursekata_packages <- function(check_remote_version = FALSE) {
-  pkgs <- c(
-    'supernova', 'mosaic', 'lsr',
-    'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'dslabs'
-  )
-
+  pkgs <- coursekata_pkg_list
   info <- data.frame(
     package = pkgs,
     installed = pkg_is_installed(pkgs),

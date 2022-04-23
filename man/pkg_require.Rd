@@ -12,6 +12,8 @@ pkg_require(pkgs, do_not_ask = FALSE)
 \item{pkgs}{A character vector of packages to load.}
 
 \item{do_not_ask}{Prevent asking the user to install missing packages (they are skipped).}
+
+\item{quietly}{Prevent package startup messages.}
 }
 \description{
 Load the package, making sure to load from the correct location. Sometimes people have different

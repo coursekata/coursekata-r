@@ -9,11 +9,15 @@ pkg_is_attached <- function(pkgs) {
 }
 
 
-#' check if packages are installed.
+#' Check if packages are installed
+#'
+#' Note: this function differs from [`rlang::is_installed()`] in two regards: it is quieter and will
+#' show no messages, and it returns a vector indicating which packages are installed or not (rather
+#' than a single Boolean value regarding the packages as a set).
 #'
 #' @param pkgs Character vector of the names of the packages to check.
 #'
-#' @return Logical vector indicating whether the packages are attached or not.
+#' @return Logical vector indicating whether the packages are installed.
 #' @keywords internal
 pkg_is_installed <- function(pkgs) {
   purrr::map_lgl(pkgs, ~ identical(TRUE, requireNamespace(.x, quietly = TRUE)))
@@ -25,7 +29,7 @@ pkg_is_installed <- function(pkgs) {
 #' @param pkgs A character vector of packages to check.
 #'
 #' @return A character vector of library directory paths the packages were loaded from, the default
-#'   location if the package is not loaded but is installed, or NA if the package is not installed.
+#'   location if the package is not loaded but is installed, or NULL if the package is not installed.
 #' @keywords internal
 pkg_library_location <- function(pkgs) {
   get_namespace_directory <- purrr::possibly(
@@ -44,15 +48,11 @@ pkg_library_location <- function(pkgs) {
 #'   pulled from the library the package was loaded from, else the default library location.
 #' @keywords internal
 pkg_version <- function(pkgs) {
-  purrr::map_chr(pkgs, function(pkg) {
-    if (!pkg_is_installed(pkg)) {
-      NA_character_
-    } else {
-      location <- pkg_library_location(pkg)
-      version <- utils::packageVersion(pkg, lib.loc = if (is.na(location)) NULL else location)
-      as.character(version)
-    }
-  })
+  get_package_version <- purrr::possibly(
+    function(pkg) as.character(utils::packageVersion(pkg, lib.loc = pkg_library_location(pkg))),
+    NA_character_
+  )
+  purrr::map_chr(pkgs, get_package_version)
 }
 
 
@@ -64,7 +64,8 @@ pkg_version <- function(pkgs) {
 #' @keywords internal
 pkg_remote_version <- function(pkgs) {
   info <- utils::available.packages(repos = coursekata_repos())
-  purrr::map_chr(pkgs, ~ tryCatch(info[.x, ]['Version'], error = function(cond) { NA_character_ }))
+  get_remote_version <- purrr::possibly(function(pkg) info[pkg, ]['Version'], NA_character_)
+  purrr::map_chr(pkgs, get_remote_version)
 }
 
 
@@ -74,18 +75,18 @@ pkg_remote_version <- function(pkgs) {
 #'
 #' @param pkgs A character vector of packages to load.
 #' @param do_not_ask Prevent asking the user to install missing packages (they are skipped).
+#' @param quietly Prevent package startup messages.
 #'
 #' @keywords internal
 pkg_require <- function(pkgs, do_not_ask = FALSE) {
   loader <- function(pkg) {
-    location <- pkg_library_location(pkg)
-    suppressWarnings(require(
+    suppressPackageStartupMessages(suppressWarnings(require(
       pkg,
-      lib.loc = if (is.na(location)) NULL else location,
+      lib.loc = pkg_library_location(pkg),
       character.only = TRUE,
       warn.conflicts = FALSE,
       quietly = TRUE
-    ))
+    )))
   }
 
   purrr::map_lgl(pkgs, function(pkg) {

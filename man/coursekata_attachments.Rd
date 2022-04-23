@@ -11,8 +11,8 @@ coursekata_attachments(startup = FALSE)
 }
 \value{
 A coursekata_attachments object, also of class data.frame with a row for each course
-package and a column for each of the \code{package} name, \code{version}, and whether it is
-currently \code{attached}.
+package and a column for each of the \code{package} name, \code{version}, and whether it is currently
+\code{attached}.
 }
 \description{
 Information about CourseKata packages.

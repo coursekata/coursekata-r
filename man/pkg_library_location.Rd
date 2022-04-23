@@ -11,7 +11,7 @@ pkg_library_location(pkgs)
 }
 \value{
 A character vector of library directory paths the packages were loaded from, the default
-location if the package is not loaded but is installed, or NA if the package is not installed.
+location if the package is not loaded but is installed, or NULL if the package is not installed.
 }
 \description{
 Determine which libraries packages were loaded from
