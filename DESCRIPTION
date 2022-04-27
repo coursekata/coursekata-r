@@ -3,42 +3,46 @@ Title: Packages and Functions for CourseKata Courses
 Version: 0.3.1
 Date: 2022-01-27
 Authors@R: c(
-    person("Adam", "Blake", email = "theadamattack@gmail.com", role = c("cre", "aut"), comment = c(ORCID = "0000-0001-7881-8652")),
-    person("Ji", "Son", email = "json2@calstatela.edu", role = "aut", comment = c(ORCID = "0000-0002-4258-4791")),
-    person("Jim", "Stigler", email = "jstigler@gmail.com", role = "aut", comment = c(ORCID = "0000-0001-6107-7827"))
+    person("Adam", "Blake", , "theadamattack@gmail.com", role = c("cre", "aut"),
+           comment = c(ORCID = "0000-0001-7881-8652")),
+    person("Ji", "Son", , "json2@calstatela.edu", role = "aut",
+           comment = c(ORCID = "0000-0002-4258-4791")),
+    person("Jim", "Stigler", , "jstigler@gmail.com", role = "aut",
+           comment = c(ORCID = "0000-0001-6107-7827"))
   )
-Description: Easily install and load all packages and functions used in CourseKata courses. Aid
-  teaching with helper functions and augment generic functions to provide cohesion between the 
-  network of packages. Learn more about CourseKata at <https://www.coursekata.org>.
+Description: Easily install and load all packages and functions used in
+    CourseKata courses. Aid teaching with helper functions and augment
+    generic functions to provide cohesion between the network of packages.
+    Learn more about CourseKata at <https://www.coursekata.org>.
+License: GPL-3
 URL: https://www.github.com/UCLTALL/coursekata-r
 BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
-License: GPL-3
+Imports: 
+    cli (>= 3.2.0),
+    crayon (>= 1.5.0),
+    dslabs (>= 0.7.4),
+    fivethirtyeight (>= 0.6.2),
+    ggformula (>= 0.10.1),
+    ggplot2 (>= 3.3.5),
+    ggsci (>= 2.9),
+    Lock5withR (>= 1.2.2),
+    lsr (>= 0.5.2),
+    magrittr (>= 2.0.2),
+    mosaic (>= 1.8.3),
+    purrr (>= 0.3.4),
+    rlang (>= 1.0.2),
+    rstudioapi (>= 0.13),
+    supernova (>= 2.5.1),
+    yesno (>= 0.1.2)
+Suggests: 
+    covr (>= 3.5.1),
+    mockery (>= 0.4.3),
+    mockr (>= 0.1),
+    testthat (>= 3.1.2),
+    vdiffr (>= 1.0.2),
+    withr (>= 2.5.0)
+Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
-Imports: 
-    cli,
-    crayon,
-    dslabs,
-    fivethirtyeight,
-    ggformula,
-    ggplot2,
-    ggsci,
-    Lock5withR,
-    lsr,
-    magrittr,
-    mosaic,
-    purrr,
-    rlang,
-    supernova,
-    yesno
-Suggests: 
-    covr,
-    testthat,
-    mockr,
-    mockery,
-    rstudioapi,
-    vdiffr,
-    withr
-Config/testthat/edition: 3
