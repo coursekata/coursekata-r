@@ -136,6 +136,11 @@ load_coursekata_themes <- function() {
     colour = coursekata_palettes()$small[[4]]
   ))
 
+  ggplot2::update_geom_defaults("line", list(
+    colour = coursekata_palettes()$small[[4]],
+    size = .8
+  ))
+
   ggplot2::update_geom_defaults("bar", list(
     colour = "black",
     fill = coursekata_palettes()$single,
@@ -236,6 +241,10 @@ restore_default_themes <- function() {
 
   ggplot2::update_geom_defaults("lm", list(
     colour = "#3366FF"
+  ))
+
+  ggplot2::update_geom_defaults("line", list(
+    colour = "black"
   ))
 
   ggplot2::update_geom_defaults("hline", list(

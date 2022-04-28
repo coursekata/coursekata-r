@@ -29,6 +29,9 @@ is a greedy operation, meaning that if the cutoff point is between two whole num
 specified region will suck up the extra space. For example, the requesting the upper 30\% of the
 \code{[1 2 3 4]} will return \code{[FALSE FALSE TRUE TRUE]} because the 30\% was greedy.
 }
+\details{
+Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE}.
+}
 \examples{
 
 upper(1:10, .1)

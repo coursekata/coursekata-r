@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils-pkg.R
 \name{pkg_is_installed}
 \alias{pkg_is_installed}
-\title{check if packages are installed.}
+\title{Check if packages are installed}
 \usage{
 pkg_is_installed(pkgs)
 }
@@ -10,9 +10,11 @@ pkg_is_installed(pkgs)
 \item{pkgs}{Character vector of the names of the packages to check.}
 }
 \value{
-Logical vector indicating whether the packages are attached or not.
+Logical vector indicating whether the packages are installed.
 }
 \description{
-check if packages are installed.
+Note: this function differs from \code{\link[rlang:is_installed]{rlang::is_installed()}} in two regards: it is quieter and will
+show no messages, and it returns a vector indicating which packages are installed or not (rather
+than a single Boolean value regarding the packages as a set).
 }
 \keyword{internal}
