@@ -1,9 +1,9 @@
 Package: coursekata
 Title: Packages and Functions for CourseKata Courses
-Version: 0.3.1
-Date: 2022-01-27
+Version: 0.3.2
+Date: 2022-04-28
 Authors@R: c(
-    person("Adam", "Blake", , "theadamattack@gmail.com", role = c("cre", "aut"),
+    person("Adam", "Blake", , "adamblake@g.ucla.edu", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
     person("Ji", "Son", , "json2@calstatela.edu", role = "aut",
            comment = c(ORCID = "0000-0002-4258-4791")),
@@ -14,7 +14,7 @@ Description: Easily install and load all packages and functions used in
     CourseKata courses. Aid teaching with helper functions and augment
     generic functions to provide cohesion between the network of packages.
     Learn more about CourseKata at <https://www.coursekata.org>.
-License: GPL-3
+License: AGPL (>= 3)
 URL: https://www.github.com/UCLTALL/coursekata-r
 BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
 Imports: 
