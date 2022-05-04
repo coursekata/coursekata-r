@@ -30,7 +30,7 @@ coursekata_attachments <- function(startup = FALSE) {
   is_dark_theme <- rstudioapi::isAvailable() &&
     rstudioapi::hasFun("getThemeInfo") &&
     rstudioapi::getThemeInfo()$dark
-  theme <- themes[[if (!is_dark_theme) "dark" else "light"]]
+  theme <- themes[[if (is_dark_theme) "dark" else "light"]]
 
   info <- coursekata_packages()
   version <- ifelse(is.na(info$version), "", info$version)
