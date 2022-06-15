@@ -1,0 +1,33 @@
+// Place your key bindings in this file to override the defaults
+[
+    {
+        "key": "alt+-",
+        "command": "type",
+        "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
+        "args": {"text": " <- "}
+      },
+      {
+        "key": "cmd+shift+m",
+        "command": "type",
+        "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
+        "args": {"text": " %>% "}
+      },
+      {
+        "key": "shift+cmd+b",
+        "command": "r.build"
+      },
+      {
+        "key": "shift+cmd+d",
+        "command": "r.document"
+      },
+      {
+        "key": "shift+cmd+t",
+        "command": "r.test"
+      },
+      {
+        "key": "shift+cmd+e",
+        "command": "r.runCommand",
+      //   "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
+        "args": "devtools::check()"
+      },
+]
