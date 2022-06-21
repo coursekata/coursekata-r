@@ -18,7 +18,10 @@ coursekata_install <- function() {
   if (any(behind$attached)) {
     cli::cat_line("The following packages are out of date:")
     cli::cat_line()
-    cli::cat_bullet(format(behind$package), " (", behind$version, " -> ", behind$remote_version, ")")
+    cli::cat_bullet(
+      format(behind$package),
+      " (", behind$version, " -> ", behind$remote_version, ")"
+    )
 
     cli::cat_line()
     cli::cat_line("Start a clean R session then run:")

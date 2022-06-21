@@ -9,7 +9,7 @@
 #' @export
 #'
 #' @examples
-#' gf_boxplot(Thumb ~ RaceEthnic, data = Fingers, fill = ~ RaceEthnic)
+#' gf_boxplot(Thumb ~ RaceEthnic, data = Fingers, fill = ~RaceEthnic)
 theme_coursekata <- function() {
   ggplot2::theme_bw() + ggplot2::theme(
     # Fonts
@@ -77,7 +77,12 @@ coursekata_palettes <- function() {
 #'   safe palettes. See [`scale_discrete_coursekata`] for more information.
 #' @export
 coursekata_palette_provider <- function() {
-  unwrap <- function(x) x %>% unname() %>% unlist() %>% force()
+  unwrap <- function(x) {
+    x %>%
+      unname() %>%
+      unlist() %>%
+      force()
+  }
   palettes <- coursekata_palettes()
   small_palette <- unwrap(palettes$small)
   large_palette <- unwrap(palettes$large)
@@ -86,8 +91,9 @@ coursekata_palette_provider <- function() {
   provider <- function(n) {
     if (n > max_values) {
       warning("This manual palette can handle a maximum of ",
-              max_values, " values. You have supplied ", n, ".",
-              call. = FALSE)
+        max_values, " values. You have supplied ", n, ".",
+        call. = FALSE
+      )
     }
 
     if (n > length(small_palette)) {
@@ -194,8 +200,8 @@ load_coursekata_themes <- function() {
     repr.plot.height = 4,
     ggplot2.discrete.fill = scale_discrete_coursekata,
     ggplot2.discrete.colour = scale_discrete_coursekata,
-    ggplot2.continuous.fill = 'viridis',
-    ggplot2.continuous.colour = 'viridis'
+    ggplot2.continuous.fill = "viridis",
+    ggplot2.continuous.colour = "viridis"
   )
 }
 
@@ -217,13 +223,13 @@ restore_default_themes <- function() {
 
   ggplot2::update_geom_defaults("bar", list(
     colour = NA,
-    fill = 'grey35',
+    fill = "grey35",
     size = .5
   ))
 
   ggplot2::update_geom_defaults("barh", list(
     colour = NA,
-    fill = 'grey35',
+    fill = "grey35",
     size = .5
   ))
 

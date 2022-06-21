@@ -40,6 +40,6 @@ middle(1:10, .5)
 
 sampling_distribution <- do(1000) * mean(rnorm(100, 5, 10))
 sampling_distribution \%>\%
-  gf_histogram(~ mean, data = sampling_distribution, fill = ~ middle(mean, .68)) \%>\%
+  gf_histogram(~mean, data = sampling_distribution, fill = ~ middle(mean, .68)) \%>\%
   gf_refine(scale_fill_manual(values = c("blue", "coral")))
 }

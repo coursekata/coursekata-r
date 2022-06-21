@@ -1,6 +1,6 @@
 coursekata_pkg_list <- c(
-  'supernova', 'mosaic', 'lsr',
-  'fivethirtyeight', 'fivethirtyeightdata', 'Lock5withR', 'dslabs'
+  "supernova", "mosaic", "lsr",
+  "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
 )
 
 #' List all CourseKata course packages

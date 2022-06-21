@@ -40,32 +40,32 @@
 #'   gf_model(Thumb ~ NULL)
 gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, width = .3, ...) {
   # phase 1: handle arguments in different positions
-  if (inherits(object, 'formula')) {
+  if (inherits(object, "formula")) {
     gformula <- object
     object <- NULL
   }
 
-  if (inherits(object, 'data.frame')) {
+  if (inherits(object, "data.frame")) {
     data <- object
     object <- NULL
   }
 
-  if (inherits(object, 'lm')) {
+  if (inherits(object, "lm")) {
     model <- object
     object <- NULL
   }
 
-  if (inherits(gformula, 'lm')) {
+  if (inherits(gformula, "lm")) {
     model <- gformula
     gformula <- NULL
   }
 
   # phase 2: find the formula and data
-  if (inherits(model, 'lm')) {
+  if (inherits(model, "lm")) {
     if (!is.null(gformula) || !is.null(data)) {
       rlang::warn(paste(
-        'You have passed both a `model` and a `gformula` and/or `data` to `gf_model()`.',
-        'The formula and data from the `model` will be used and the others ignored.'
+        "You have passed both a `model` and a `gformula` and/or `data` to `gf_model()`.",
+        "The formula and data from the `model` will be used and the others ignored."
       ))
     }
 
@@ -77,8 +77,8 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
     }
   }
 
-  if (inherits(object, 'gg')) {
-    if (!inherits(object$data, 'waiver')) {
+  if (inherits(object, "gg")) {
+    if (!inherits(object$data, "waiver")) {
       if (!is.null(data) && !identical(data, object$data)) {
         rlang::abort(paste(
           "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
@@ -92,8 +92,8 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
     # 1. determine if we are adding to a single-variable plot (like a histogram), and if so, return
     #    the appropriate vline/hline
     # 2. otherwise, if we don't already know the formula, infer it using the chained plot's axes
-    y <- object$mapping[['y']]
-    x <- object$mapping[['x']]
+    y <- object$mapping[["y"]]
+    x <- object$mapping[["x"]]
 
     # short-circuit for single-variable plots (incl. with facets)
     if (is.null(y) || is.null(x)) {
@@ -102,7 +102,7 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
 
     # check for density plots
     if (deparse(rlang::get_expr(y)) == "stat(density)" ||
-        deparse(rlang::get_expr(x)) == "stat(density)"
+      deparse(rlang::get_expr(x)) == "stat(density)"
     ) {
       return(gf_model_single_variable(object, gformula, data, ..., .density = TRUE))
     }
@@ -117,7 +117,7 @@ gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, 
   }
 
   # TODO: for now, data is required with a formula, in the future allow data$var syntax
-  if (inherits(gformula, 'formula') && inherits(data, 'data.frame')) {
+  if (inherits(gformula, "formula") && inherits(data, "data.frame")) {
     if (is.null(model)) {
       # construct the model so that we can guess what kind of plot we need
       model <- stats::lm(gformula, data = data)
@@ -159,7 +159,7 @@ add_empty_model <- function(object, model, ...) {
     object <- ggformula::gf_blank(gformula = frm, data = model$model)
   }
 
-  ggformula::gf_hline(object, yintercept = ~b0(model), ...)
+  ggformula::gf_hline(object, yintercept = ~ b0(model), ...)
 }
 
 #' Plot the group model
@@ -190,8 +190,8 @@ add_group_model <- function(object, gformula, data, width = .3, ...) {
 }
 
 gf_model_single_variable <- function(object, gformula, data, ..., .density = FALSE) {
-  y <- object$mapping[['y']]
-  x <- object$mapping[['x']]
+  y <- object$mapping[["y"]]
+  x <- object$mapping[["x"]]
 
   outcome <- if (.density) {
     if (deparse(rlang::get_expr(y)) == "stat(density)") x else y
@@ -207,8 +207,7 @@ gf_model_single_variable <- function(object, gformula, data, ..., .density = FAL
         paste(rlang::as_name(outcome), "~ NULL"),
         rlang::quo_get_env(outcome)
       )
-    }
-    else if (length(object$facet$vars()) > 1) {
+    } else if (length(object$facet$vars()) > 1) {
       rlang::abort("Cannot determine what model to plot. Please be more specific.")
     } else {
       possible <- c(object$facet$params$facets, object$facet$params$rows, object$facet$params$cols)
@@ -228,4 +227,3 @@ gf_model_single_variable <- function(object, gformula, data, ..., .density = FAL
     return(ggformula::gf_hline(object, yintercept = ~mean, data = stats, ...))
   }
 }
-

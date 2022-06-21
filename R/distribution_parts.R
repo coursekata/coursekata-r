@@ -25,7 +25,7 @@
 #'
 #' sampling_distribution <- do(1000) * mean(rnorm(100, 5, 10))
 #' sampling_distribution %>%
-#'   gf_histogram(~ mean, data = sampling_distribution, fill = ~ middle(mean, .68)) %>%
+#'   gf_histogram(~mean, data = sampling_distribution, fill = ~ middle(mean, .68)) %>%
 #'   gf_refine(scale_fill_manual(values = c("blue", "coral")))
 middle <- function(x, prop = .95, greedy = TRUE) {
   tail_prop <- (1 - prop) / 2
@@ -43,7 +43,7 @@ lower <- function(x, prop = .025, greedy = TRUE) {
   values <- values[order(x), , drop = FALSE]
   values$in_zone <- seq_along(x) <= tail_size(x, prop, greedy)
 
-  values[order(values$original_pos), 'in_zone', drop = TRUE]
+  values[order(values$original_pos), "in_zone", drop = TRUE]
 }
 
 
@@ -54,7 +54,7 @@ upper <- function(x, prop = .025, greedy = TRUE) {
   values <- values[order(x, decreasing = TRUE), , drop = FALSE]
   values$in_zone <- seq_along(x) <= tail_size(x, prop, greedy)
 
-  values[order(values$original_pos), 'in_zone', drop = TRUE]
+  values[order(values$original_pos), "in_zone", drop = TRUE]
 }
 
 tail_size <- function(x, prop, greedy) {

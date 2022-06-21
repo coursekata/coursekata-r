@@ -9,7 +9,7 @@
 #'
 #' @return A string that prints to the terminal as columns.
 #' @keywords internal
-to_cols <- function(strings, n_cols = 2, space_between = '       ') {
+to_cols <- function(strings, n_cols = 2, space_between = "       ") {
   items_per_col <- ceiling(length(strings) / n_cols)
   spacers <- rep("", items_per_col * n_cols - length(strings))
   strings <- append(strings, spacers)

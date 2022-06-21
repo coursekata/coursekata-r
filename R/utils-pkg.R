@@ -29,7 +29,8 @@ pkg_is_installed <- function(pkgs) {
 #' @param pkgs A character vector of packages to check.
 #'
 #' @return A character vector of library directory paths the packages were loaded from, the default
-#'   location if the package is not loaded but is installed, or NULL if the package is not installed.
+#'   location if the package is not loaded but is installed, or NULL if the package is not
+#'   installed.
 #' @keywords internal
 pkg_library_location <- function(pkgs) {
   get_namespace_directory <- purrr::possibly(
@@ -64,7 +65,7 @@ pkg_version <- function(pkgs) {
 #' @keywords internal
 pkg_remote_version <- function(pkgs) {
   info <- utils::available.packages(repos = coursekata_repos())
-  get_remote_version <- purrr::possibly(function(pkg) info[pkg, ]['Version'], NA_character_)
+  get_remote_version <- purrr::possibly(function(pkg) info[pkg, ]["Version"], NA_character_)
   purrr::map_chr(pkgs, get_remote_version)
 }
 
@@ -109,9 +110,13 @@ pkg_require <- function(pkgs, do_not_ask = FALSE) {
 #' @return A logical indicating whether the user answered yes or no.
 #' @keywords internal
 ask_to_install <- function(pkgs) {
-  if (!interactive()) return(FALSE)
+  if (!interactive()) {
+    return(FALSE)
+  }
 
-  line <- function(x = '') { sprintf("%s\n", x) }
+  line <- function(x = "") {
+    sprintf("%s\n", x)
+  }
   yesno::yesno(crayon::red(paste0(
     line(),
     line("The following packages could not be found:"),

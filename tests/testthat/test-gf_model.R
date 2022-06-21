@@ -9,36 +9,36 @@ test_that("it requires at least a formula and data or a model", {
 
 test_that("it wraps gf_lm() for regression models", {
   vdiffr::expect_doppelganger(
-    'regression--data-formula',
+    "regression--data-formula",
     gf_model(gformula = mpg ~ hp, data = mtcars)
   )
 })
 
 test_that("it wraps gf_hline() to add the empty model as a line", {
   vdiffr::expect_doppelganger(
-    'empty--data-formula',
+    "empty--data-formula",
     gf_model(gformula = mpg ~ NULL, data = mtcars)
   )
 })
 
 test_that("it draws gf_segment()s to add the group model", {
   vdiffr::expect_doppelganger(
-    'group--data-formula',
+    "group--data-formula",
     gf_model(gformula = Sepal.Length ~ Species, data = iris)
   )
 })
 
 test_that("it accepts a fitted model in place of a formula and data", {
   vdiffr::expect_doppelganger(
-    'regression--lm',
+    "regression--lm",
     gf_model(model = lm(mpg ~ hp, data = mtcars))
   )
   vdiffr::expect_doppelganger(
-    'empty--lm',
+    "empty--lm",
     gf_model(model = lm(mpg ~ NULL, data = mtcars))
   )
   vdiffr::expect_doppelganger(
-    'group--lm',
+    "group--lm",
     gf_model(model = lm(Sepal.Length ~ Species, data = iris))
   )
 })
@@ -46,34 +46,34 @@ test_that("it accepts a fitted model in place of a formula and data", {
 test_that("using a model supsersedes the formula and data arguments", {
   expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
   vdiffr::expect_doppelganger(
-    'regression--model-supersedes-formula',
+    "regression--model-supersedes-formula",
     suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
   )
 
   expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
   vdiffr::expect_doppelganger(
-    'regression--model-supersedes-data',
+    "regression--model-supersedes-data",
     suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
   )
 })
 
 test_that("it allows data to be the first argument", {
   vdiffr::expect_doppelganger(
-    'regression--data-first',
+    "regression--data-first",
     gf_model(mtcars, mpg ~ hp)
   )
 })
 
 test_that("it allows model to be the first argument", {
   vdiffr::expect_doppelganger(
-    'regression--lm-first',
+    "regression--lm-first",
     gf_model(lm(mpg ~ hp, data = mtcars))
   )
 })
 
 test_that("it allows formula to be the first argument", {
   vdiffr::expect_doppelganger(
-    'regression--formula-first',
+    "regression--formula-first",
     gf_model(mpg ~ hp, data = mtcars)
   )
 })
@@ -83,13 +83,13 @@ test_that("it allows formula to be the first argument", {
 
 test_that("it uses its own model or formula if chained", {
   vdiffr::expect_doppelganger(
-    'regression--chained-own-model',
+    "regression--chained-own-model",
     gf_point(mpg ~ hp, data = mtcars) %>%
       gf_model(model = lm(mpg ~ hp, data = mtcars))
   )
 
   vdiffr::expect_doppelganger(
-    'regression--chained-own-formula',
+    "regression--chained-own-formula",
     gf_point(mpg ~ hp, data = mtcars) %>%
       gf_model(mpg ~ NULL)
   )
@@ -109,7 +109,7 @@ test_that("it doesn't complain about new data if the original plot had no data",
 
 test_that("model can be first argument when chaining", {
   vdiffr::expect_doppelganger(
-    'regression--chained--formula-in-data-arg',
+    "regression--chained--formula-in-data-arg",
     gf_point(mpg ~ hp, data = mtcars) %>%
       gf_model(mpg ~ NULL, data = mtcars)
   )
@@ -131,7 +131,7 @@ test_that("it will use the formula and/or data from earlier in the chain if it n
 
 test_that("it can chain to itself", {
   vdiffr::expect_doppelganger(
-    'regression--chained--empty-and-regression',
+    "regression--chained--empty-and-regression",
     gf_model(lm(mpg ~ hp, data = mtcars)) %>%
       gf_model(lm(mpg ~ NULL, data = mtcars))
   )
@@ -139,7 +139,7 @@ test_that("it can chain to itself", {
 
 test_that("it respects ... options from up the chain", {
   vdiffr::expect_doppelganger(
-    'color-through-chain',
+    "color-through-chain",
     gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
       gf_model()
   )
@@ -147,7 +147,7 @@ test_that("it respects ... options from up the chain", {
 
 test_that("it can modify ... options from up the chain", {
   vdiffr::expect_doppelganger(
-    'override-color-from-chain',
+    "override-color-from-chain",
     gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
       gf_model(color = ~"red")
   )
@@ -158,42 +158,42 @@ test_that("it can modify ... options from up the chain", {
 
 test_that("it draws gf_vline()s on faceted histograms", {
   vdiffr::expect_doppelganger(
-    'histogram-wrap',
+    "histogram-wrap",
     gf_histogram(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model()
   )
 
   vdiffr::expect_doppelganger(
-    'histogram-grid',
+    "histogram-grid",
     gf_histogram(~mpg, data = mtcars) %>%
       gf_facet_grid(cyl ~ .) %>%
       gf_model()
   )
 
   vdiffr::expect_doppelganger(
-    'dhistogram',
+    "dhistogram",
     gf_dhistogram(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model()
   )
 
   vdiffr::expect_doppelganger(
-    'histogram-null-specified',
+    "histogram-null-specified",
     gf_histogram(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model(mpg ~ NULL)
   )
 
   vdiffr::expect_doppelganger(
-    'histogram-group-specified',
+    "histogram-group-specified",
     gf_histogram(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model(mpg ~ cyl)
   )
 
   vdiffr::expect_doppelganger(
-    'histogram-group-inferred',
+    "histogram-group-inferred",
     gf_histogram(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model(mpg ~ cyl)
@@ -202,7 +202,7 @@ test_that("it draws gf_vline()s on faceted histograms", {
 
 test_that("it draws the empty model on non-faceted histograms", {
   vdiffr::expect_doppelganger(
-    'histogram-empty-inferred',
+    "histogram-empty-inferred",
     gf_histogram(~mpg, data = mtcars) %>%
       gf_model()
   )
@@ -210,7 +210,7 @@ test_that("it draws the empty model on non-faceted histograms", {
 
 test_that("it works with rotated histograms", {
   vdiffr::expect_doppelganger(
-    'histogram-rotated',
+    "histogram-rotated",
     gf_histogramh(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model(mpg ~ cyl)
@@ -219,14 +219,14 @@ test_that("it works with rotated histograms", {
 
 test_that("it works with other single variable models", {
   vdiffr::expect_doppelganger(
-    'density',
+    "density",
     gf_density(~mpg, data = mtcars) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model(mpg ~ cyl)
   )
 
   vdiffr::expect_doppelganger(
-    'dot',
+    "dot",
     gf_dotplot(~mpg, data = mtcars, binwidth = 1) %>%
       gf_facet_wrap(~cyl) %>%
       gf_model(mpg ~ cyl)
