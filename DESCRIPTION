@@ -27,6 +27,8 @@ Imports:
     ggformula (>= 0.10.1),
     ggplot2 (>= 3.3.5),
     ggsci (>= 2.9),
+    glue (>= 1.6.2),
+    lifecycle (>= 1.0.1),
     Lock5withR (>= 1.2.2),
     lsr (>= 0.5.2),
     magrittr (>= 2.0.2),
@@ -35,13 +37,19 @@ Imports:
     rlang (>= 1.0.2),
     rstudioapi (>= 0.13),
     supernova (>= 2.5.1),
+    tibble(>= 3.1.7),
+    withr (>= 2.5.0),
     yesno (>= 0.1.2)
 Suggests: 
+    lubridate (>= 1.8.0),
     mockery (>= 0.4.3),
     mockr (>= 0.1),
+    readr (>= 2.1.2),
+    readxl (>= 1.4.0),
+    usethis (>= 2.1.6),
     testthat (>= 3.1.2),
-    vdiffr (>= 1.0.2),
-    withr (>= 2.5.0)
+    tidyr (>= 1.2.0),
+    vdiffr (>= 1.0.2)
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true

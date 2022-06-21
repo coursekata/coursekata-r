@@ -29,5 +29,5 @@
         "command": "r.runCommand",
       //   "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
         "args": "devtools::check()"
-      },
+      }
 ]

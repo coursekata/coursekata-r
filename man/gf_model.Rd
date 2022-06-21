@@ -4,58 +4,24 @@
 \alias{gf_model}
 \title{Add a model to a plot}
 \usage{
-gf_model(
-  object = NULL,
-  gformula = NULL,
-  data = NULL,
-  model = NULL,
-  width = 0.3,
-  ...
-)
+gf_model(object, model, ...)
 }
 \arguments{
-\item{object}{When chaining, this holds an object produced in the earlier portions of the chain.
-Most users can safely ignore this argument. See details and examples.}
+\item{object}{A plot created with the \code{ggformula} package.}
 
-\item{gformula}{A formula with shape y ~ x. Superseded by \code{model} if one is given.}
+\item{model}{A linear model fit by either \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}.}
 
-\item{data}{A data frame with the variables to be plotted. Superseded by \code{model} if one is given.}
-
-\item{model}{A model fit by \code{\link[=lm]{lm()}}. If a model is given, it supersedes the \code{data} and
-\code{gformula}.}
-
-\item{width}{The width of the mean line(s) to be plotted for group models. Note that factors are
-plotted 1 unit apart, so values larger than 1 will overlap into other groups.}
-
-\item{...}{Arguments passed on to the respective \verb{gf_*} function.}
-}
-\value{
-A \code{gg} object
+\item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
+\code{attribute = value}, (b) ggplot2 aesthetics to be mapped with \verb{attribute = ~ expression``, or (c) attributes of the layer as a whole, which are set with }attribute = value`.}
 }
 \description{
 When teaching about regression it can be useful to visualize the data as a point plot with the
 outcome on the y-axis and the explanatory variable on the x-axis. For regression models, this is
-most easily achieved by calling \code{\link[=gf_lm]{gf_lm()}}, with empty models \code{\link[=gf_hline]{gf_hline()}} using the mean, and
-a more complicated call to \code{\link[=gf_segment]{gf_segment()}} for group models. This function simplifies this by
-making a guess about what kind of model you are plotting (empty/null, regression, group) and then
-making the appropriate plot layer for it. \strong{Note}: this function only works with models that
-have a \emph{single} or \code{NULL} explanatory variable, and it will not work with multiple regression.
+most easily achieved by calling \code{\link[=gf_lm]{gf_lm()}}, with empty models \code{\link[=gf_hline]{gf_hline()}} using the mean,
+and a more complicated call to \code{\link[=gf_segment]{gf_segment()}} for group models. This function simplifies this
+by making a guess about what kind of model you are plotting (empty/null, regression, group) and
+then making the appropriate plot layer for it.
 }
-\examples{
-# basic examples
-gf_model(Thumb ~ NULL, data = Fingers)
-gf_model(Thumb ~ Height, data = Fingers)
-gf_model(Thumb ~ RaceEthnic, data = Fingers)
-
-# specifying the model using a fitted model
-model <- lm(Thumb ~ Height, data = Fingers)
-gf_model(model)
-
-# chaining on to previous plots
-gf_point(Thumb ~ Height, data = Fingers) \%>\%
-  gf_model()
-
-gf_point(Thumb ~ Height, data = Fingers) \%>\%
-  gf_model() \%>\%
-  gf_model(Thumb ~ NULL)
+\details{
+This function only works with models that have a continuous outcome measure.
 }
