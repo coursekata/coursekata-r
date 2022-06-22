@@ -1,4 +1,4 @@
-// Place your key bindings in this file to override the defaults
+// Copy these keybindings into the VSCode keybindings.json to use them
 [
     {
         "key": "alt+-",
@@ -10,7 +10,7 @@
         "key": "cmd+shift+m",
         "command": "type",
         "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
-        "args": {"text": " %>% "}
+        "args": {"text": " %>%\n  "}
       },
       {
         "key": "shift+cmd+b",
@@ -26,8 +26,6 @@
       },
       {
         "key": "shift+cmd+e",
-        "command": "r.runCommand",
-      //   "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
-        "args": "devtools::check()"
+        "command": "r.check"
       }
 ]
