@@ -1,22 +1,3 @@
-check_model <- function(model, data, mapping) {
-  model_vars <- all.vars(stats::terms(model))
-  plot_vars <- purrr::map_chr(mapping, quo_name)
-  missing_in_plot <- setdiff(model_vars, plot_vars)
-
-  if (length(missing_in_plot) > 0) {
-    abort(c(
-      "The model you are trying to plot uses variables that do not exist in the plot",
-      glue("missing terms in plot: {paste(missing_in_plot, collapse = ', ')}")
-    ))
-  }
-
-  if (is_formula(model)) {
-    model <- stats::lm(model, data = data)
-  }
-
-  model
-}
-
 check_aesthetics <- function(args, predictor_vars) {
   mappable <- c(ggplot2::GeomLine$aesthetics(), "color")
   to_map <- union(names(args), mappable)
@@ -75,34 +56,18 @@ gf_model <- function(object, model, ...) {
   mapped_vars <- purrr::map_chr(object$mapping, quo_name)
   mapped_aesthetics <- mapped_vars[names(mapped_vars) %in% c("x", "y") == FALSE]
 
-  info <- list(model = list(), plot = list())
+  info <- list(layer = list())
+  info$model <- fortify_model(object, model)
+  info$plot <- fortify_plot(object, info$model)
 
-  info$layer$args <- list2(...)
+  layer <- list()
+  info$layer$args <- rlang::list2(...)
   info$layer$args$object <- object
   # standardize user-defined aesthetics
   if (!is.null(info$layer$args$color)) {
     info$layer$args$colour <- info$layer$args$color
     info$layer$args$color <- NULL
   }
-
-  info$model$formula <- stats::formula(model)
-  info$model$data <- if (inherits(model, "lm")) model$model else object$data
-  info$model$fit <- stats::lm(info$model$formula, data = info$model$data)
-  info$model$terms <- sort(names(info$model$fit$model))
-  info$model$predictors <- sort(base::setdiff(info$model$terms, deparse(f_lhs(info$model$formula))))
-  info$model$outcome <- base::setdiff(info$model$terms, info$model$predictors)
-
-  info$plot$env <- object$plot_env
-  info$plot$mapping <- object$mapping
-  info$plot$aesthetics <- sort(base::setdiff(names(object$mapping), c("x", "y")))
-  info$plot$facets <- object$facet$vars()
-  info$plot$variables <- sort(c(purrr::map_chr(object$mapping, quo_name), facet = info$plot$facets))
-  info$plot$axes <- info$plot$variables[
-    names(info$plot$variables) %in% info$plot$aesthetics == FALSE &
-      info$plot$variables %in% info$plot$facets == FALSE
-  ]
-  info$plot$outcome_axis <- names(info$plot$axes)[match(info$model$outcome, info$plot$axes, 0L)]
-  info$plot$flipped <- info$plot$outcome_axis == "x"
 
   missing_in_plot <- setdiff(info$model$terms, info$plot$variables)
   if (length(missing_in_plot) > 0) {
@@ -171,7 +136,7 @@ gf_model <- function(object, model, ...) {
 
     info$layer$args$data <- mosaic::favstats(
       info$model$formula,
-      data = info$model$data,
+      data = object$data,
       na.rm = TRUE
     )
     info$layer$args$data[[info$model$outcome]] <- info$layer$args$data$mean
@@ -225,9 +190,11 @@ gf_model <- function(object, model, ...) {
 
       info$layer$args$data <- mosaic::favstats(
         info$model$formula,
-        data = info$model$data,
+        data = object$data,
         na.rm = TRUE
       )
+
+      info$layer$args$data[[info$model$predictors]] <- info$layer$args$data[[1]]
       info$layer$args$data[[info$model$outcome]] <- info$layer$args$data$mean
 
       return(do.call(info$layer$plotter, info$layer$args))
@@ -259,7 +226,7 @@ gf_model <- function(object, model, ...) {
       } else {
         data <- mosaic::favstats(
           info$model$formula,
-          data = info$model$data,
+          data = object$data,
           na.rm = TRUE
         )
         outcome <- data$mean
@@ -282,10 +249,83 @@ gf_model <- function(object, model, ...) {
         info$layer$args$color <- name_to_frm(info$plot$variables[["fill"]])
       }
 
-      # return(info)
       return(do.call(info$layer$plotter, info$layer$args))
     }
   }
 
+  if (length(info$model$terms) > 2) {
+    # cat. predictor on facet, quant. predictor on axis
+    # one line in each facet
+    # cat. predictor on aesthetic, quant. predictor on axis
+    # one line on each aesthetic
+
+    # strategy:
+    # build a grid with predictor params
+    params <- list()
+    for (term in info$model$predictors) {
+      pred_data <- object$data[[term]]
+      if (is.numeric(pred_data)) {
+        if (term == info$plot$axes[[if (info$plot$flipped) "y" else "x"]]) {
+          info$layer$plotter <- ggformula::gf_line
+        }
+
+        # if flipped and pred is y or if not flipped and pred is x, use gf_line
+        rng <- range(pred_data)
+        len <- max(nrow(object$data), 80L)
+        params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
+      } else {
+        params[[term]] <- levels(factor(pred_data))
+      }
+    }
+
+    # predict y values using the grid
+    grid <- expand.grid(params)
+    grid[info$model$outcome] <- stats::predict(info$model$fit, newdata = grid)
+    info$layer$args$data <- grid
+
+    return(do.call(info$layer$plotter, info$layer$args))
+  }
+
   return(info)
+}
+
+
+fortify_layer <- function(object, ...) {
+  args <- rlang::list2(...)
+  args$object <- object
+
+  # standardize user-defined aesthetics
+  if (!is.null(info$layer$args$color)) {
+    info$layer$args$colour <- info$layer$args$color
+    info$layer$args$color <- NULL
+  }
+
+  list(args = args)
+}
+
+fortify_model <- function(object, model) {
+  formula <- stats::formula(model)
+  data <- if (inherits(model, "lm")) model$model else object$data
+  fit <- if (inherits(model, "lm")) model else stats::lm(formula, data = data)
+  terms <- sort(names(fit$model))
+  predictors <- sort(base::setdiff(terms, deparse(f_lhs(formula))))
+  outcome <- base::setdiff(terms, predictors)
+  list(
+    formula = formula, data = data, fit = fit,
+    terms = terms, predictors = predictors, outcome = outcome
+  )
+}
+
+fortify_plot <- function(object, fortified_model) {
+  mapping <- object$mapping
+  aesthetics <- sort(base::setdiff(names(mapping), c("x", "y")))
+  facets <- object$facet$vars()
+  variables <- sort(c(purrr::map_chr(mapping, rlang::quo_name), facet = facets))
+  axes <- variables[names(variables) %in% aesthetics == FALSE & variables %in% facets == FALSE]
+  outcome_axis <- names(axes)[match(fortified_model$outcome, axes, 0L)]
+  list(
+    mapping = mapping, aesthetics = aesthetics, facets = facets, variables = variables,
+    axes = axes, outcome_axis = outcome_axis, flipped = outcome_axis == "x",
+    env = object$plot_env
+  )
 }

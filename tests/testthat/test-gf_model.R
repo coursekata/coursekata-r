@@ -292,6 +292,27 @@ test_that("it splits continuous aesthetic predictors at -+1 SD and mean", {
 })
 
 
+# Single predictor, on facet, continuous ------------------------------------------------------
+
+
+# Multiple predictors, on axis and aesthetic, categorical -------------------------------------
+
+test_that("it plots main effect models (quant. + cat.)", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(main_effects_model) %>%
+    expect_doppelganger("[gf_point] parallel lines of different colors")
+})
+
+test_that("it plots interactive models (quant. + cat.)", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(interactive_model) %>%
+    expect_doppelganger("[gf_point] diverging lines of different colors")
+
+  gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
+    gf_model(interactive_model) %>%
+    expect_doppelganger("[gf_point] diverging lines of different colors, flipped")
+})
+
 
 # Mappings ------------------------------------------------------------------------------------
 
@@ -334,4 +355,17 @@ test_that("it can handle data$var syntax", {
   # info <- gf_point(er$later_anxiety ~ er$condition, color = ~ er$condition) %>%
   #   gf_model(lm(er$later_anxiety ~ er$condition))
   #   expect_doppelganger("condition model with data$var syntax")
+})
+
+test_that("it allows modified variables as long as they match", {
+  # maybe the problem with this is that we use model$model which doesn't have the
+  # unaltered variables in it
+
+  # gf_point(later_anxiety ~ factor(base_anxiety), color = ~condition, data = er) %>%
+  #   gf_model(lm(later_anxiety ~ factor(base_anxiety), data = er)) %>%
+  #   load_before()
+})
+
+test_that("you can pass it a formula instead of an `lm()` object", {
+
 })
