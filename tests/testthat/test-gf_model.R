@@ -424,5 +424,7 @@ test_that("it allows modified variables as long as they match", {
 })
 
 test_that("you can pass it a formula instead of an `lm()` object", {
-
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(later_anxiety ~ condition) %>%
+    expect_doppelganger("should look the same as if you did the lm() version")
 })
