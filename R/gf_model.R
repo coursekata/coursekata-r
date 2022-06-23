@@ -55,7 +55,6 @@ gf_model <- function(object, model, ...) {
   info$model <- fortify_model(object, model)
   info$plot <- fortify_plot(object, info$model)
 
-  layer <- list()
   info$layer$args <- list2(...)
   info$layer$args$object <- object
   # standardize user-defined aesthetics
@@ -98,11 +97,6 @@ gf_model <- function(object, model, ...) {
     ))
   }
 
-  # TODO: no test case
-  if (length(intersect(info$model$terms, info$plot$aesthetics)) > 1) {
-    abort("Not sure how to plot a model with multiple variables mapped to aesthetic properties.")
-  }
-
   # if the plot has an aesthetic mapped, but the model doesn't have that variable, unset it
   not_in_model <- info$plot$variables[info$plot$variables %in% info$model$terms == FALSE]
   for (aesthetic in names(not_in_model)) {
@@ -122,8 +116,20 @@ gf_model <- function(object, model, ...) {
     }
   }
 
-  # no predictor ----
-  if (length(info$model$terms) == 1) {
+  # find grouping variable
+  non_axis_predictor <- setdiff(info$model$predictors, info$plot$axes)
+  if (length(non_axis_predictor) == 1) {
+    # if it is a predictor *and* an aesthetic, it must be the grouping variable
+    info$layer$args$group <- name_to_frm(non_axis_predictor)
+  } else if (length(non_axis_predictor) > 1) {
+    abort("Not sure how to plot a model with multiple variables mapped to aesthetic properties.")
+  }
+
+  # determine what to plot with ------------
+  if (
+    length(info$model$predictors) == 0 ||
+      (length(info$model$predictors) == 1 && info$model$predictors %in% info$plot$axes == FALSE)
+  ) {
     if (info$plot$flipped) {
       info$layer$plotter <- ggformula::gf_vline
       info$layer$geom <- ggplot2::GeomVline
@@ -133,179 +139,69 @@ gf_model <- function(object, model, ...) {
       info$layer$geom <- ggplot2::GeomHline
       info$layer$args$yintercept <- name_to_frm(info$model$outcome)
     }
-
-    info$layer$args$data <- mosaic::favstats(
-      info$model$formula,
-      data = object$data,
-      na.rm = TRUE
-    )
-    info$layer$args$data[[info$model$outcome]] <- info$layer$args$data$mean
-
-    # TODO: no test case
-    # re-map dynamic aesthetics from previous layers for predictors in the model
-    remap <- info$plot$variables[info$plot$variables %in% info$model$predictors]
-    remap <- remap[names(remap) %in% ggplot2::GeomLine$aesthetics()]
-    info$layer$args[names(remap)] <- purrr::map(remap, name_to_frm)
-
-    return(do.call(info$layer$plotter, info$layer$args))
-  }
-
-  # single predictor models ----
-  if (length(info$model$terms) == 2) {
-    # predictor on axis ----
-    if (all(info$model$terms %in% info$plot$axes)) {
-      grid <- object$data
-      x_name <- info$model$predictors
-      x_data <- object$data[[x_name]]
-
-      # predictor is continuous ----
-      if (is.numeric(x_data)) {
-        rng <- range(x_data)
-        grid[[x_name]] <- seq(rng[[1]], rng[[2]], length.out = nrow(object$data))
-
-        grid$pred <- stats::predict(model, newdata = grid)
-        info$layer$args$data <- grid
-        info$layer$args$gformula <- if (info$plot$flipped) {
-          stats::as.formula(paste(x_name, "~ pred"))
-        } else {
-          stats::as.formula(paste("pred ~", x_name))
-        }
-        return(do.call(ggformula::gf_line, info$layer$args))
-      }
-
-      # predictor is categorical ----
+  } else {
+    non_outcome_axis_data <- object$data[[info$plot$non_outcome_axis]]
+    if (is.numeric(non_outcome_axis_data)) {
+      info$layer$geom <- ggplot2::GeomLine
+      info$layer$plotter <- ggformula::gf_line
+    } else {
       info$layer$plotter <- ggformula::gf_errorbar
       info$layer$geom <- ggplot2::GeomErrorbar
       info$layer$args$size <- if_not_null(info$layer$args$size, 2)
+      info$layer$args$width <- if_not_null(info$layer$args$width, .2)
 
       if (info$plot$flipped) {
         info$layer$args$xmin <- name_to_frm(info$model$outcome)
         info$layer$args$xmax <- info$layer$args$xmin
-        info$layer$args$width <- if_not_null(info$layer$args$width, .2)
       } else {
         info$layer$args$ymin <- name_to_frm(info$model$outcome)
         info$layer$args$ymax <- info$layer$args$ymin
-        info$layer$args$width <- if_not_null(info$layer$args$width, .2)
       }
+    }
+  }
 
-      info$layer$args$data <- mosaic::favstats(
-        info$model$formula,
-        data = object$data,
-        na.rm = TRUE
-      )
+  # TODO: no test case
+  # re-map dynamic aesthetics from previous layers if they are predictors in the model
+  remap <- info$plot$variables[info$plot$variables %in% info$model$predictors]
+  remap <- remap[names(remap) %in% info$layer$geom$aesthetics()]
+  remap <- remap[names(remap) %in% names(info$layer$args) == FALSE]
+  info$layer$args[names(remap)] <- purrr::map(remap, name_to_frm)
+  if (
+    is.null(info$layer$args$color) &&
+      "color" %in% names(info$plot$aesthetics) == FALSE &&
+      "fill" %in% names(info$plot$aesthetics)
+  ) {
+    info$layer$args$color <- name_to_frm(info$plot$variables[["fill"]])
+  }
 
-      info$layer$args$data[[info$model$predictors]] <- info$layer$args$data[[1]]
-      info$layer$args$data[[info$model$outcome]] <- info$layer$args$data$mean
-
-      return(do.call(info$layer$plotter, info$layer$args))
+  # build data grid ----------------
+  params <- list()
+  for (term in c(info$model$predictors, info$plot$aesthetics)) {
+    term_data <- object$data[[term]]
+    if (term == info$model$outcome) {
+      abort("How did you use the outcome as a predictor?")
+    } else if (!is.numeric(term_data)) {
+      # discrete term
+      params[[term]] <- levels(factor(term_data))
+    } else if (term %in% info$plot$axes) {
+      # continuous on a continuous axis
+      rng <- range(term_data)
+      len <- max(nrow(object$data), 80L)
+      params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
     } else {
-      # predictor on aesthetic or facet ----
-      if (info$plot$flipped) {
-        info$layer$plotter <- ggformula::gf_vline
-        info$layer$geom <- ggplot2::GeomVline
-        info$layer$args$xintercept <- name_to_frm(info$model$outcome)
-      } else {
-        info$layer$plotter <- ggformula::gf_hline
-        info$layer$geom <- ggplot2::GeomHline
-        info$layer$args$yintercept <- name_to_frm(info$model$outcome)
-      }
-
-      grid <- object$data
-      pred_name <- info$model$predictors
-      pred_data <- object$data[[pred_name]]
-
-      if (is.numeric(pred_data)) {
-        spread <- stats::sd(pred_data, na.rm = TRUE)
-        middle <- mean(pred_data, na.rm = TRUE)
-        data <- tibble::tibble(!!pred_name := c(
-          middle + spread,
-          middle,
-          middle - spread
-        ))
-        outcome <- stats::predict(info$model$fit, newdata = data)
-      } else {
-        data <- mosaic::favstats(
-          info$model$formula,
-          data = object$data,
-          na.rm = TRUE
-        )
-        outcome <- data$mean
-      }
-
-      # create the new data object
-      data[[info$model$outcome]] <- outcome
-      info$layer$args$data <- data.frame(data)
-
-      # TODO: no test case
-      # re-map dynamic aesthetics from previous layers for predictors in the model
-      remap <- info$plot$variables[info$plot$variables %in% info$model$predictors]
-      remap <- remap[names(remap) %in% ggplot2::GeomLine$aesthetics()]
-      info$layer$args[names(remap)] <- purrr::map(remap, name_to_frm)
-      if (
-        is.null(info$layer$args$color) &&
-          "color" %in% names(info$plot$aesthetics) == FALSE &&
-          "fill" %in% names(info$plot$aesthetics)
-      ) {
-        info$layer$args$color <- name_to_frm(info$plot$variables[["fill"]])
-      }
-
-      return(do.call(info$layer$plotter, info$layer$args))
+      # continuous on an aesthetic
+      spread <- stats::sd(term_data, na.rm = TRUE)
+      middle <- mean(term_data, na.rm = TRUE)
+      params[[term]] <- c(middle - spread, middle, middle + spread)
     }
   }
 
-  if (length(info$model$terms) > 2) {
-    # build a grid with predictor params
-    params <- list()
-    for (term in info$model$predictors) {
-      pred_data <- object$data[[term]]
+  # predict y values using the grid
+  grid <- expand.grid(if (length(params)) params else list(dummy = 1))
+  grid[info$model$outcome] <- stats::predict(info$model$fit, newdata = grid)
+  info$layer$args$data <- grid
 
-      if (term == info$plot$axes[[if (info$plot$flipped) "y" else "x"]]) {
-        if (is.numeric(pred_data)) {
-          rng <- range(pred_data)
-          len <- max(nrow(object$data), 80L)
-          params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
-
-          info$layer$geom <- ggplot2::GeomLine
-          info$layer$plotter <- ggformula::gf_line
-        } else {
-          params[[term]] <- levels(factor(pred_data))
-
-          info$layer$plotter <- ggformula::gf_errorbar
-          info$layer$geom <- ggplot2::GeomErrorbar
-          info$layer$args$size <- if_not_null(info$layer$args$size, 2)
-          info$layer$args$width <- if_not_null(info$layer$args$width, .2)
-
-          if (info$plot$flipped) {
-            info$layer$args$xmin <- name_to_frm(info$model$outcome)
-            info$layer$args$xmax <- info$layer$args$xmin
-          } else {
-            info$layer$args$ymin <- name_to_frm(info$model$outcome)
-            info$layer$args$ymax <- info$layer$args$ymin
-          }
-        }
-      } else if (term != info$model$outcome) {
-        info$layer$args$group <- name_to_frm(term)
-        if (is.numeric(pred_data)) {
-          spread <- stats::sd(pred_data, na.rm = TRUE)
-          middle <- mean(pred_data, na.rm = TRUE)
-          params[[term]] <- c(middle - spread, middle, middle + spread)
-        } else {
-          params[[term]] <- levels(factor(pred_data))
-        }
-      } else {
-        abort("How did you use the outcome as a predictor?")
-      }
-    }
-
-    # predict y values using the grid
-    grid <- expand.grid(params)
-    grid[info$model$outcome] <- stats::predict(info$model$fit, newdata = grid)
-    info$layer$args$data <- grid
-
-    return(do.call(info$layer$plotter, info$layer$args))
-  }
-
-  return(info)
+  return(do.call(info$layer$plotter, info$layer$args))
 }
 
 
@@ -341,10 +237,12 @@ fortify_plot <- function(object, fortified_model) {
   facets <- object$facet$vars()
   variables <- sort(c(purrr::map_chr(mapping, quo_name), facet = facets))
   axes <- variables[names(variables) %in% aesthetics == FALSE & variables %in% facets == FALSE]
-  outcome_axis <- names(axes)[match(fortified_model$outcome, axes, 0L)]
+  outcome_axis <- axes[axes %in% fortified_model$outcome]
+  non_outcome_axis <- axes[axes %in% outcome_axis == FALSE]
+  flipped <- names(outcome_axis) == "x"
   list(
     mapping = mapping, variables = variables, aesthetics = variables[aesthetics],
-    facets = facets, axes = axes, outcome_axis = outcome_axis, flipped = outcome_axis == "x",
-    env = object$plot_env
+    facets = facets, axes = axes, outcome_axis = outcome_axis, non_outcome_axis = non_outcome_axis,
+    flipped = flipped, env = object$plot_env
   )
 }

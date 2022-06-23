@@ -111,9 +111,9 @@
 <circle cx='184.86' cy='402.66' r='1.95' style='stroke-width: 0.71; stroke: #2A788E; fill: #2A788E;' />
 <circle cx='398.44' cy='402.66' r='1.95' style='stroke-width: 0.71; stroke: #22A884; fill: #22A884;' />
 <circle cx='184.86' cy='402.66' r='1.95' style='stroke-width: 0.71; stroke: #2A788E; fill: #2A788E;' />
-<line x1='425.53' y1='545.11' x2='425.53' y2='22.78' style='stroke-width: 1.71; stroke: #B8DB42; stroke-linecap: butt;' />
-<line x1='310.72' y1='545.11' x2='310.72' y2='22.78' style='stroke-width: 1.71; stroke: #2DAA81; stroke-linecap: butt;' />
 <line x1='195.91' y1='545.11' x2='195.91' y2='22.78' style='stroke-width: 1.71; stroke: #36688C; stroke-linecap: butt;' />
+<line x1='310.72' y1='545.11' x2='310.72' y2='22.78' style='stroke-width: 1.71; stroke: #2DAA81; stroke-linecap: butt;' />
+<line x1='425.53' y1='545.11' x2='425.53' y2='22.78' style='stroke-width: 1.71; stroke: #B8DB42; stroke-linecap: butt;' />
 <rect x='51.37' y='22.78' width='587.35' height='522.33' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
