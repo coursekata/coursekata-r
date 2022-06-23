@@ -51,17 +51,12 @@ gf_model <- function(object, model, ...) {
     abort("`gf_model()` needs to be layered on top of a plot.")
   }
 
-  # model <- check_model(model, object$data, object$mapping)
-  model_vars <- supernova::variables(model)
-  mapped_vars <- purrr::map_chr(object$mapping, quo_name)
-  mapped_aesthetics <- mapped_vars[names(mapped_vars) %in% c("x", "y") == FALSE]
-
   info <- list(layer = list())
   info$model <- fortify_model(object, model)
   info$plot <- fortify_plot(object, info$model)
 
   layer <- list()
-  info$layer$args <- rlang::list2(...)
+  info$layer$args <- list2(...)
   info$layer$args$object <- object
   # standardize user-defined aesthetics
   if (!is.null(info$layer$args$color)) {
@@ -101,6 +96,11 @@ gf_model <- function(object, model, ...) {
       "There is only support for plotting models with numeric outcome variables at this time",
       glue("detected outcome type: {class(info$model$outcome)}")
     ))
+  }
+
+  # TODO: no test case
+  if (length(intersect(info$model$terms, info$plot$aesthetics)) > 1) {
+    abort("Not sure how to plot a model with multiple variables mapped to aesthetic properties.")
   }
 
   # if the plot has an aesthetic mapped, but the model doesn't have that variable, unset it
@@ -243,8 +243,8 @@ gf_model <- function(object, model, ...) {
       info$layer$args[names(remap)] <- purrr::map(remap, name_to_frm)
       if (
         is.null(info$layer$args$color) &&
-          "color" %in% info$plot$aesthetics == FALSE &&
-          "fill" %in% info$plot$aesthetics
+          "color" %in% names(info$plot$aesthetics) == FALSE &&
+          "fill" %in% names(info$plot$aesthetics)
       ) {
         info$layer$args$color <- name_to_frm(info$plot$variables[["fill"]])
       }
@@ -254,27 +254,46 @@ gf_model <- function(object, model, ...) {
   }
 
   if (length(info$model$terms) > 2) {
-    # cat. predictor on facet, quant. predictor on axis
-    # one line in each facet
-    # cat. predictor on aesthetic, quant. predictor on axis
-    # one line on each aesthetic
-
-    # strategy:
     # build a grid with predictor params
     params <- list()
     for (term in info$model$predictors) {
       pred_data <- object$data[[term]]
-      if (is.numeric(pred_data)) {
-        if (term == info$plot$axes[[if (info$plot$flipped) "y" else "x"]]) {
-          info$layer$plotter <- ggformula::gf_line
-        }
 
-        # if flipped and pred is y or if not flipped and pred is x, use gf_line
-        rng <- range(pred_data)
-        len <- max(nrow(object$data), 80L)
-        params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
+      if (term == info$plot$axes[[if (info$plot$flipped) "y" else "x"]]) {
+        if (is.numeric(pred_data)) {
+          rng <- range(pred_data)
+          len <- max(nrow(object$data), 80L)
+          params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
+
+          info$layer$geom <- ggplot2::GeomLine
+          info$layer$plotter <- ggformula::gf_line
+        } else {
+          params[[term]] <- levels(factor(pred_data))
+
+          info$layer$plotter <- ggformula::gf_errorbar
+          info$layer$geom <- ggplot2::GeomErrorbar
+          info$layer$args$size <- if_not_null(info$layer$args$size, 2)
+          info$layer$args$width <- if_not_null(info$layer$args$width, .2)
+
+          if (info$plot$flipped) {
+            info$layer$args$xmin <- name_to_frm(info$model$outcome)
+            info$layer$args$xmax <- info$layer$args$xmin
+          } else {
+            info$layer$args$ymin <- name_to_frm(info$model$outcome)
+            info$layer$args$ymax <- info$layer$args$ymin
+          }
+        }
+      } else if (term != info$model$outcome) {
+        info$layer$args$group <- name_to_frm(term)
+        if (is.numeric(pred_data)) {
+          spread <- stats::sd(pred_data, na.rm = TRUE)
+          middle <- mean(pred_data, na.rm = TRUE)
+          params[[term]] <- c(middle - spread, middle, middle + spread)
+        } else {
+          params[[term]] <- levels(factor(pred_data))
+        }
       } else {
-        params[[term]] <- levels(factor(pred_data))
+        abort("How did you use the outcome as a predictor?")
       }
     }
 
@@ -291,7 +310,7 @@ gf_model <- function(object, model, ...) {
 
 
 fortify_layer <- function(object, ...) {
-  args <- rlang::list2(...)
+  args <- list2(...)
   args$object <- object
 
   # standardize user-defined aesthetics
@@ -308,8 +327,8 @@ fortify_model <- function(object, model) {
   data <- if (inherits(model, "lm")) model$model else object$data
   fit <- if (inherits(model, "lm")) model else stats::lm(formula, data = data)
   terms <- sort(names(fit$model))
-  predictors <- sort(base::setdiff(terms, deparse(f_lhs(formula))))
-  outcome <- base::setdiff(terms, predictors)
+  predictors <- sort(setdiff(terms, deparse(f_lhs(formula))))
+  outcome <- setdiff(terms, predictors)
   list(
     formula = formula, data = data, fit = fit,
     terms = terms, predictors = predictors, outcome = outcome
@@ -318,14 +337,14 @@ fortify_model <- function(object, model) {
 
 fortify_plot <- function(object, fortified_model) {
   mapping <- object$mapping
-  aesthetics <- sort(base::setdiff(names(mapping), c("x", "y")))
+  aesthetics <- sort(setdiff(names(mapping), c("x", "y")))
   facets <- object$facet$vars()
-  variables <- sort(c(purrr::map_chr(mapping, rlang::quo_name), facet = facets))
+  variables <- sort(c(purrr::map_chr(mapping, quo_name), facet = facets))
   axes <- variables[names(variables) %in% aesthetics == FALSE & variables %in% facets == FALSE]
   outcome_axis <- names(axes)[match(fortified_model$outcome, axes, 0L)]
   list(
-    mapping = mapping, aesthetics = aesthetics, facets = facets, variables = variables,
-    axes = axes, outcome_axis = outcome_axis, flipped = outcome_axis == "x",
+    mapping = mapping, variables = variables, aesthetics = variables[aesthetics],
+    facets = facets, axes = axes, outcome_axis = outcome_axis, flipped = outcome_axis == "x",
     env = object$plot_env
   )
 }
