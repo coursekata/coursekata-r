@@ -182,7 +182,11 @@ gf_model <- function(object, model, ...) {
       abort("How did you use the outcome as a predictor?")
     } else if (!is.numeric(term_data)) {
       # discrete term
-      params[[term]] <- levels(factor(term_data))
+      if (is.logical(term_data)) {
+        params[[term]] <- c(TRUE, FALSE)
+      } else {
+        params[[term]] <- levels(factor(term_data))
+      }
     } else if (term %in% info$plot$axes) {
       # continuous on a continuous axis
       rng <- range(term_data)

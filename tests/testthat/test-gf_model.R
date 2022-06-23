@@ -428,3 +428,15 @@ test_that("you can pass it a formula instead of an `lm()` object", {
     gf_model(later_anxiety ~ condition) %>%
     expect_doppelganger("should look the same as if you did the lm() version")
 })
+
+
+# Other tests ---------------------------------------------------------------------------------
+
+test_that("it treats boolean and character predictors like factors", {
+  new_er <- er %>%
+    mutate(base_anxiety_high = base_anxiety > 5)
+
+  gf_point(later_anxiety ~ base_anxiety_high, data = new_er) %>%
+    gf_model(later_anxiety ~ base_anxiety_high) %>%
+    expect_doppelganger("[gf_point] floating hashes TRUE higher than FALSE")
+})
