@@ -36,6 +36,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: System dependencies
+        if: ${{ matrix.config.os == 'macOS-latest' }}
+        run: brew install gdal
+
       - uses: r-lib/actions/setup-pandoc@v1
 
       - uses: r-lib/actions/setup-r@v1
