@@ -39,6 +39,8 @@ This package makes it easy to install and load all packages and functions used i
 remotes::install_github("UCLATALL/coursekata-r")
 ```
 
+Note that installing the package will install all of the functions that are used in the course, but by default a couple of packages will not be installed: `fivethirtyeight` and `fivethirtyeightdata`. These packages only contain data, so the R package building process complains when functions are not imported from them. The first time you call `library(coursekata)` you will be prompted to install the packages if they are not already installed.
+
 
 ## Loading Packages Used in CourseKata Courses
 
@@ -101,7 +103,7 @@ The estimate extraction functions help to simplify the ability to create bootstr
 samp_dist_of_b1 <- do(1000) * b1(lm(mpg ~ hp, data = resample(mtcars)))
 
 # plot the bootstrapped estimates
-gf_histogram(~samp_dist_of_b1$b1)
+gf_histogram(~ samp_dist_of_b1$b1)
 ```
 
 Other estimates and terms can be bootstrapped using the same technique, but you will need to calculate the values yourself. Here's an example of doing that for a term that doesn't have a dedicated extraction function:
@@ -110,13 +112,13 @@ Other estimates and terms can be bootstrapped using the same technique, but you 
 samp_dist_of_hp <- do(1000) * {
   # create a new model from the resampled data
   model <- lm(mpg ~ disp * hp, data = resample(mtcars))
-  
+
   # extract the desired estimate, here the coefficient for hp
   coef(model)[["hp"]]
 }
 
 # plot the bootstrapped estimates
-gf_histogram(~samp_dist_of_hp$result)
+gf_histogram(~ samp_dist_of_hp$result)
 ```
 
 ### Sectioning a Distribution 
@@ -125,7 +127,7 @@ When teaching about hypothesis testing, *F*, and *p*-value, it is useful to mark
 
 ```{r shaded_middle}
 # shade in the middle 80% of the Thumb distribution
-gf_histogram(~Thumb, data = Fingers, fill = ~middle(Thumb, .80))
+gf_histogram(~Thumb, data = Fingers, fill = ~ middle(Thumb, .80))
 ```
 
 ### Toggling the Theme
