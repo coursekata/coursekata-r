@@ -13,9 +13,9 @@ test_that("all course packages are listed with version and whether attached", {
 
 
 test_that("detached packages are listed as not attached", {
-  try(detach("package:supernova", unload = TRUE, character.only = TRUE), silent = TRUE)
-  withr::defer(suppressMessages(library(supernova)))
+  detacher("fivethirtyeight")
+  withr::defer(attacher("fivethirtyeight"))
 
   packages <- suppressMessages(coursekata_packages())
-  expect_false(packages[match("supernova", packages$package), "attached"])
+  expect_false(packages[match("fivethirtyeight", packages$package), "attached"])
 })

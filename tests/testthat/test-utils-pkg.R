@@ -1,15 +1,5 @@
-
-detacher <- function(pkg) {
-  try(detach(paste0("package:", pkg), unload = TRUE, character.only = TRUE), silent = TRUE)
-}
-
-attacher <- function(pkg) {
-  suppressMessages(library(pkg, character.only = TRUE))
-}
-
-
 test_that("it determines whether a package is attached or not", {
-  pkgs <- c("supernova", "lsr")
+  pkgs <- "fivethirtyeight" # use this package because it is not imported
 
   purrr::walk(pkgs, detacher)
   expect_vector(pkg_is_attached(pkgs), logical(), length(pkgs))
@@ -39,14 +29,14 @@ test_that("it retrieves the package version for currently installed packages, or
 
 
 test_that("requiring a package is vectorized", {
-  pkgs <- c("supernova", "lsr")
+  pkgs <- "fivethirtyeight" # use this package because it is not imported
   purrr::walk(pkgs, detacher)
   expect_identical(pkg_require(pkgs), rep(TRUE, length(pkgs)))
 })
 
 
 test_that("requiring a package is quiet", {
-  pkgs <- c("supernova", "lsr")
+  pkgs <- "fivethirtyeight" # use this package because it is not imported
   purrr::walk(pkgs, detacher)
   expect_message(pkg_require(pkgs), NA)
   expect_message(pkg_require(pkgs), NA)
