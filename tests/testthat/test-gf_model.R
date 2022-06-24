@@ -18,10 +18,6 @@ test_that("the model outcome has to be one of the axes", {
     expect_error(".*model outcome.*one of the axes.*")
 })
 
-test_that("facets must be based on categorical variables", {
-  skip("Should this be a constraint?")
-})
-
 
 # No predictor -------------------------------------------------------------------------------
 
