@@ -2,11 +2,14 @@
 % Please edit documentation in R/distribution_parts.R
 \name{middle}
 \alias{middle}
+\alias{tails}
 \alias{lower}
 \alias{upper}
 \title{Find a percentage of a distribution}
 \usage{
 middle(x, prop = 0.95, greedy = TRUE)
+
+tails(x, prop = 0.95, greedy = TRUE)
 
 lower(x, prop = 0.025, greedy = TRUE)
 
@@ -37,6 +40,7 @@ Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE
 upper(1:10, .1)
 lower(1:10, .2)
 middle(1:10, .5)
+tails(1:10, .5)
 
 sampling_distribution <- do(1000) * mean(rnorm(100, 5, 10))
 sampling_distribution \%>\%
