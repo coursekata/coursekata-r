@@ -29,9 +29,9 @@
 <rect x='40.13' y='22.78' width='674.39' height='522.33' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
 <line x1='377.33' y1='236.46' x2='377.33' y2='46.53' style='stroke-width: 1.07; stroke-linecap: butt;' />
 <line x1='377.33' y1='426.40' x2='377.33' y2='521.37' style='stroke-width: 1.07; stroke-linecap: butt;' />
-<polygon points='70.79,236.46 70.79,426.40 683.87,426.40 683.87,236.46 70.79,236.46 ' style='stroke-width: 1.07; fill: #EEA236; fill-opacity: 0.60;' />
+<polygon points='70.79,236.46 70.79,426.40 683.87,426.40 683.87,236.46 70.79,236.46 ' style='stroke-width: 1.07; fill: #009D9A; fill-opacity: 0.60;' />
 <line x1='70.79' y1='331.43' x2='683.87' y2='331.43' style='stroke-width: 2.13; stroke-linecap: butt;' />
-<line x1='40.13' y1='314.47' x2='714.52' y2='314.47' style='stroke-width: 1.71; stroke: #357EBD; stroke-linecap: butt;' />
+<line x1='40.13' y1='314.47' x2='714.52' y2='314.47' style='stroke-width: 2.13; stroke: #002D9C; stroke-linecap: butt;' />
 <rect x='40.13' y='22.78' width='674.39' height='522.33' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>

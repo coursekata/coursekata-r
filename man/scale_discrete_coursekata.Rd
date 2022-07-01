@@ -13,8 +13,8 @@ scale_discrete_coursekata(...)
 A discrete color scale.
 }
 \description{
-See \code{\link[=coursekata_palettes]{coursekata_palettes()}} for more information.
+See \code{\link[=coursekata_palette]{coursekata_palette()}} for more information.
 }
 \seealso{
-coursekata_palettes
+coursekata_palette
 }
