@@ -35,6 +35,7 @@ Imports:
     rlang (>= 1.0.2),
     rstudioapi (>= 0.13),
     supernova (>= 2.5.1),
+    vctrs (>= 0.4.1),
     yesno (>= 0.1.2)
 Suggests: 
     fivethirtyeight (>= 0.6.2),
