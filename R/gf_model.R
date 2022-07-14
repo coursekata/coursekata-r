@@ -42,8 +42,10 @@ if_not_null <- function(x, other) if (!is.null(x)) x else other
 #' @param object A plot created with the `ggformula` package.
 #' @param model A linear model fit by either [`lm()`] or [`aov()`].
 #' @param ... Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
-#'   `attribute = value`, (b) ggplot2 aesthetics to be mapped with `attribute = ~ expression``, or
+#'   `attribute = value`, (b) ggplot2 aesthetics to be mapped with `attribute = ~ expression`, or
 #'   (c) attributes of the layer as a whole, which are set with `attribute = value`.
+#'
+#' @export
 gf_model <- function(object, model, ...) {
   args <- list2(...)
 
