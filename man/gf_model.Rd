@@ -12,7 +12,8 @@ gf_model(object, model, ...)
 \item{model}{A linear model fit by either \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}.}
 
 \item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
-\code{attribute = value}, (b) ggplot2 aesthetics to be mapped with \verb{attribute = ~ expression``, or (c) attributes of the layer as a whole, which are set with }attribute = value`.}
+\code{attribute = value}, (b) ggplot2 aesthetics to be mapped with \code{attribute = ~ expression}, or
+(c) attributes of the layer as a whole, which are set with \code{attribute = value}.}
 }
 \description{
 When teaching about regression it can be useful to visualize the data as a point plot with the
