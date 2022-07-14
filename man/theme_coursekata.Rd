@@ -16,5 +16,5 @@ default, you can run \code{set_theme(theme_grey)}. If you want to restore all pl
 and/or prevent them when loading the package, see \code{\link{restore_default_themes}}.
 }
 \examples{
-gf_boxplot(Thumb ~ RaceEthnic, data = Fingers, fill = ~ RaceEthnic)
+gf_boxplot(Thumb ~ RaceEthnic, data = Fingers, fill = ~RaceEthnic)
 }

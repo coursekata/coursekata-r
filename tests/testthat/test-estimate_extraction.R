@@ -1,27 +1,84 @@
-
-test_model <- lm(mpg ~ hp, data = mtcars)
-estimate_funs <- c(b0, b1, f, pre, sse, ssm, ssr)
-
-test_that("extracted values are all single element numeric vectors", {
-  purrr::map(estimate_funs, function(f) {
-    expect_vector(f(test_model), double(), 1L)
-  })
-})
-
-test_that("values can be extracted from fitted lm or formula-and-data", {
-  purrr::map(estimate_funs, function(f) {
-    expect_identical(f(formula(test_model), test_model$model), f(test_model))
-  })
-})
-
 test_that("extracted values are correct", {
-  expect_identical(b0(test_model), test_model$coefficients[[1]])
-  expect_identical(b1(test_model), coefficients(test_model)[[2]])
-  expect_identical(f(test_model), summary(test_model)$fstatistic[["value"]])
-  expect_identical(pre(test_model), summary(test_model)$r.squared)
-  expect_identical(sse(test_model), sum(resid(test_model)^2))
+  test_model <- lm(mpg ~ hp, data = mtcars)
+
+  expect_equal(b0(test_model), test_model$coefficients[[1]])
+  expect_equal(b1(test_model), coefficients(test_model)[[2]])
+  expect_equal(pre(test_model), summary(test_model)$r.squared)
+
+  f_full_expected <- summary(test_model)$fstatistic
+  expect_equal(f(test_model), f_full_expected[["value"]])
+  expect_equal(p(test_model), pf(
+    f_full_expected[["value"]],
+    f_full_expected[["numdf"]],
+    f_full_expected[["dendf"]],
+    lower.tail = FALSE
+  ))
 
   ssr_expected <- sum((test_model$fitted.values - mean(test_model$model[[1]]))^2)
-  expect_identical(ssr(test_model), ssr_expected)
-  expect_identical(ssm(test_model), ssr(test_model))
+  expect_equal(ssr(test_model), ssr_expected)
+  expect_equal(ssm(test_model), ssr(test_model))
+  expect_equal(sse(test_model), sum(resid(test_model)^2))
+})
+
+# test_that("values can be extracted from fitted lm or formula-and-data", {
+#   test_model <- lm(mpg ~ hp, data = mtcars)
+#   estimate_funs <- c(b0, b1, f, pre, p, sse, ssm, ssr)
+#   purrr::map(estimate_funs, function(f) {
+#     expect_identical(f(formula(test_model), test_model$model), f(test_model))
+#   })
+# })
+
+test_that("they can extract all related terms (not just full model terms)", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  sup_out <- supernova(mult_model, type = 3)
+
+  expect_equal(b(mult_model, all = TRUE), list(
+    "b_0" = coefficients(mult_model)[[1]],
+    "b_hp" = coefficients(mult_model)[["hp"]],
+    "b_cyl" = coefficients(mult_model)[["cyl"]],
+    "b_hp:cyl" = coefficients(mult_model)[["hp:cyl"]]
+  ))
+
+  expect_equal(f(mult_model, all = TRUE, type = 3), list(
+    "f" = sup_out$tbl$F[[1]],
+    "f_hp" = sup_out$tbl$F[[2]],
+    "f_cyl" = sup_out$tbl$F[[3]],
+    "f_hp:cyl" = sup_out$tbl$F[[4]]
+  ))
+
+  expect_equal(pre(mult_model, all = TRUE, type = 3), list(
+    "pre" = sup_out$tbl$PRE[[1]],
+    "pre_hp" = sup_out$tbl$PRE[[2]],
+    "pre_cyl" = sup_out$tbl$PRE[[3]],
+    "pre_hp:cyl" = sup_out$tbl$PRE[[4]]
+  ))
+
+  expect_equal(p(mult_model, all = TRUE, type = 3), list(
+    "p" = sup_out$tbl$p[[1]],
+    "p_hp" = sup_out$tbl$p[[2]],
+    "p_cyl" = sup_out$tbl$p[[3]],
+    "p_hp:cyl" = sup_out$tbl$p[[4]]
+  ))
+})
+
+test_that("they return a scalar if a single term is requested", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  terms <- c("hp")
+  named <- function(x) paste(x, terms, sep = "_")
+
+  expect_equal(b(mult_model, term = terms), b(mult_model, all = TRUE)[[named("b")]])
+  expect_equal(f(mult_model, term = terms), f(mult_model, all = TRUE)[[named("f")]])
+  expect_equal(pre(mult_model, term = terms), pre(mult_model, all = TRUE)[[named("pre")]])
+  expect_equal(p(mult_model, term = terms), p(mult_model, all = TRUE)[[named("p")]])
+})
+
+test_that("they return a named list of the requested terms if 2+ terms are requested", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  terms <- c("hp", "hp:cyl")
+  named <- function(x) paste(x, terms, sep = "_")
+
+  expect_equal(b(mult_model, term = terms), b(mult_model, all = TRUE)[named("b")])
+  expect_equal(f(mult_model, term = terms), f(mult_model, all = TRUE)[named("f")])
+  expect_equal(pre(mult_model, term = terms), pre(mult_model, all = TRUE)[named("pre")])
+  expect_equal(p(mult_model, term = terms), p(mult_model, all = TRUE)[named("p")])
 })

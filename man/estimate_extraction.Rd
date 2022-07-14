@@ -4,6 +4,7 @@
 \alias{estimate_extraction}
 \alias{b0}
 \alias{b1}
+\alias{b}
 \alias{f}
 \alias{pre}
 \alias{sse}
@@ -20,9 +21,11 @@ b0(object, data = NULL, ...)
 
 b1(object, data = NULL, ...)
 
-f(object, data = NULL, ...)
+b(object, data = NULL, all = FALSE, term = character(), ...)
 
-pre(object, data = NULL, ...)
+f(object, data = NULL, all = FALSE, term = character(), type = 3, ...)
+
+pre(object, data = NULL, all = FALSE, term = character(), type = 3, ...)
 
 sse(object, data = NULL, ...)
 
@@ -46,6 +49,17 @@ SSR(object, data = NULL, ...)
 \item{data}{If \code{object} is a formula, the data to fit the formula to as a \code{\link{data.frame}}.}
 
 \item{...}{Additional arguments passed through to \code{\link{lm}}.}
+
+\item{all}{If \code{TRUE}, return a named list of all related terms (e.g. all \emph{F}-values).The name
+for the full model value is the name of the function (e.g. "f"), and the names for the
+constituent terms are the term names prefixed by the function name (e.g. "f_a:b" for the
+\emph{F}-value of the \code{a:b} interaction term).}
+
+\item{term}{Filter the output down to just the statistics for these terms (e.g. "hp" to just
+get the statistics for that term in the model).}
+
+\item{type}{The type of sums of squares to calculate (see \code{\link[supernova:generate_models]{generate_models()}}). Defaults to the
+widely used Type \code{III} SS.}
 }
 \value{
 The value of the estimate as a single number.
@@ -67,4 +81,13 @@ empty model.}
 \item \strong{\code{SSM}}: The SS Model (SS Regression) for the full model.
 \item \strong{\code{SSR}}: Alias for SSM.
 }
+}
+\examples{
+supernova(lm(mpg ~ disp, data = mtcars))
+supernova(lm(mpg ~ disp, data = mtcars)) \%>\% print(pcut = 8)
+}
+\references{
+Judd, C. M., McClelland, G. H., & Ryan, C. S. (2017). \emph{Data
+Analysis: A Model Comparison Approach to Regression, ANOVA, and Beyond}
+(3rd ed.). New York: Routledge. ISBN:879-1138819832
 }

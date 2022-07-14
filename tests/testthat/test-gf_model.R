@@ -1,284 +1,438 @@
+# Constraints ---------------------------------------------------------------------------------
 
-# Main tests ----------------------------------------------------------------------------------
-
-test_that("it requires at least a formula and data or a model", {
-  expect_error(gf_model(), ".*supply a.*`gformula` and `data`.*")
-  expect_error(gf_model(gformula = mpg ~ NULL), ".*`data`.*")
-  expect_error(gf_model(data = mtcars), ".*`gformula`.*")
+test_that("it needs to be layered onto a plot", {
+  gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_error()
 })
 
-test_that("it wraps gf_lm() for regression models", {
-  vdiffr::expect_doppelganger(
-    'regression--data-formula',
-    gf_model(gformula = mpg ~ hp, data = mtcars)
-  )
+test_that("the model variables must be in the underlying plot", {
+  wrong_model <- lm(Thumb ~ NULL, data = Fingers)
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(wrong_model) %>%
+    expect_error(".*missing in plot: Thumb.*")
 })
 
-test_that("it wraps gf_hline() to add the empty model as a line", {
-  vdiffr::expect_doppelganger(
-    'empty--data-formula',
-    gf_model(gformula = mpg ~ NULL, data = mtcars)
-  )
-})
-
-test_that("it draws gf_segment()s to add the group model", {
-  vdiffr::expect_doppelganger(
-    'group--data-formula',
-    gf_model(gformula = Sepal.Length ~ Species, data = iris)
-  )
-})
-
-test_that("it accepts a fitted model in place of a formula and data", {
-  vdiffr::expect_doppelganger(
-    'regression--lm',
-    gf_model(model = lm(mpg ~ hp, data = mtcars))
-  )
-  vdiffr::expect_doppelganger(
-    'empty--lm',
-    gf_model(model = lm(mpg ~ NULL, data = mtcars))
-  )
-  vdiffr::expect_doppelganger(
-    'group--lm',
-    gf_model(model = lm(Sepal.Length ~ Species, data = iris))
-  )
-})
-
-test_that("using a model supsersedes the formula and data arguments", {
-  expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
-  vdiffr::expect_doppelganger(
-    'regression--model-supersedes-formula',
-    suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), gformula = mpg ~ NULL))
-  )
-
-  expect_warning(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
-  vdiffr::expect_doppelganger(
-    'regression--model-supersedes-data',
-    suppressWarnings(gf_model(model = lm(mpg ~ hp, data = mtcars), data = iris))
-  )
-})
-
-test_that("it allows data to be the first argument", {
-  vdiffr::expect_doppelganger(
-    'regression--data-first',
-    gf_model(mtcars, mpg ~ hp)
-  )
-})
-
-test_that("it allows model to be the first argument", {
-  vdiffr::expect_doppelganger(
-    'regression--lm-first',
-    gf_model(lm(mpg ~ hp, data = mtcars))
-  )
-})
-
-test_that("it allows formula to be the first argument", {
-  vdiffr::expect_doppelganger(
-    'regression--formula-first',
-    gf_model(mpg ~ hp, data = mtcars)
-  )
+test_that("the model outcome has to be one of the axes", {
+  gf_point(base_anxiety ~ condition, color = ~later_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
+    expect_error(".*model outcome.*one of the axes.*")
 })
 
 
-# Chaining ------------------------------------------------------------------------------------
+# No predictor -------------------------------------------------------------------------------
 
-test_that("it uses its own model or formula if chained", {
-  vdiffr::expect_doppelganger(
-    'regression--chained-own-model',
-    gf_point(mpg ~ hp, data = mtcars) %>%
-      gf_model(model = lm(mpg ~ hp, data = mtcars))
-  )
-
-  vdiffr::expect_doppelganger(
-    'regression--chained-own-formula',
-    gf_point(mpg ~ hp, data = mtcars) %>%
-      gf_model(mpg ~ NULL)
-  )
+test_that("it plots the empty model as a horizontal line when outcome is on Y, two axis plots", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger("[gf_point] Empty model, outcome on Y")
 })
 
-test_that("an informative error is given if new data is passed to it", {
-  expect_error(
-    gf_point(mpg ~ hp, data = mtcars) %>%
-      gf_model(Thumb ~ Sex, data = Fingers),
-    ".*different data sets.*"
-  )
+test_that("it plots the empty model as a vertical line when outcome is on Y, one axis plot", {
+  # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] Empty model, outcome on Y")
+  }
+
+  plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
+
+  bin_plots <- c("gf_histogramh", "gf_dhistogramh")
+  purrr::walk(bin_plots, function(plot) {
+    do.call(plot, append(plot_args, list(bins = 30))) %>%
+      gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  other_plots <- c("gf_rugy")
+  purrr::walk(other_plots, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  # box/violin plots have different formulae
+  gf_boxplot(later_anxiety ~ 1, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_boxplot", " -- 2"))
+
+  gf_violin(later_anxiety ~ 1, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_violin"))
 })
 
-test_that("it doesn't complain about new data if the original plot had no data", {
-  expect_error(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ hp, data = mtcars), NA)
+test_that("it plots the empty model as a horizontal line when outcome is on X, two axis plot", {
+  gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger("[gf_point] Empty model, outcome on X")
 })
 
-test_that("model can be first argument when chaining", {
-  vdiffr::expect_doppelganger(
-    'regression--chained--formula-in-data-arg',
-    gf_point(mpg ~ hp, data = mtcars) %>%
-      gf_model(mpg ~ NULL, data = mtcars)
-  )
-})
+test_that("it plots the empty model as a vertical line when outcome is on X, one axis plot", {
+  # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] Empty model, outcome on X{suffix}")
+  }
 
-test_that("it will use the formula and/or data from earlier in the chain if it needs to", {
-  vdiffr::expect_doppelganger(
-    "regression--chained--inherited-data-formula",
-    gf_point(mpg ~ hp, data = mtcars) %>%
-      gf_model()
-  )
+  plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
 
-  vdiffr::expect_doppelganger(
-    "regression--chained--inherited-data",
-    gf_point(mpg ~ hp, data = mtcars) %>%
-      gf_model(mpg ~ NULL)
-  )
-})
+  bin_plots <- c("gf_histogram", "gf_dhistogram", "gf_freqpoly")
+  purrr::walk(bin_plots, function(plot) {
+    do.call(plot, append(plot_args, list(bins = 30))) %>%
+      gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
+      expect_doppelganger(snap_name(plot))
+  })
 
-test_that("it can chain to itself", {
-  vdiffr::expect_doppelganger(
-    'regression--chained--empty-and-regression',
-    gf_model(lm(mpg ~ hp, data = mtcars)) %>%
-      gf_model(lm(mpg ~ NULL, data = mtcars))
-  )
-})
+  other_plots <- c("gf_density", "gf_dens", "gf_dens2", "gf_rug", "gf_rugx")
+  purrr::walk(other_plots, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
+      expect_doppelganger(snap_name(plot))
+  })
 
-test_that("it respects ... options from up the chain", {
-  vdiffr::expect_doppelganger(
-    'color-through-chain',
-    gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
-      gf_model()
-  )
-})
+  # box/violin plots have different formulae
+  gf_boxplot(~later_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_boxplot"))
 
-test_that("it can modify ... options from up the chain", {
-  vdiffr::expect_doppelganger(
-    'override-color-from-chain',
-    gf_point(Thumb ~ RaceEthnic, data = Fingers, color = ~RaceEthnic) %>%
-      gf_model(color = ~"red")
-  )
+  gf_violin(1 ~ later_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_violin", " -- 2"))
+
+  gf_violinh(1 ~ later_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_violinh"))
+
+  gf_boxploth(1 ~ later_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_boxploth"))
 })
 
 
-# Histograms ----------------------------------------------------------------------------------
+# Single predictor, on axis, categorical ------------------------------------------------------
 
-test_that("it draws gf_vline()s on faceted histograms", {
-  vdiffr::expect_doppelganger(
-    'histogram-wrap',
-    gf_histogram(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model()
-  )
+test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on Y", {
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] cond. mod., outcome on Y{suffix}")
+  }
 
-  vdiffr::expect_doppelganger(
-    'histogram-grid',
-    gf_histogram(~mpg, data = mtcars) %>%
-      gf_facet_grid(cyl ~ .) %>%
-      gf_model()
-  )
-
-  vdiffr::expect_doppelganger(
-    'dhistogram',
-    gf_dhistogram(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model()
-  )
-
-  vdiffr::expect_doppelganger(
-    'histogram-null-specified',
-    gf_histogram(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model(mpg ~ NULL)
-  )
-
-  vdiffr::expect_doppelganger(
-    'histogram-group-specified',
-    gf_histogram(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model(mpg ~ cyl)
-  )
-
-  vdiffr::expect_doppelganger(
-    'histogram-group-inferred',
-    gf_histogram(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model(mpg ~ cyl)
-  )
+  plot_args <- list(gformula = later_anxiety ~ condition, color = ~condition, data = er)
+  plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er), color = "brown") %>%
+      expect_doppelganger(snap_name(plot))
+  })
 })
 
-test_that("it draws the empty model on non-faceted histograms", {
-  vdiffr::expect_doppelganger(
-    'histogram-empty-inferred',
-    gf_histogram(~mpg, data = mtcars) %>%
-      gf_model()
-  )
+test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on X", {
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] cond. mod., outcome on X{suffix}")
+  }
+
+  plot_args <- list(gformula = condition ~ later_anxiety, color = ~condition, data = er)
+  plot_types <- c("gf_point", "gf_boxploth", "gf_violinh")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er), color = "brown") %>%
+      expect_doppelganger(snap_name(plot))
+  })
 })
 
-test_that("it works with rotated histograms", {
-  vdiffr::expect_doppelganger(
-    'histogram-rotated',
-    gf_histogramh(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model(mpg ~ cyl)
-  )
+
+# Single predictor, on aesthetic, categorical -------------------------------------------------
+
+test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on Y", {
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] cond. mod., outcome on Y, pred. on color")
+  }
+
+  # plots where both axes are specified
+  plot_args <- list(gformula = later_anxiety ~ provider, color = ~condition, data = er)
+  plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  # plots where one axis is calculated
+  plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
+  plot_types <- c("gf_histogramh", "gf_dhistogramh", "gf_rugy")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
 })
 
-test_that("it works with other single variable models", {
-  vdiffr::expect_doppelganger(
-    'density',
-    gf_density(~mpg, data = mtcars) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model(mpg ~ cyl)
-  )
+test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on X", {
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] cond. mod., outcome on X, pred. on color")
+  }
 
-  vdiffr::expect_doppelganger(
-    'dot',
-    gf_dotplot(~mpg, data = mtcars, binwidth = 1) %>%
-      gf_facet_wrap(~cyl) %>%
-      gf_model(mpg ~ cyl)
-  )
+  # plots where both axes are specified
+  plot_args <- list(gformula = provider ~ later_anxiety, color = ~condition, data = er)
+  plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  # plots where one axis is calculated
+  plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
+  plot_types <- c("gf_histogram", "gf_dhistogram", "gf_rug", "gf_rugx")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
 })
 
-# test_that("it will fail if it can't determine the formula based on the plot and facets", {
-#   expect_error(
-#     gf_histogram(~mpg, data = mtcars) %>%
-#       gf_facet_grid(am ~ cyl) %>%
-#       gf_model(),
-#     ".*be more specific.*"
-#   )
-# })
-#
-# # test_that("it throws a warning when trying to chain to something it can't work with", {
-# #   # taking a white list approach, so only testing one unsupported here which will error by default,
-# #   # and then all explicitly supported below with no error
-# #
-# #   # unsupported
-# #   expect_warning(gf_density_2d(eruptions ~ waiting, data = faithful) %>% gf_model())
-# #
-# #   # supported
-# #   expect_warning(gf_point(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
-# #   expect_warning(gf_lm(mpg ~ hp, data = mtcars) %>% gf_model(), NA)
-# #   expect_warning(gf_hline(yintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
-# #   expect_warning(gf_vline(xintercept = ~5) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
-# #   expect_warning(gf_abline(slope = ~3, intercept = ~2) %>% gf_model(mpg ~ NULL, data = mtcars), NA)
-# #   expect_warning(gf_histogram(~mpg, data = mtcars) %>% gf_model(), NA)
-# #   # expect_warning(gf_density(~mpg, data = mtcars) %>% gf_model(), NA)
-# #   # expect_warning(gf_boxplot(~mpg, data = mtcars) %>% gf_model(), NA)
-# #   # expect_warning(gf_violin(~mpg, data = mtcars) %>% gf_model(), NA)
-# # })
-#
-#
-# # Alternate formula specification -------------------------------------------------------------
-#
-# test_that("it allows the fitted model to use data$var syntax in the formula", {
-#   vdiffr::expect_doppelganger(
-#     'regression--lm-with-data$var',
-#     gf_model(lm(mtcars$mpg ~ mtcars$hp))
-#   )
-#   vdiffr::expect_doppelganger(
-#     'empty--lm-with-data$var',
-#     gf_model(lm(mtcars$mpg ~ NULL))
-#   )
-#   vdiffr::expect_doppelganger(
-#     'group--lm-with-data$var',
-#     gf_model(lm(iris$Sepal.Length ~ iris$Species))
-#   )
-# })
-#
-# test_that("it allows the formula to use data$var syntax, if data can be found", {
-#   skip("Planned improvement")
-# })
+
+# Single predictor, on facet, categorical -----------------------------------------------------
+
+test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on Y", {
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] cond. mod., outcome on Y, pred. on facet")
+  }
+
+  # plots where both axes are specified
+  plot_args <- list(gformula = later_anxiety ~ provider | condition, data = er)
+  plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  # alternative specification
+  plot_args <- list(gformula = later_anxiety ~ provider, data = er)
+  plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_facet_wrap(~condition) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  # plots where one axis is calculated
+  plot_args <- list(gformula = ~ later_anxiety | condition, data = er)
+  plot_types <- c("gf_histogramh", "gf_dhistogramh", "gf_rugy")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+})
+
+test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on X", {
+  snap_name <- function(plot_name, suffix = "") {
+    glue("[{plot_name}] cond. mod., outcome on X, pred. on facet")
+  }
+
+  # plots where both axes are specified
+  plot_args <- list(gformula = provider ~ later_anxiety | condition, data = er)
+  plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  # plots where one axis is calculated
+  plot_args <- list(gformula = ~ later_anxiety | condition, data = er)
+  plot_types <- c("gf_histogram", "gf_dhistogram", "gf_rug", "gf_rugx")
+  purrr::walk(plot_types, function(plot) {
+    do.call(plot, plot_args) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+})
+
+
+# Single predictor, on axis, continuous -------------------------------------------------------
+
+test_that("it plots 1 predictor (on axis, cont.) models as a fit line", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] anx. mod., outcome on Y")
+
+  gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] anx. mod., outcome on X")
+})
+
+
+# Single predictor, on aesthetic, continuous --------------------------------------------------
+
+test_that("it splits continuous aesthetic predictors at -+1 SD and mean", {
+  gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] anx. mod., pred. on color, outcome on Y")
+
+  gf_point(condition ~ later_anxiety, color = ~base_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] anx. mod., pred. on color, outcome on X")
+})
+
+
+# Two predictors, on axis and aesthetic -------------------------------------------------------
+
+test_that("it plots main effects models (cat. + cat.)", {
+  gf_point(later_anxiety ~ provider, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ provider + condition, data = er)) %>%
+    expect_doppelganger("[gf_point] floating 'parallel' hashes in two colors")
+})
+
+test_that("it plots main effects models (quant. + cat.)", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
+    expect_doppelganger("[gf_point] parallel lines in two colors")
+})
+
+test_that("it plots main effects models (cat. + quant.)", {
+  gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ condition + base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] parallel hashes in three colors (at M, +-SD)")
+})
+
+test_that("it plots main effect models (quant. + quant.)", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~base_depression, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety + base_depression, data = er)) %>%
+    expect_doppelganger("[gf_point] parallel lines in three colors (at M, +-SD)")
+})
+
+test_that("it plots interactive models (cat. * cat.)", {
+  gf_point(later_anxiety ~ provider, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ provider * condition, data = er)) %>%
+    expect_doppelganger("[gf_point] hashes in two colors at varying distances")
+})
+
+test_that("it plots interactive models (quant. * cat.)", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
+    expect_doppelganger("[gf_point] diverging lines in two colors")
+
+  gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
+    expect_doppelganger("[gf_point] diverging lines in two colors, flipped")
+})
+
+test_that("it plots interactive models (cat. * quant.)", {
+  gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ condition * base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] non-parallel hashes in three colors (at M, +-SD)")
+})
+
+test_that("it plots interactive models (quant. * quant.)", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~base_depression, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety * base_depression, data = er)) %>%
+    expect_doppelganger("[gf_point] crossing lines in two colors")
+})
+
+
+# Two predictors, on axis and facet -----------------------------------------------------------
+
+test_that("it plots main effect models across facets (cat. + cat.)", {
+  gf_point(later_anxiety ~ provider | condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ provider + condition, data = er)) %>%
+    expect_doppelganger("[gf_point] hashes at an offset across facets")
+})
+
+test_that("it plots main effect models across facets (quant. + cat.)", {
+  gf_point(later_anxiety ~ base_anxiety | condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
+    expect_doppelganger("[gf_point] parallel lines in different facets")
+})
+
+test_that("it plots interactive models across facets (cat. * cat.)", {
+  gf_point(later_anxiety ~ provider | condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ provider * condition, data = er)) %>%
+    expect_doppelganger("[gf_point] hashes with different patterns across facets")
+})
+
+test_that("it plots interactive models across facets (quant. * cat.)", {
+  gf_point(later_anxiety ~ base_anxiety | condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
+    expect_doppelganger("[gf_point] diverging lines in different facets")
+
+  gf_point(base_anxiety ~ later_anxiety | condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
+    expect_doppelganger("[gf_point] diverging lines in different facets, flipped")
+})
+
+# faceting on a quantitative variable isn't advisable -- maybe just show a warning for this?
+# it plots main effect models across facets (cat. + quant.)
+# it plots main effect models across facets (quant. + quant.)
+# it plots interactive models across facets (cat. * quant.)
+# it plots interactive models across facets (quant. * quant.)
+
+
+# Mappings ------------------------------------------------------------------------------------
+
+test_that("it respects static aesthetic choices", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er), color = "blue") %>%
+    expect_doppelganger("[gf_point] model line is blue")
+})
+
+test_that("it un-maps dynamic aesthetics from underlying layers that are not in the model", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, shape = ~provider, data = er) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
+    expect_doppelganger("[gf_point] anx. mod., outcome on Y, with color & shape")
+})
+
+test_that("it will translate color arguments if applicable (e.g. fill to color)", {
+  gf_boxplot(later_anxiety ~ provider, fill = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+    expect_doppelganger("[gf_point] cond. mod., outcome on Y, with color")
+})
+
+test_that("it can use aesthetics other than color... just checking", {
+  gf_point(later_anxiety ~ base_anxiety, size = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+    expect_doppelganger("[gf_point] cond. mod., outcome on Y, pred. on size") %>%
+    expect_warning()
+})
+
+test_that("it allows mapping new aesthetics", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(lm(later_anxiety ~ condition, data = er), linetype = ~condition) %>%
+    expect_doppelganger("[gf_point] cond. mod., outcome on Y, pred. on color, linetype")
+})
+
+
+
+# Alternate specification ---------------------------------------------------------------------
+
+test_that("it can handle data$var syntax", {
+  # info <- gf_point(er$later_anxiety ~ er$condition, color = ~ er$condition) %>%
+  #   gf_model(lm(er$later_anxiety ~ er$condition))
+  #   expect_doppelganger("cond. mod. with data$var syntax")
+})
+
+test_that("it allows modified variables as long as they match", {
+  # maybe the problem with this is that we use model$model which doesn't have the
+  # unaltered variables in it
+
+  # gf_point(later_anxiety ~ factor(base_anxiety), color = ~condition, data = er) %>%
+  #   gf_model(lm(later_anxiety ~ factor(base_anxiety), data = er)) %>%
+  #   load_before()
+})
+
+test_that("you can pass it a formula instead of an `lm()` object", {
+  gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
+    gf_model(later_anxiety ~ condition) %>%
+    expect_doppelganger("should look the same as if you did the lm() version")
+})
+
+
+# Other tests ---------------------------------------------------------------------------------
+
+test_that("it treats boolean and character predictors like factors", {
+  new_er <- er %>%
+    mutate(base_anxiety_high = base_anxiety > 5)
+
+  gf_point(later_anxiety ~ base_anxiety_high, data = new_er) %>%
+    gf_model(later_anxiety ~ base_anxiety_high) %>%
+    expect_doppelganger("[gf_point] hashes TRUE higher than FALSE")
+})

@@ -14,9 +14,15 @@
 #' - **`SSM`**: The SS Model (SS Regression) for the full model.
 #' - **`SSR`**: Alias for SSM.
 #'
-#'
 #' @param object A [`lm`] object, or [`formula`].
 #' @param data If `object` is a formula, the data to fit the formula to as a [`data.frame`].
+#' @param all If `TRUE`, return a named list of all related terms (e.g. all *F*-values).The name
+#'   for the full model value is the name of the function (e.g. "f"), and the names for the
+#'   constituent terms are the term names prefixed by the function name (e.g. "f_a:b" for the
+#'   *F*-value of the `a:b` interaction term).
+#' @param term Filter the output down to just the statistics for these terms (e.g. "hp" to just
+#'   get the statistics for that term in the model).
+#' @inherit supernova::supernova
 #' @param ... Additional arguments passed through to [`lm`].
 #'
 #' @return The value of the estimate as a single number.
@@ -40,16 +46,49 @@ b1 <- function(object, data = NULL, ...) {
 
 #' @rdname estimate_extraction
 #' @export
-f <- function(object, data = NULL, ...) {
+b <- function(object, data = NULL, all = FALSE, term = character(), ...) {
+  check_extract_args(all, term)
   fit <- convert_lm(object, data, ...)
-  summary(fit)$fstatistic[[1]]
+
+  # all is unused because there is no concept of an overall b
+  # by default we just return all the available b's, and filter to requested terms
+  lst <- as.list(fit$coefficients)
+  nms <- paste("b", names(lst), sep = "_")
+  nms[[1]] <- "b_0"
+  out <- set_names(lst, nms)
+
+  if (length(term) == 1) {
+    out[[which(names(fit$coefficients) %in% term)]]
+  } else if (length(term) > 1) {
+    as.list(out[names(fit$coefficients) %in% term])
+  } else {
+    as.list(out[!is.na(out)])
+  }
 }
 
 #' @rdname estimate_extraction
 #' @export
-pre <- function(object, data = NULL, ...) {
+f <- function(object, data = NULL, all = FALSE, term = character(), type = 3, ...) {
+  check_extract_args(all, term, type)
   fit <- convert_lm(object, data, ...)
-  summary(fit)$r.squared[[1]]
+  stats <- extract_stat(fit, type, "F", term)
+  if (all || !is_empty(term)) stats else stats[[1]]
+}
+
+#' @rdname estimate_extraction
+#' @export
+pre <- function(object, data = NULL, all = FALSE, term = character(), type = 3, ...) {
+  check_extract_args(all, term, type)
+  fit <- convert_lm(object, data, ...)
+  stats <- extract_stat(fit, type, "PRE", term)
+  if (all || !is_empty(term)) stats else stats[[1]]
+}
+
+p <- function(object, data = NULL, all = FALSE, term = character(), type = 3, ...) {
+  check_extract_args(all, term, type)
+  fit <- convert_lm(object, data, ...)
+  stats <- extract_stat(fit, type, "p", term)
+  if (all || !is_empty(term)) stats else stats[[1]]
 }
 
 #' @rdname estimate_extraction
@@ -73,6 +112,34 @@ ssr <- ssm
 
 convert_lm <- function(object, data, ...) {
   return(if ("lm" %in% class(object)) object else lm(object, data, ...))
+}
+
+check_extract_args <- function(all, term, type = 3) {
+  vctrs::vec_assert(all, logical(), 1)
+  vctrs::vec_assert(term, character())
+  vctrs::vec_assert(type, numeric(), 1)
+}
+
+#' Extract a statistic from a supernova table and name the values
+#' @param fit A fitted linear model to pass to supernova.
+#' @param type The type (1, 2, 3) of sums of squares to use.
+#' @param stat The statistic from the supernova (as named in the `supernova(...)$tbl`).
+#' @param term Optionally specify which terms to return (instead of all of them).
+#' @keywords internal
+extract_stat <- function(fit, type, stat, term = character(0)) {
+  sup_out <- supernova(fit, type)
+  vals <- sup_out$tbl[[stat]]
+  nms <- paste(tolower(stat), sup_out$tbl$term, sep = "_")
+  nms[[1]] <- tolower(stat)
+  out <- set_names(vals, nms)
+
+  if (length(term) == 1) {
+    out[[which(sup_out$tbl$term %in% term)]]
+  } else if (length(term) > 1) {
+    as.list(out[sup_out$tbl$term %in% term])
+  } else {
+    as.list(out[!is.na(out)])
+  }
 }
 
 

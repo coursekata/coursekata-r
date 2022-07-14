@@ -1,231 +1,252 @@
+check_aesthetics <- function(args, predictor_vars) {
+  mappable <- c(ggplot2::GeomLine$aesthetics(), "color")
+  to_map <- union(names(args), mappable)
+
+  purrr::walk(to_map, function(aesthetic) {
+    if (inherits(args[[aesthetic]], "formula")) {
+      var_name <- deparse(f_rhs(args[[aesthetic]]))
+      if (!var_name %in% predictor_vars) {
+        abort(c(
+          "Cannot apply an aesthetic using variables that are not predictors in the model",
+          glue("trying to apply: `{aesthetic} ~ {var_name}`"),
+          glue("predictor variables: {paste(predictor_vars, collapse = ', ')}")
+        ))
+      }
+    }
+  })
+}
+
+sd_spread <- list(
+  "-1 SD" = function(x) mean(x, na.rm = TRUE) - stats::sd(x, na.rm = TRUE),
+  "mean" = function(x) mean(x, na.rm = TRUE),
+  "+1 SD" = function(x) mean(x, na.rm = TRUE) + stats::sd(x, na.rm = TRUE)
+)
+
+is_categorical <- function(x) !is.numeric(x)
+collapse <- function(x) glue::glue_collapse(x, sep = ", ")
+name_to_frm <- function(x) stats::formula(glue("~{x}"))
+if_not_null <- function(x, other) if (!is.null(x)) x else other
+
+
 #' Add a model to a plot
 #'
 #' When teaching about regression it can be useful to visualize the data as a point plot with the
 #' outcome on the y-axis and the explanatory variable on the x-axis. For regression models, this is
-#' most easily achieved by calling [`gf_lm()`], with empty models [`gf_hline()`] using the mean, and
-#' a more complicated call to [`gf_segment()`] for group models. This function simplifies this by
-#' making a guess about what kind of model you are plotting (empty/null, regression, group) and then
-#' making the appropriate plot layer for it. **Note**: this function only works with models that
-#' have a *single* or `NULL` explanatory variable, and it will not work with multiple regression.
+#' most easily achieved by calling [`gf_lm()`], with empty models [`gf_hline()`] using the mean,
+#' and a more complicated call to [`gf_segment()`] for group models. This function simplifies this
+#' by making a guess about what kind of model you are plotting (empty/null, regression, group) and
+#' then making the appropriate plot layer for it.
 #'
-#' @param object When chaining, this holds an object produced in the earlier portions of the chain.
-#'   Most users can safely ignore this argument. See details and examples.
-#' @param gformula A formula with shape y ~ x. Superseded by `model` if one is given.
-#' @param data A data frame with the variables to be plotted. Superseded by `model` if one is given.
-#' @param model A model fit by [`lm()`]. If a model is given, it supersedes the `data` and
-#'   `gformula`.
-#' @param width The width of the mean line(s) to be plotted for group models. Note that factors are
-#'   plotted 1 unit apart, so values larger than 1 will overlap into other groups.
-#' @param ... Arguments passed on to the respective `gf_*` function.
+#' This function only works with models that have a continuous outcome measure.
 #'
-#' @return A `gg` object
-#' @export
-#'
-#' @examples
-#' # basic examples
-#' gf_model(Thumb ~ NULL, data = Fingers)
-#' gf_model(Thumb ~ Height, data = Fingers)
-#' gf_model(Thumb ~ RaceEthnic, data = Fingers)
-#'
-#' # specifying the model using a fitted model
-#' model <- lm(Thumb ~ Height, data = Fingers)
-#' gf_model(model)
-#'
-#' # chaining on to previous plots
-#' gf_point(Thumb ~ Height, data = Fingers) %>%
-#'   gf_model()
-#'
-#' gf_point(Thumb ~ Height, data = Fingers) %>%
-#'   gf_model() %>%
-#'   gf_model(Thumb ~ NULL)
-gf_model <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, width = .3, ...) {
-  # phase 1: handle arguments in different positions
-  if (inherits(object, 'formula')) {
-    gformula <- object
-    object <- NULL
+#' @param object A plot created with the `ggformula` package.
+#' @param model A linear model fit by either [`lm()`] or [`aov()`].
+#' @param ... Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
+#'   `attribute = value`, (b) ggplot2 aesthetics to be mapped with `attribute = ~ expression``, or
+#'   (c) attributes of the layer as a whole, which are set with `attribute = value`.
+gf_model <- function(object, model, ...) {
+  args <- list2(...)
+
+  if (!inherits(object, c("gg", "ggplot"))) {
+    abort("`gf_model()` needs to be layered on top of a plot.")
   }
 
-  if (inherits(object, 'data.frame')) {
-    data <- object
-    object <- NULL
+  info <- list(layer = list())
+  info$model <- fortify_model(object, model)
+  info$plot <- fortify_plot(object, info$model)
+
+  info$layer$args <- list2(...)
+  info$layer$args$object <- object
+  # standardize user-defined aesthetics
+  if (!is.null(info$layer$args$color)) {
+    info$layer$args$colour <- info$layer$args$color
+    info$layer$args$color <- NULL
   }
 
-  if (inherits(object, 'lm')) {
-    model <- object
-    object <- NULL
+  missing_in_plot <- setdiff(info$model$terms, info$plot$variables)
+  if (length(missing_in_plot) > 0) {
+    abort(c(
+      "The model you are trying to plot uses variables that do not exist in the plot",
+      glue("plot: {collapse(unique(info$plot$variables))}"),
+      glue("model: {collapse(info$model$terms)}"),
+      glue("missing in plot: {collapse(missing_in_plot)}")
+    ))
   }
 
-  if (inherits(gformula, 'lm')) {
-    model <- gformula
-    gformula <- NULL
+  # TODO: no test case
+  if (length(info$model$outcome) > 1) {
+    abort(c(
+      "There is only support for plotting models with one outcome variable at this time",
+      glue("detected outcomes: {info$model$outcome}")
+    ))
   }
 
-  # phase 2: find the formula and data
-  if (inherits(model, 'lm')) {
-    if (!is.null(gformula) || !is.null(data)) {
-      rlang::warn(paste(
-        'You have passed both a `model` and a `gformula` and/or `data` to `gf_model()`.',
-        'The formula and data from the `model` will be used and the others ignored.'
-      ))
-    }
+  if (info$model$outcome %in% info$plot$axes == FALSE) {
+    abort(c(
+      "The model outcome variable must be represented on the plot as one of the axes",
+      glue("model outcome: {info$model$outcome}"),
+      glue("plot axes: {collapse(info$plot$axes)}")
+    ))
+  }
 
-    gformula <- stats::as.formula(model)
-    data <- if (is.null(model$call$data)) {
-      model$model
-    } else {
-      rlang::env_get(rlang::f_env(gformula), rlang::as_string(model$call$data), inherit = TRUE)
+  # TODO: no test case
+  if (!is.numeric(info$model$data[[info$model$outcome]])) {
+    abort(c(
+      "There is only support for plotting models with numeric outcome variables at this time",
+      glue("detected outcome type: {class(info$model$outcome)}")
+    ))
+  }
+
+  # if the plot has an aesthetic mapped, but the model doesn't have that variable, unset it
+  not_in_model <- info$plot$variables[info$plot$variables %in% info$model$terms == FALSE]
+  for (aesthetic in names(not_in_model)) {
+    if (aesthetic %in% ggplot2::GeomLine$aesthetics() && is.null(info$layer$args[[aesthetic]])) {
+      info$layer$args[[aesthetic]] <- ggplot2::GeomLine$default_aes[[aesthetic]]
     }
   }
 
-  if (inherits(object, 'gg')) {
-    if (!inherits(object$data, 'waiver')) {
-      if (!is.null(data) && !identical(data, object$data)) {
-        rlang::abort(paste(
-          "Can't plot two different data sets. A different set of data was passed to `gf_model()`",
-          "compared to the previous function in the chain."
-        ))
+  # TODO: no test case for allowing the aesthetic
+  # only allow mapped aesthetics that are predictors in the model
+  for (arg_name in names(info$layer$args)) {
+    if (is_formula(info$layer$args[[arg_name]])) {
+      var_name <- sub("^~", "", quo_name(info$layer$args[[arg_name]]))
+      if (var_name %in% info$model$predictors == FALSE) {
+        info$layer$args[[arg_name]] <- NULL
       }
-      data <- object$data
-    }
-
-    # the rest of if-block has two main functions:
-    # 1. determine if we are adding to a single-variable plot (like a histogram), and if so, return
-    #    the appropriate vline/hline
-    # 2. otherwise, if we don't already know the formula, infer it using the chained plot's axes
-    y <- object$mapping[['y']]
-    x <- object$mapping[['x']]
-
-    # short-circuit for single-variable plots (incl. with facets)
-    if (is.null(y) || is.null(x)) {
-      return(gf_model_single_variable(object, gformula, data, ...))
-    }
-
-    # check for density plots
-    if (deparse(rlang::get_expr(y)) == "stat(density)" ||
-        deparse(rlang::get_expr(x)) == "stat(density)"
-    ) {
-      return(gf_model_single_variable(object, gformula, data, ..., .density = TRUE))
-    }
-
-    # we don't know the formula but have both axes, the formula is y ~ x
-    if (is.null(gformula)) {
-      gformula <- stats::as.formula(
-        paste(rlang::as_name(y), "~", rlang::as_name(x)),
-        rlang::quo_get_env(y)
-      )
     }
   }
 
-  # TODO: for now, data is required with a formula, in the future allow data$var syntax
-  if (inherits(gformula, 'formula') && inherits(data, 'data.frame')) {
-    if (is.null(model)) {
-      # construct the model so that we can guess what kind of plot we need
-      model <- stats::lm(gformula, data = data)
-    }
-  } else {
-    rlang::abort("You must supply a `model` or a `gformula` and `data`.")
+  # find grouping variable
+  non_axis_predictor <- setdiff(info$model$predictors, info$plot$axes)
+  if (length(non_axis_predictor) == 1) {
+    # if it is a predictor *and* an aesthetic, it must be the grouping variable
+    info$layer$args$group <- name_to_frm(non_axis_predictor)
+  } else if (length(non_axis_predictor) > 1) {
+    abort("Not sure how to plot a model with multiple variables mapped to aesthetic properties.")
   }
 
-  # phase 3: plot the model
-  variables <- supernova::variables(model)
-  if (length(variables$predictor) == 0) {
-    add_empty_model(object, model, ...)
-  } else if (is.factor(data[[variables$predictor]]) || is.factor(data[[variables$predictor]])) {
-    # TODO: documentation -- group model does not support formulae with facets
-    add_group_model(object, gformula, data, width = .3, ...)
-  } else {
-    ggformula::gf_lm(object, gformula, data, ...)
-  }
-}
-
-#' Plot the empty model
-#'
-#' The empty model is extracted by pulling out [`b0()`] from the passed model. This expression is
-#' passed to [`gf_hline()`] to plot the empty model. If this plot is not being chained to a prior
-#' plot, a blank point plot is created to make sure the y-axis is informative and has the range of
-#' the original data.
-#'
-#' @param object A gg object to chain to, optionally.
-#' @param model An empty model fit by [`lm()`].
-#' @param ... Additional arguments to pass to [`gf_hline()`].
-#'
-#' @return A gg object.
-#' @keywords internal
-add_empty_model <- function(object, model, ...) {
-  if (is.null(object)) {
-    # build a blank plot so that the y-axis is informative
-    outcome <- supernova::variables(model)$outcome
-    frm <- stats::as.formula(paste(outcome, "~ 1"))
-    object <- ggformula::gf_blank(gformula = frm, data = model$model)
-  }
-
-  ggformula::gf_hline(object, yintercept = ~b0(model), ...)
-}
-
-#' Plot the group model
-#'
-#' The group model is represented by mean lines for each group in the model. The values for these
-#' lines are extracted using the formula with the passed data, and then plotted via
-#' [`gf_segment()`]. If this plot is not being chained to a prior plot, a blank point plot is
-#' created to make sure the axes are informative and have the range of the original data.
-#'
-#' @param object A gg object to chain to, optionally.
-#' @param gformula A formula of the shape `y ~ x`.
-#' @param data The data the formula refers to.
-#' @param width The width of the mean lines to be plotted.
-#' @param ... Additional arguments passed to [`gf_segment()`]
-#'
-#' @return A gg object.
-#' @keywords internal
-add_group_model <- function(object, gformula, data, width = .3, ...) {
-  if (is.null(object)) {
-    # build a blank plot so that the axes are informative
-    object <- ggformula::gf_blank(gformula = gformula, data = data)
-  }
-
-  five_num <- mosaic::favstats(gformula, data = data)
-  five_num$x_min <- seq_along(five_num$mean) - width
-  five_num$x_max <- seq_along(five_num$mean) + width
-  gf_segment(object, mean + mean ~ x_min + x_max, data = five_num, ...)
-}
-
-gf_model_single_variable <- function(object, gformula, data, ..., .density = FALSE) {
-  y <- object$mapping[['y']]
-  x <- object$mapping[['x']]
-
-  outcome <- if (.density) {
-    if (deparse(rlang::get_expr(y)) == "stat(density)") x else y
-  } else {
-    if (is.null(y)) x else y
-  }
-
-  if (is.null(gformula)) {
-    # if there is only one variable and no facets, it's the empty model
-    # otherwise we can pull the other variable from the facets
-    if (inherits(object$facet, "FacetNull")) {
-      gformula <- stats::as.formula(
-        paste(rlang::as_name(outcome), "~ NULL"),
-        rlang::quo_get_env(outcome)
-      )
-    }
-    else if (length(object$facet$vars()) > 1) {
-      rlang::abort("Cannot determine what model to plot. Please be more specific.")
+  # determine what to plot with ------------
+  if (
+    length(info$model$predictors) == 0 ||
+      (length(info$model$predictors) == 1 && info$model$predictors %in% info$plot$axes == FALSE)
+  ) {
+    if (info$plot$flipped) {
+      info$layer$plotter <- ggformula::gf_vline
+      info$layer$geom <- ggplot2::GeomVline
+      info$layer$args$xintercept <- name_to_frm(info$model$outcome)
     } else {
-      possible <- c(object$facet$params$facets, object$facet$params$rows, object$facet$params$cols)
-      explanatory <- purrr::reduce(possible, c)
-      gformula <- stats::as.formula(
-        paste(rlang::as_name(outcome), "~", rlang::as_name(explanatory)),
-        rlang::quo_get_env(outcome)
-      )
+      info$layer$plotter <- ggformula::gf_hline
+      info$layer$geom <- ggplot2::GeomHline
+      info$layer$args$yintercept <- name_to_frm(info$model$outcome)
+    }
+  } else {
+    non_outcome_axis_data <- object$data[[info$plot$non_outcome_axis]]
+    if (is.numeric(non_outcome_axis_data)) {
+      info$layer$geom <- ggplot2::GeomLine
+      info$layer$plotter <- ggformula::gf_line
+    } else {
+      info$layer$plotter <- ggformula::gf_errorbar
+      info$layer$geom <- ggplot2::GeomErrorbar
+      info$layer$args$size <- if_not_null(info$layer$args$size, 2)
+      info$layer$args$width <- if_not_null(info$layer$args$width, .2)
+
+      if (info$plot$flipped) {
+        info$layer$args$xmin <- name_to_frm(info$model$outcome)
+        info$layer$args$xmax <- info$layer$args$xmin
+      } else {
+        info$layer$args$ymin <- name_to_frm(info$model$outcome)
+        info$layer$args$ymax <- info$layer$args$ymin
+      }
     }
   }
 
-  # we should have the formula by now: time to use it and return
-  stats <- mosaic::favstats(gformula, data = data)
-  if (identical(outcome, x)) {
-    return(ggformula::gf_vline(object, xintercept = ~mean, data = stats, ...))
-  } else {
-    return(ggformula::gf_hline(object, yintercept = ~mean, data = stats, ...))
+  # TODO: no test case
+  # re-map dynamic aesthetics from previous layers if they are predictors in the model
+  remap <- info$plot$variables[info$plot$variables %in% info$model$predictors]
+  remap <- remap[names(remap) %in% info$layer$geom$aesthetics()]
+  remap <- remap[names(remap) %in% names(info$layer$args) == FALSE]
+  info$layer$args[names(remap)] <- purrr::map(remap, name_to_frm)
+  if (
+    is.null(info$layer$args$color) &&
+      "color" %in% names(info$plot$aesthetics) == FALSE &&
+      "fill" %in% names(info$plot$aesthetics)
+  ) {
+    info$layer$args$color <- name_to_frm(info$plot$variables[["fill"]])
   }
+
+  # build data grid ----------------
+  params <- list()
+  for (term in c(info$model$predictors, info$plot$aesthetics)) {
+    term_data <- object$data[[term]]
+    if (term == info$model$outcome) {
+      abort("How did you use the outcome as a predictor?")
+    } else if (!is.numeric(term_data)) {
+      # discrete term
+      if (is.logical(term_data)) {
+        params[[term]] <- c(TRUE, FALSE)
+      } else {
+        params[[term]] <- levels(factor(term_data))
+      }
+    } else if (term %in% info$plot$axes) {
+      # continuous on a continuous axis
+      rng <- range(term_data)
+      len <- max(nrow(object$data), 80L)
+      params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
+    } else {
+      # continuous on an aesthetic
+      spread <- stats::sd(term_data, na.rm = TRUE)
+      middle <- mean(term_data, na.rm = TRUE)
+      params[[term]] <- c(middle - spread, middle, middle + spread)
+    }
+  }
+
+  # predict y values using the grid
+  grid <- expand.grid(if (length(params)) params else list(dummy = 1))
+  grid[info$model$outcome] <- stats::predict(info$model$fit, newdata = grid)
+  info$layer$args$data <- grid
+
+  return(do.call(info$layer$plotter, info$layer$args))
 }
 
+
+fortify_layer <- function(object, ...) {
+  args <- list2(...)
+  args$object <- object
+
+  # standardize user-defined aesthetics
+  if (!is.null(info$layer$args$color)) {
+    info$layer$args$colour <- info$layer$args$color
+    info$layer$args$color <- NULL
+  }
+
+  list(args = args)
+}
+
+fortify_model <- function(object, model) {
+  formula <- stats::formula(model)
+  data <- if (inherits(model, "lm")) model$model else object$data
+  fit <- if (inherits(model, "lm")) model else stats::lm(formula, data = data)
+  terms <- sort(names(fit$model))
+  predictors <- sort(setdiff(terms, deparse(f_lhs(formula))))
+  outcome <- setdiff(terms, predictors)
+  list(
+    formula = formula, data = data, fit = fit,
+    terms = terms, predictors = predictors, outcome = outcome
+  )
+}
+
+fortify_plot <- function(object, fortified_model) {
+  mapping <- object$mapping
+  aesthetics <- sort(setdiff(names(mapping), c("x", "y")))
+  facets <- object$facet$vars()
+  variables <- sort(c(purrr::map_chr(mapping, quo_name), facet = facets))
+  axes <- variables[names(variables) %in% aesthetics == FALSE & variables %in% facets == FALSE]
+  outcome_axis <- axes[axes %in% fortified_model$outcome]
+  non_outcome_axis <- axes[axes %in% outcome_axis == FALSE]
+  flipped <- names(outcome_axis) == "x"
+  list(
+    mapping = mapping, variables = variables, aesthetics = variables[aesthetics],
+    facets = facets, axes = axes, outcome_axis = outcome_axis, non_outcome_axis = non_outcome_axis,
+    flipped = flipped, env = object$plot_env
+  )
+}

@@ -1,0 +1,31 @@
+// Copy these keybindings into the VSCode keybindings.json to use them
+[
+    {
+        "key": "alt+-",
+        "command": "type",
+        "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
+        "args": {"text": " <- "}
+      },
+      {
+        "key": "cmd+shift+m",
+        "command": "type",
+        "when": "editorLangId == r || editorLangId == rmd && editorTextFocus",
+        "args": {"text": " %>%\n  "}
+      },
+      {
+        "key": "shift+cmd+b",
+        "command": "r.build"
+      },
+      {
+        "key": "shift+cmd+d",
+        "command": "r.document"
+      },
+      {
+        "key": "shift+cmd+t",
+        "command": "r.test"
+      },
+      {
+        "key": "shift+cmd+e",
+        "command": "r.check"
+      }
+]

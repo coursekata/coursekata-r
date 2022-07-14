@@ -35,7 +35,7 @@ coursekata_attachments <- function(startup = FALSE) {
   info <- coursekata_packages()
   version <- ifelse(is.na(info$version), "", info$version)
   pkgs <- theme$pkg(paste(
-    ifelse(info$attached, theme$good(cli::symbol$tick), theme$bad('x')),
+    ifelse(info$attached, theme$good(cli::symbol$tick), theme$bad("x")),
     theme$text(format(info$package)),
     cli::ansi_align(version, max(cli::ansi_nchar(version)))
   ))

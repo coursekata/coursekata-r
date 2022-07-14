@@ -11,7 +11,7 @@
 #'
 #' @examples
 #' coursekata_repos()
-coursekata_repos <- function(repos = getOption('repos')) {
-  if (is.na(repos['CRAN'])) repos['CRAN'] <- "https://cran.rstudio.com"
-  c(repos, 'https://fivethirtyeightdata.github.io/drat/')
+coursekata_repos <- function(repos = getOption("repos")) {
+  if (is.na(repos["CRAN"])) repos["CRAN"] <- "https://cran.rstudio.com"
+  c(repos, "https://fivethirtyeightdata.github.io/drat/")
 }
