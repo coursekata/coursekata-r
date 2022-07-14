@@ -2,7 +2,7 @@
 % Please edit documentation in R/gf_model_old.R
 \name{gf_model_old}
 \alias{gf_model_old}
-\title{Old version of gf_model}
+\title{Old version of \code{\link[=gf_model]{gf_model()}}}
 \usage{
 gf_model_old(
   object = NULL,

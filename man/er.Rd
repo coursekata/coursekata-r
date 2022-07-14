@@ -34,7 +34,7 @@ to after}
 after}
 \item{\code{change_total}}{The sum of the subject's \code{change_*} scores}
 \item{\code{provider_male}}{Was the health care provider male?}
-\item{\code{provider}}{The health care provider's status: either an \strong{Advanced Practicioner},
+\item{\code{provider}}{The health care provider's status: either an \strong{Advanced Practitioner},
 \strong{Resident} physician, or \strong{Attending} physician}
 \item{\code{heart_rate}}{The subject's heart rate at baseline (T0)}
 \item{\code{resp_rate}}{The subject's respiratory rate at baseline (T0)}

@@ -1,4 +1,4 @@
-#' Old version of gf_model
+#' Old version of [`gf_model()`]
 #'
 #' When teaching about regression it can be useful to visualize the data as a point plot with the
 #' outcome on the y-axis and the explanatory variable on the x-axis. For regression models, this is
