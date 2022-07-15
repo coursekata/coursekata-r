@@ -98,20 +98,6 @@
 #' }
 "er"
 
-#' Simulated housing data
-#'
-#' These data are simulated to be similar to the Ames housing data, but with far fewer variables
-#' and much smaller effect sizes.
-#'
-#' @format A data frame with 32 observations on the following 4 variables:
-#' \describe{
-#'   \item{\code{PriceK}}{Price the home sold for (in thousands of dollars)}
-#'   \item{\code{Neighborhood}}{The neighborhood the home is in (Eastside, Downtown)}
-#'   \item{\code{HomeSizeK}}{The size of the home (in thousands of square feet)}
-#'   \item{\code{HasFireplace}}{Whether the home has a fireplace (0 = no, 1 = yes)}
-#' }
-"Smallville"
-
 
 #' Data from introductory statistics students at a university.
 #'
@@ -234,6 +220,21 @@
 #'   \item{\code{Check}}{The amount of money the table paid for their meal.}
 #' }
 "TipExperiment"
+
+
+#' Simulated housing data
+#'
+#' These data are simulated to be similar to the Ames housing data, but with far fewer variables
+#' and much smaller effect sizes.
+#'
+#' @format A data frame with 32 observations on the following 4 variables:
+#' \describe{
+#'   \item{\code{PriceK}}{Price the home sold for (in thousands of dollars)}
+#'   \item{\code{Neighborhood}}{The neighborhood the home is in (Eastside, Downtown)}
+#'   \item{\code{HomeSizeK}}{The size of the home (in thousands of square feet)}
+#'   \item{\code{HasFireplace}}{Whether the home has a fireplace (0 = no, 1 = yes)}
+#' }
+"Smallville"
 
 
 #' Students at a university were asked to enter a random number between 1-20 into a survey.
