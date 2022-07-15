@@ -2,11 +2,11 @@
 % Please edit documentation in R/estimate_extraction.R
 \name{estimate_extraction}
 \alias{estimate_extraction}
-\alias{b0}
-\alias{b1}
 \alias{b}
 \alias{f}
 \alias{pre}
+\alias{b0}
+\alias{b1}
 \alias{sse}
 \alias{ssm}
 \alias{ssr}
@@ -17,15 +17,15 @@
 \alias{SSR}
 \title{Extract estimates/statistics from a model}
 \usage{
-b0(object, data = NULL)
-
-b1(object, data = NULL)
-
 b(object, data = NULL, all = FALSE, predictor = character())
 
 f(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 pre(object, data = NULL, all = FALSE, predictor = character(), type = 3)
+
+b0(object, data = NULL)
+
+b1(object, data = NULL)
 
 sse(object, data = NULL)
 
@@ -54,7 +54,9 @@ constituent terms are the term names prefixed by the function name (e.g. "f_a:b"
 \emph{F}-value of the \code{a:b} interaction term).}
 
 \item{predictor}{Filter the output down to just the statistics for these terms (e.g. "hp" to
-just get the statistics for that term in the model).}
+just get the statistics for that term in the model). This argument is flexible: you can pass
+a character vector of terms (\code{c("hp", "hp:cyl")}), a one-sided formula (\code{~hp}), or a list of
+formulae (\code{c(~hp, ~hp:cyl)}).}
 
 \item{type}{The type of sums of squares to calculate (see \code{\link[supernova:generate_models]{generate_models()}}). Defaults to the
 widely used Type \code{III} SS.}
