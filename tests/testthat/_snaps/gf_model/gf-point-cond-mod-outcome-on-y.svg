@@ -111,12 +111,12 @@
 <circle cx='207.12' cy='426.40' r='2.49' style='stroke-width: 0.71; stroke: #009D9A; stroke-opacity: 0.60; fill: #009D9A; fill-opacity: 0.60;' />
 <circle cx='207.12' cy='236.46' r='2.49' style='stroke-width: 0.71; stroke: #009D9A; stroke-opacity: 0.60; fill: #009D9A; fill-opacity: 0.60;' />
 <circle cx='207.12' cy='426.40' r='2.49' style='stroke-width: 0.71; stroke: #009D9A; stroke-opacity: 0.60; fill: #009D9A; fill-opacity: 0.60;' />
-<polyline points='179.29,273.52 234.96,273.52 ' style='stroke-width: 4.27; stroke: #A52A2A; stroke-linecap: butt;' />
-<polyline points='207.12,273.52 207.12,273.52 ' style='stroke-width: 4.27; stroke: #A52A2A; stroke-linecap: butt;' />
-<polyline points='179.29,273.52 234.96,273.52 ' style='stroke-width: 4.27; stroke: #A52A2A; stroke-linecap: butt;' />
-<polyline points='457.61,353.52 513.27,353.52 ' style='stroke-width: 4.27; stroke: #A52A2A; stroke-linecap: butt;' />
-<polyline points='485.44,353.52 485.44,353.52 ' style='stroke-width: 4.27; stroke: #A52A2A; stroke-linecap: butt;' />
-<polyline points='457.61,353.52 513.27,353.52 ' style='stroke-width: 4.27; stroke: #A52A2A; stroke-linecap: butt;' />
+<polyline points='151.46,273.52 262.79,273.52 ' style='stroke-width: 2.13; stroke: #A52A2A; stroke-linecap: butt;' />
+<polyline points='207.12,273.52 207.12,273.52 ' style='stroke-width: 2.13; stroke: #A52A2A; stroke-linecap: butt;' />
+<polyline points='151.46,273.52 262.79,273.52 ' style='stroke-width: 2.13; stroke: #A52A2A; stroke-linecap: butt;' />
+<polyline points='429.78,353.52 541.11,353.52 ' style='stroke-width: 2.13; stroke: #A52A2A; stroke-linecap: butt;' />
+<polyline points='485.44,353.52 485.44,353.52 ' style='stroke-width: 2.13; stroke: #A52A2A; stroke-linecap: butt;' />
+<polyline points='429.78,353.52 541.11,353.52 ' style='stroke-width: 2.13; stroke: #A52A2A; stroke-linecap: butt;' />
 <rect x='40.13' y='22.78' width='612.30' height='522.33' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
