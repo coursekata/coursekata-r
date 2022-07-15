@@ -35,20 +35,6 @@
 
 #' @rdname estimate_extraction
 #' @export
-b0 <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  fit$coefficients[[1]]
-}
-
-#' @rdname estimate_extraction
-#' @export
-b1 <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  fit$coefficients[[2]]
-}
-
-#' @rdname estimate_extraction
-#' @export
 b <- function(object, data = NULL, all = FALSE, predictor = character()) {
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor)
@@ -98,24 +84,6 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
 
-#' @rdname estimate_extraction
-#' @export
-sse <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  sum(fit$residuals^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssm <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  sum((fit$fitted.values - mean(fit$model[[1]]))^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssr <- ssm
-
 convert_predictor <- function(predictor) {
   purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))) %>%
     purrr::flatten_chr()
@@ -153,6 +121,38 @@ extract_stat <- function(fit, type, stat, predictor = character(0)) {
   }
 }
 
+
+#' @rdname estimate_extraction
+#' @export
+b0 <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  fit$coefficients[[1]]
+}
+
+#' @rdname estimate_extraction
+#' @export
+b1 <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  fit$coefficients[[2]]
+}
+
+#' @rdname estimate_extraction
+#' @export
+sse <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  sum(fit$residuals^2)
+}
+
+#' @rdname estimate_extraction
+#' @export
+ssm <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  sum((fit$fitted.values - mean(fit$model[[1]]))^2)
+}
+
+#' @rdname estimate_extraction
+#' @export
+ssr <- ssm
 
 # nolint start
 
