@@ -66,10 +66,10 @@ test_that("they return a scalar if a single term is requested", {
   terms <- c("hp")
   named <- function(x) paste(x, terms, sep = "_")
 
-  expect_equal(b(mult_model, term = terms), b(mult_model, all = TRUE)[[named("b")]])
-  expect_equal(f(mult_model, term = terms), f(mult_model, all = TRUE)[[named("f")]])
-  expect_equal(pre(mult_model, term = terms), pre(mult_model, all = TRUE)[[named("pre")]])
-  expect_equal(p(mult_model, term = terms), p(mult_model, all = TRUE)[[named("p")]])
+  expect_equal(b(mult_model, predictor = terms), b(mult_model, all = TRUE)[[named("b")]])
+  expect_equal(f(mult_model, predictor = terms), f(mult_model, all = TRUE)[[named("f")]])
+  expect_equal(pre(mult_model, predictor = terms), pre(mult_model, all = TRUE)[[named("pre")]])
+  expect_equal(p(mult_model, predictor = terms), p(mult_model, all = TRUE)[[named("p")]])
 })
 
 test_that("they return a named list of the requested terms if 2+ terms are requested", {
@@ -77,8 +77,8 @@ test_that("they return a named list of the requested terms if 2+ terms are reque
   terms <- c("hp", "hp:cyl")
   named <- function(x) paste(x, terms, sep = "_")
 
-  expect_equal(b(mult_model, term = terms), b(mult_model, all = TRUE)[named("b")])
-  expect_equal(f(mult_model, term = terms), f(mult_model, all = TRUE)[named("f")])
-  expect_equal(pre(mult_model, term = terms), pre(mult_model, all = TRUE)[named("pre")])
-  expect_equal(p(mult_model, term = terms), p(mult_model, all = TRUE)[named("p")])
+  expect_equal(b(mult_model, predictor = terms), b(mult_model, all = TRUE)[named("b")])
+  expect_equal(f(mult_model, predictor = terms), f(mult_model, all = TRUE)[named("f")])
+  expect_equal(pre(mult_model, predictor = terms), pre(mult_model, all = TRUE)[named("pre")])
+  expect_equal(p(mult_model, predictor = terms), p(mult_model, all = TRUE)[named("p")])
 })

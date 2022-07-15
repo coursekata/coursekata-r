@@ -4,7 +4,7 @@
 \alias{extract_stat}
 \title{Extract a statistic from a supernova table and name the values}
 \usage{
-extract_stat(fit, type, stat, term = character(0))
+extract_stat(fit, type, stat, predictor = character(0))
 }
 \arguments{
 \item{fit}{A fitted linear model to pass to supernova.}
@@ -13,7 +13,7 @@ extract_stat(fit, type, stat, term = character(0))
 
 \item{stat}{The statistic from the supernova (as named in the \code{supernova(...)$tbl}).}
 
-\item{term}{Optionally specify which terms to return (instead of all of them).}
+\item{predictor}{Optionally specify which terms to return (instead of all of them).}
 }
 \description{
 Extract a statistic from a supernova table and name the values
