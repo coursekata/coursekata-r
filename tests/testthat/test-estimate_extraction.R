@@ -82,3 +82,15 @@ test_that("they return a named list of the requested terms if 2+ terms are reque
   expect_equal(pre(mult_model, predictor = terms), pre(mult_model, all = TRUE)[named("pre")])
   expect_equal(p(mult_model, predictor = terms), p(mult_model, all = TRUE)[named("p")])
 })
+
+test_that("term filtering works with formulae", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  terms <- c("hp", "hp:cyl")
+  frms <- purrr::map(terms, asOneSidedFormula)
+  named <- function(x) paste(x, terms, sep = "_")
+
+  expect_equal(b(mult_model, predictor = frms), b(mult_model, all = TRUE)[named("b")])
+  expect_equal(f(mult_model, predictor = frms), f(mult_model, all = TRUE)[named("f")])
+  expect_equal(pre(mult_model, predictor = frms), pre(mult_model, all = TRUE)[named("pre")])
+  expect_equal(p(mult_model, predictor = frms), p(mult_model, all = TRUE)[named("p")])
+})
