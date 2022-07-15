@@ -17,38 +17,36 @@
 \alias{SSR}
 \title{Extract estimates/statistics from a model}
 \usage{
-b0(object, data = NULL, ...)
+b0(object, data = NULL)
 
-b1(object, data = NULL, ...)
+b1(object, data = NULL)
 
-b(object, data = NULL, all = FALSE, predictor = character(), ...)
+b(object, data = NULL, all = FALSE, predictor = character())
 
-f(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...)
+f(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
-pre(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...)
+pre(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
-sse(object, data = NULL, ...)
+sse(object, data = NULL)
 
-ssm(object, data = NULL, ...)
+ssm(object, data = NULL)
 
-ssr(object, data = NULL, ...)
+ssr(object, data = NULL)
 
-fVal(object, data = NULL, ...)
+fVal(object, data = NULL)
 
-PRE(object, data = NULL, ...)
+PRE(object, data = NULL)
 
-SSE(object, data = NULL, ...)
+SSE(object, data = NULL)
 
-SSM(object, data = NULL, ...)
+SSM(object, data = NULL)
 
-SSR(object, data = NULL, ...)
+SSR(object, data = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{lm}} object, or \code{\link{formula}}.}
 
 \item{data}{If \code{object} is a formula, the data to fit the formula to as a \code{\link{data.frame}}.}
-
-\item{...}{Additional arguments passed through to \code{\link{lm}}.}
 
 \item{all}{If \code{TRUE}, return a named list of all related terms (e.g. all \emph{F}-values).The name
 for the full model value is the name of the function (e.g. "f"), and the names for the
