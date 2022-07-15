@@ -21,11 +21,11 @@ b0(object, data = NULL, ...)
 
 b1(object, data = NULL, ...)
 
-b(object, data = NULL, all = FALSE, term = character(), ...)
+b(object, data = NULL, all = FALSE, predictor = character(), ...)
 
-f(object, data = NULL, all = FALSE, term = character(), type = 3, ...)
+f(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...)
 
-pre(object, data = NULL, all = FALSE, term = character(), type = 3, ...)
+pre(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...)
 
 sse(object, data = NULL, ...)
 
@@ -55,8 +55,8 @@ for the full model value is the name of the function (e.g. "f"), and the names f
 constituent terms are the term names prefixed by the function name (e.g. "f_a:b" for the
 \emph{F}-value of the \code{a:b} interaction term).}
 
-\item{term}{Filter the output down to just the statistics for these terms (e.g. "hp" to just
-get the statistics for that term in the model).}
+\item{predictor}{Filter the output down to just the statistics for these terms (e.g. "hp" to
+just get the statistics for that term in the model).}
 
 \item{type}{The type of sums of squares to calculate (see \code{\link[supernova:generate_models]{generate_models()}}). Defaults to the
 widely used Type \code{III} SS.}
@@ -75,11 +75,13 @@ empty model.}
 \itemize{
 \item \strong{\code{b0}}: The intercept from the full model.
 \item \strong{\code{b1}}: The slope b1 from the full model.
-\item \strong{\code{fVal}}: The F value from the full model.
-\item \strong{\code{PRE}}: The Proportional Reduction in Error for the full model.
-\item \strong{\code{SSE}}: The SS Error (SS Residual) from the model.
-\item \strong{\code{SSM}}: The SS Model (SS Regression) for the full model.
-\item \strong{\code{SSR}}: Alias for SSM.
+\item \strong{\code{b}}: The coefficients from the full model.
+\item \strong{\code{f}}: The F value from the full model.
+\item \strong{\code{pre}}: The Proportional Reduction in Error for the full model.
+\item \strong{\code{p}}: The \emph{p}-value from the full model.
+\item \strong{\code{sse}}: The SS Error (SS Residual) from the model.
+\item \strong{\code{ssm}}: The SS Model (SS Regression) for the full model.
+\item \strong{\code{ssr}}: Alias for SSM.
 }
 }
 \examples{
