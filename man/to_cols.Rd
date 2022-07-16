@@ -17,7 +17,7 @@ to_cols(strings, n_cols = 2, space_between = "       ")
 A string that prints to the terminal as columns.
 }
 \description{
-Split the string into \code{n} columns, then glue the columns together row-wise with
-\code{space_between}, then glue the rows together with new line characters.
+Split the string into \code{n} columns, then glue the columns together row-wise with \code{space_between},
+then glue the rows together with new line characters.
 }
 \keyword{internal}

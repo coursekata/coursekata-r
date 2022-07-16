@@ -4,7 +4,7 @@
 #' distribution. Useful when you want to do something like shade in the middle 95% of a plot. This
 #' is a greedy operation, meaning that if the cutoff point is between two whole numbers the
 #' specified region will suck up the extra space. For example, the requesting the upper 30% of the
-#' \code{[1 2 3 4]} will return \code{[FALSE FALSE TRUE TRUE]} because the 30% was greedy.
+#' `[1 2 3 4]` will return `[FALSE FALSE TRUE TRUE]` because the 30% was greedy.
 #'
 #' Note that `NA` values are ignored, i.e. they will always return `FALSE`.
 #'

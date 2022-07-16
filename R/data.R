@@ -38,79 +38,97 @@
 #' department. **PloS One, 14**(1), e0209232. <https://doi.org/10.1371/journal.pone.0209232>
 #'
 #' @format A data frame with 84 observations on the following 53 variables:
+#'   - **`id`**: Subject ID
+#'
 #' \describe{
-#'   \item{\code{id}}{Subject ID}
-#'   \item{\code{condition}}{Whether the subject saw a **Dog** or was in the **Control** group}
-#'   \item{\code{age}}{Subject's age in years}
-#'   \item{\code{gender}}{Subject's self-identified gender}
-#'   \item{\code{race}}{Subject's self-identified race}
-#'   \item{\code{veteran}}{Is the subject a veteran?}
-#'   \item{\code{disabled}}{Is the subject disabled?}
-#'   \item{\code{dog_name}}{The name of the therapy dog}
-#'   \item{\code{base_pain}}{Subject's self reported pain before the intervention (T0)}
-#'   \item{\code{base_depression}}{Subject's self reported depression before the intervention (T0)}
-#'   \item{\code{base_anxiety}}{Subject's self reported anxiety before the intervention (T0)}
-#'   \item{\code{base_total}}{The sum of the subject's \code{base_*} scores}
-#'   \item{\code{later_pain}}{Subject's self reported pain after the intervention (T1)}
-#'   \item{\code{later_depression}}{Subject's self reported depression after the intervention (T1)}
-#'   \item{\code{later_anxiety}}{Subject's self reported anxiety after the intervention (T1)}
-#'   \item{\code{later_total}}{The sum of the subject's \code{later_*} scores}
-#'   \item{\code{last_pain}}{Subject's self reported pain after the intervention (T2)}
-#'   \item{\code{last_depression}}{Subject's self reported depression after the intervention (T2)}
-#'   \item{\code{last_anxiety}}{Subject's self reported anxiety after the intervention (T2)}
-#'   \item{\code{last_total}}{The sum of the subject's \code{last_*} scores}
-#'   \item{\code{change_pain}}{The change in subject's pain from before the intervention to after}
-#'   \item{\code{change_depression}}{The change in subject's depression from before the intervention
+#'   \item{`id`}{Subject ID}
+#'   \item{`condition`}{Whether the subject saw a **Dog** or was in the **Control** group}
+#'   \item{`age`}{Subject's age in years}
+#'   \item{`gender`}{Subject's self-identified gender}
+#'   \item{`race`}{Subject's self-identified race}
+#'   \item{`veteran`}{Is the subject a veteran?}
+#'   \item{`disabled`}{Is the subject disabled?}
+#'   \item{`dog_name`}{The name of the therapy dog}
+#'   \item{`base_pain`}{Subject's self reported pain before the intervention (T0)}
+#'   \item{`base_depression`}{Subject's self reported depression before the intervention (T0)}
+#'   \item{`base_anxiety`}{Subject's self reported anxiety before the intervention (T0)}
+#'   \item{`base_total`}{The sum of the subject's `base_*` scores}
+#'   \item{`later_pain`}{Subject's self reported pain after the intervention (T1)}
+#'   \item{`later_depression`}{Subject's self reported depression after the intervention (T1)}
+#'   \item{`later_anxiety`}{Subject's self reported anxiety after the intervention (T1)}
+#'   \item{`later_total`}{The sum of the subject's `later_*` scores}
+#'   \item{`last_pain`}{Subject's self reported pain after the intervention (T2)}
+#'   \item{`last_depression`}{Subject's self reported depression after the intervention (T2)}
+#'   \item{`last_anxiety`}{Subject's self reported anxiety after the intervention (T2)}
+#'   \item{`last_total`}{The sum of the subject's `last_*` scores}
+#'   \item{`change_pain`}{The change in subject's pain from before the intervention to after}
+#'   \item{`change_depression`}{The change in subject's depression from before the intervention
 #'     to after}
-#'   \item{\code{change_anxiety}}{The change in subject's anxiety from before the intervention to
-#'     after}
-#'   \item{\code{change_total}}{The sum of the subject's \code{change_*} scores}
-#'   \item{\code{provider_male}}{Was the health care provider male?}
-#'   \item{\code{provider}}{The health care provider's status: either an **Advanced Practitioner**,
+#'   \item{`change_anxiety`}{The change in subject's anxiety from before the intervention to after}
+#'   \item{`change_total`}{The sum of the subject's `change_*` scores}
+#'   \item{`provider_male`}{Was the health care provider male?}
+#'   \item{`provider`}{The health care provider's status: either an **Advanced Practitioner**,
 #'     **Resident** physician, or **Attending** physician}
-#'   \item{\code{heart_rate}}{The subject's heart rate at baseline (T0)}
-#'   \item{\code{resp_rate}}{The subject's respiratory rate at baseline (T0)}
-#'   \item{\code{sp_o2}}{The subject's SpO2 at baseline (T0)}
-#'   \item{\code{bp_syst}}{The subject's systolic blood pressure at baseline (T0)}
-#'   \item{\code{bp_diast}}{The subject's diastolic blood pressure at baseline (T0)}
-#'   \item{\code{med_given}}{Was the subject given medication prior to the study? (T0)}
-#'   \item{\code{mh_none}}{None of the other medical history items were indicated}
-#'   \item{\code{mh_asthma}}{Medical history: asthma}
-#'   \item{\code{mh_smoker}}{Medical history: smoker}
-#'   \item{\code{mh_cad}}{Medical history: coronary artery disease}
-#'   \item{\code{mh_diabetes}}{Medical history: diabetes mellitus}
-#'   \item{\code{mh_hypertension}}{Medical history: hypertension}
-#'   \item{\code{mh_stroke}}{Medical history: prior stroke}
-#'   \item{\code{mh_chronic_kidney}}{Medical history: chronic kidney disease}
-#'   \item{\code{mh_copd}}{Medical history: chronic obstructive pulmonary disease}
-#'   \item{\code{mh_hyperlipidemia}}{Medical history: hyperlipidemia}
-#'   \item{\code{mh_hiv}}{Medical history: HIV}
-#'   \item{\code{mh_other}}{Medical history: other (write-in)}
-#'   \item{\code{ph_adhd}}{Psychiatric history: attention-deficit/hyperactivity disorder}
-#'   \item{\code{ph_anxiety}}{Psychiatric history: anxiety}
-#'   \item{\code{ph_bipolar}}{Psychiatric history: bipolar}
-#'   \item{\code{ph_borderline}}{Psychiatric history: borderline personality disorder}
-#'   \item{\code{ph_depression}}{Psychiatric history: depression}
-#'   \item{\code{ph_schizophrenia}}{Psychiatric history: schizophrenia}
-#'   \item{\code{ph_ptsd}}{Psychiatric history: PTSD}
-#'   \item{\code{ph_none}}{None of the other psychiatric history items were indicated}
-#'   \item{\code{ph_other}}{Psychiatric history: other (write-in)}
+#'   \item{`heart_rate`}{The subject's heart rate at baseline (T0)}
+#'   \item{`resp_rate`}{The subject's respiratory rate at baseline (T0)}
+#'   \item{`sp_o2`}{The subject's SpO2 at baseline (T0)}
+#'   \item{`bp_syst`}{The subject's systolic blood pressure at baseline (T0)}
+#'   \item{`bp_diast`}{The subject's diastolic blood pressure at baseline (T0)}
+#'   \item{`med_given`}{Was the subject given medication prior to the study? (T0)}
+#'   \item{`mh_none`}{None of the other medical history items were indicated}
+#'   \item{`mh_asthma`}{Medical history: asthma}
+#'   \item{`mh_smoker`}{Medical history: smoker}
+#'   \item{`mh_cad`}{Medical history: coronary artery disease}
+#'   \item{`mh_diabetes`}{Medical history: diabetes mellitus}
+#'   \item{`mh_hypertension`}{Medical history: hypertension}
+#'   \item{`mh_stroke`}{Medical history: prior stroke}
+#'   \item{`mh_chronic_kidney`}{Medical history: chronic kidney disease}
+#'   \item{`mh_copd`}{Medical history: chronic obstructive pulmonary disease}
+#'   \item{`mh_hyperlipidemia`}{Medical history: hyperlipidemia}
+#'   \item{`mh_hiv`}{Medical history: HIV}
+#'   \item{`mh_other`}{Medical history: other (write-in)}
+#'   \item{`ph_adhd`}{Psychiatric history: attention-deficit/hyperactivity disorder}
+#'   \item{`ph_anxiety`}{Psychiatric history: anxiety}
+#'   \item{`ph_bipolar`}{Psychiatric history: bipolar}
+#'   \item{`ph_borderline`}{Psychiatric history: borderline personality disorder}
+#'   \item{`ph_depression`}{Psychiatric history: depression}
+#'   \item{`ph_schizophrenia`}{Psychiatric history: schizophrenia}
+#'   \item{`ph_ptsd`}{Psychiatric history: PTSD}
+#'   \item{`ph_none`}{None of the other psychiatric history items were indicated}
+#'   \item{`ph_other`}{Psychiatric history: other (write-in)}
 #' }
 "er"
 
-#' Simulated housing data
+
+#' Forced Expiratory Volume (FEV) Data
 #'
-#' These data are simulated to be similar to the Ames housing data, but with far fewer variables
-#' and much smaller effect sizes.
+#' @description
+#' Data from: Fundamentals of Biostatistics, 5th Ed.
+#' Notes from: Kahn, M.
 #'
-#' @format A data frame with 32 observations on the following 4 variables:
+#' ## Abstract
+#' Sample of 654 youths, aged 3 to 19, in the area of East Boston during middle to late 1970's.
+#' Interest concerns the relationship between smoking and FEV. Since the study is necessarily
+#' observational, statistical adjustment via regression models clarifies the relationship.
+#'
+#' ## Pedagogical Notes:
+#' This is a versatile dataset that can be used throughout an introductory statistics course as
+#' well as an introductory modeling course. It includes many issues from statistical adjustment
+#' in observational studies, to subgroup analysis, quadratic regression and analysis of covariance.
+#'
+#' @references
+#' Kahn,M. (2003), "Data Sleuth," STATS, 37, 24. <http://jse.amstat.org/datasets/fev.txt>
+#' Rosner, B. (1999), Fundamentals of Biostatistics, 5th Ed., Pacific Grove, CA: Duxbury
+#'
+#' @format A data frame with 654 observations on the following 5 variables:
 #' \describe{
-#'   \item{\code{PriceK}}{Price the home sold for (in thousands of dollars)}
-#'   \item{\code{Neighborhood}}{The neighborhood the home is in (Eastside, Downtown)}
-#'   \item{\code{HomeSizeK}}{The size of the home (in thousands of square feet)}
-#'   \item{\code{HasFireplace}}{Whether the home has a fireplace (0 = no, 1 = yes)}
+#'   \item{`AGE`}{Age, in years}
+#'   \item{`FEV`}{Forced expiratory volume, in liters}
+#'   \item{`HEIGHT`}{Height, in inches}
+#'   \item{`SEX`}{`0` = Female, `1` = Male}
+#'   \item{`SMOKE`}{`0` = Non-smoker, `1` = Smoker}
 #' }
-"Smallville"
+"fevdata"
 
 
 #' Data from introductory statistics students at a university.
@@ -120,34 +138,31 @@
 #'
 #' @format A data frame with 157 observations on the following 16 variables:
 #' \describe{
-#'   \item{\code{Sex}}{Sex of participant.}
-#'   \item{\code{RaceEthnic}}{Racial or ethnic background.}
-#'   \item{\code{FamilyMembers}}{Members of immediate family (excluding self).}
-#'   \item{\code{SSLast}}{Last digit of social security number (\code{NA} if no SSN).}
-#'   \item{\code{Year}}{Year in school: \code{1}=First, \code{2}=Second, \code{3}=Third,
-#'     \code{4}=Fourth, \code{5}=Other}
-#'   \item{\code{Job}}{Current employment status: \code{1}=Not Working, \code{2}=Part-time Job,
-#'     \code{3}=Full-time Job}
-#'   \item{\code{MathAnxious}}{Agreement with the statement "In general I tend to feel very anxious
-#'     about mathematics": \code{1}=Strongly Disagree, \code{2}=Disagree, \code{3}=Neither Agree nor
-#'     Disagree, \code{4}=Agree, \code{5}=Strongly Agree}
-#'   \item{\code{Interest}}{Interest in statistics and the course: \code{1}=No Interest,
-#'     \code{2}=Somewhat Interested, \code{3}=Very Interested}
-#'   \item{\code{GradePredict}}{Numeric prediction for final grade in the course. The value is
-#'     converted from the student's letter grade prediction. \code{4.0}=A, \code{3.7}=A-,
-#'     \code{3.3}=B+, \code{3.0}=B, \code{2.7}=B-, \code{2.3}=C+, \code{2.0}=C, \code{1.7}=C-,
-#'     \code{1.3}=Below C-}
-#'   \item{\code{Thumb}}{Length in mm from tip of thumb to the crease between the thumb and palm.}
-#'   \item{\code{Index}}{Length in mm from tip of index finger to the crease between the index
+#'   \item{`Sex`}{Sex of participant.}
+#'   \item{`RaceEthnic`}{Racial or ethnic background.}
+#'   \item{`FamilyMembers`}{Members of immediate family (excluding self).}
+#'   \item{`SSLast`}{Last digit of social security number (`NA` if no SSN).}
+#'   \item{`Year`}{Year in school: `1`=First, `2`=Second, `3`=Third, `4`=Fourth, `5`=Other}
+#'   \item{`Job`}{Current employment status: `1`=Not Working, `2`=Part-time Job, `3`=Full-time Job}
+#'   \item{`MathAnxious`}{Agreement with the statement "In general I tend to feel very anxious
+#'     about mathematics": `1`=Strongly Disagree, `2`=Disagree, `3`=Neither Agree nor Disagree,
+#'    `4`=Agree, `5`=Strongly Agree}
+#'   \item{`Interest`}{Interest in statistics and the course: `1`=No Interest, `2`=Somewhat
+#'     Interested, `3`=Very Interested}
+#'   \item{`GradePredict`}{Numeric prediction for final grade in the course. The value is
+#'     converted from the student's letter grade prediction. `4.0`=A, `3.7`=A-, `3.3`=B+, `3.0`=B,
+#'     `2.7`=B-, `2.3`=C+, `2.0`=C, `1.7`=C-, `1.3`=Below C-}
+#'   \item{`Thumb`}{Length in mm from tip of thumb to the crease between the thumb and palm.}
+#'   \item{`Index`}{Length in mm from tip of index finger to the crease between the index
 #'     finger and palm.}
-#'   \item{\code{Middle}}{Length in mm from tip of middle finger to the crease between the middle
+#'   \item{`Middle`}{Length in mm from tip of middle finger to the crease between the middle
 #'     finger and palm.}
-#'   \item{\code{Ring}}{Length in mm from tip of ring finger to the crease between the middle finger
+#'   \item{`Ring`}{Length in mm from tip of ring finger to the crease between the middle finger
 #'     and palm.}
-#'   \item{\code{Pinkie}}{Length in mm from tip of pinkie finger to the crease between the pinkie
+#'   \item{`Pinkie`}{Length in mm from tip of pinkie finger to the crease between the pinkie
 #'     finger and palm.}
-#'   \item{\code{Height}}{Height in inches.}
-#'   \item{\code{Weight}}{Weight in pounds.}
+#'   \item{`Height`}{Height in inches.}
+#'   \item{`Weight`}{Weight in pounds.}
 #' }
 "Fingers"
 
@@ -163,34 +178,31 @@
 #'
 #' @format A data frame with 157 observations on the following 16 variables:
 #' \describe{
-#'   \item{\code{Sex}}{Sex of participant.}
-#'   \item{\code{RaceEthnic}}{Racial or ethnic background.}
-#'   \item{\code{FamilyMembers}}{Members of immediate family (excluding self).}
-#'   \item{\code{SSLast}}{Last digit of social security number (\code{NA} if no SSN).}
-#'   \item{\code{Year}}{Year in school: \code{1}=First, \code{2}=Second, \code{3}=Third,
-#'     \code{4}=Fourth, \code{5}=Other}
-#'   \item{\code{Job}}{Current employment status: \code{1}=Not Working, \code{2}=Part-time Job,
-#'     \code{3}=Full-time Job}
-#'   \item{\code{MathAnxious}}{Agreement with the statement "In general I tend to feel very anxious
-#'     about mathematics": \code{1}=Strongly Disagree, \code{2}=Disagree, \code{3}=Neither Agree nor
-#'     Disagree, \code{4}=Agree, \code{5}=Strongly Agree}
-#'   \item{\code{Interest}}{Interest in statistics and the course: \code{1}=No Interest,
-#'     \code{2}=Somewhat Interested, \code{3}=Very Interested}
-#'   \item{\code{GradePredict}}{Numeric prediction for final grade in the course. The value is
-#'     converted from the student's letter grade prediction. \code{4.0}=A, \code{3.7}=A-,
-#'     \code{3.3}=B+, \code{3.0}=B, \code{2.7}=B-, \code{2.3}=C+, \code{2.0}=C, \code{1.7}=C-,
-#'     \code{1.3}=Below C-}
-#'   \item{\code{Thumb}}{Length in mm from tip of thumb to the crease between the thumb and palm.}
-#'   \item{\code{Index}}{Length in mm from tip of index finger to the crease between the index
+#'   \item{`Sex`}{Sex of participant.}
+#'   \item{`RaceEthnic`}{Racial or ethnic background.}
+#'   \item{`FamilyMembers`}{Members of immediate family (excluding self).}
+#'   \item{`SSLast`}{Last digit of social security number (`NA` if no SSN).}
+#'   \item{`Year`}{Year in school: `1`=First, `2`=Second, `3`=Third, `4`=Fourth, `5`=Other}
+#'   \item{`Job`}{Current employment status: `1`=Not Working, `2`=Part-time Job, `3`=Full-time Job}
+#'   \item{`MathAnxious`}{Agreement with the statement "In general I tend to feel very anxious
+#'     about mathematics": `1`=Strongly Disagree, `2`=Disagree, `3`=Neither Agree nor Disagree,
+#'    `4`=Agree, `5`=Strongly Agree}
+#'   \item{`Interest`}{Interest in statistics and the course: `1`=No Interest, `2`=Somewhat
+#'     Interested, `3`=Very Interested}
+#'   \item{`GradePredict`}{Numeric prediction for final grade in the course. The value is
+#'     converted from the student's letter grade prediction. `4.0`=A, `3.7`=A-, `3.3`=B+, `3.0`=B,
+#'     `2.7`=B-, `2.3`=C+, `2.0`=C, `1.7`=C-, `1.3`=Below C-}
+#'   \item{`Thumb`}{Length in mm from tip of thumb to the crease between the thumb and palm.}
+#'   \item{`Index`}{Length in mm from tip of index finger to the crease between the index
 #'     finger and palm.}
-#'   \item{\code{Middle}}{Length in mm from tip of middle finger to the crease between the middle
+#'   \item{`Middle`}{Length in mm from tip of middle finger to the crease between the middle
 #'     finger and palm.}
-#'   \item{\code{Ring}}{Length in mm from tip of ring finger to the crease between the middle finger
+#'   \item{`Ring`}{Length in mm from tip of ring finger to the crease between the middle finger
 #'     and palm.}
-#'   \item{\code{Pinkie}}{Length in mm from tip of pinkie finger to the crease between the pinkie
+#'   \item{`Pinkie`}{Length in mm from tip of pinkie finger to the crease between the pinkie
 #'     finger and palm.}
-#'   \item{\code{Height}}{Height in inches.}
-#'   \item{\code{Weight}}{Weight in pounds.}
+#'   \item{`Height`}{Height in inches.}
+#'   \item{`Weight`}{Weight in pounds.}
 #' }
 "Fingers.messy"
 
@@ -202,8 +214,8 @@
 #' significant for C > A, and borderline for the others.
 #'
 #' \describe{
-#'   \item{\code{outcome}}{A hypothetical, numerical outcome of an intervention.}
-#'   \item{\code{teacher}}{Either "A", "B", or "C", associating the outcome to a teacher.}
+#'   \item{`outcome`}{A hypothetical, numerical outcome of an intervention.}
+#'   \item{`teacher`}{Either "A", "B", or "C", associating the outcome to a teacher.}
 #' }
 "class_data"
 
@@ -214,8 +226,8 @@
 #'
 #' @format A data frame with 44 observations on the following 2 variables.
 #' \describe{
-#'   \item{\code{TableID}}{A number assigned to each table.}
-#'   \item{\code{Tip}}{How much the tip was.}
+#'   \item{`TableID`}{A number assigned to each table.}
+#'   \item{`Tip`}{How much the tip was.}
 #' }
 "Tables"
 
@@ -228,12 +240,42 @@
 #'
 #' @format A data frame with 44 observations on the following 3 variables.
 #' \describe{
-#'   \item{\code{TableID}}{A number assigned to each table.}
-#'   \item{\code{Tip}}{How much the tip was.}
-#'   \item{\code{Condition}}{Which experimental condition the table was randomly assigned to.}
-#'   \item{\code{Check}}{The amount of money the table paid for their meal.}
+#'   \item{`TableID`}{A number assigned to each table.}
+#'   \item{`Tip`}{How much the tip was.}
+#'   \item{`Condition`}{Which experimental condition the table was randomly assigned to.}
+#'   \item{`Check`}{The amount of money the table paid for their meal.}
 #' }
 "TipExperiment"
+
+
+#' Simulated data for an experiment about smiley faces and tips
+#'
+#' These are simulated data that are similar to the `TipExperiment` data. Hypothetical tables
+#' were randomly assigned to receive checks that either included or did not include a drawing
+#' of a smiley face, either from a male or a female server.
+#'
+#' @format A data frame with 44 observations on the following 3 variables.
+#' \describe{
+#'   \item{`gender`}{Whether the server was **female** or **male**}
+#'   \item{`condition`}{Whether the check had a **smiley face** or not (**control**)}
+#'   \item{`tip_percent`}{The size of the tip as a percentage of the price of the meal}
+#' }
+"tip_exp"
+
+
+#' Simulated housing data
+#'
+#' These data are simulated to be similar to the Ames housing data, but with far fewer variables
+#' and much smaller effect sizes.
+#'
+#' @format A data frame with 32 observations on the following 4 variables:
+#' \describe{
+#'   \item{`PriceK`}{Price the home sold for (in thousands of dollars)}
+#'   \item{`Neighborhood`}{The neighborhood the home is in (Eastside, Downtown)}
+#'   \item{`HomeSizeK`}{The size of the home (in thousands of square feet)}
+#'   \item{`HasFireplace`}{Whether the home has a fireplace (0 = no, 1 = yes)}
+#' }
+"Smallville"
 
 
 #' Students at a university were asked to enter a random number between 1-20 into a survey.
@@ -243,6 +285,6 @@
 #'
 #' @format A data frame with 211 observations on the following 1 variable:
 #' \describe{
-#'   \item{\code{Any1_20}}{The random number between 1 and 20 that a student thought of.}
+#'   \item{`Any1_20`}{The random number between 1 and 20 that a student thought of.}
 #' }
 "Survey"

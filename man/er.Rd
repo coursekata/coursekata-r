@@ -6,6 +6,10 @@
 \title{Emergency room canine therapy}
 \format{
 A data frame with 84 observations on the following 53 variables:
+\itemize{
+\item \strong{\code{id}}: Subject ID
+}
+
 \describe{
 \item{\code{id}}{Subject ID}
 \item{\code{condition}}{Whether the subject saw a \strong{Dog} or was in the \strong{Control} group}
@@ -18,21 +22,20 @@ A data frame with 84 observations on the following 53 variables:
 \item{\code{base_pain}}{Subject's self reported pain before the intervention (T0)}
 \item{\code{base_depression}}{Subject's self reported depression before the intervention (T0)}
 \item{\code{base_anxiety}}{Subject's self reported anxiety before the intervention (T0)}
-\item{\code{base_total}}{The sum of the subject's \code{base_*} scores}
+\item{\code{base_total}}{The sum of the subject's \verb{base_*} scores}
 \item{\code{later_pain}}{Subject's self reported pain after the intervention (T1)}
 \item{\code{later_depression}}{Subject's self reported depression after the intervention (T1)}
 \item{\code{later_anxiety}}{Subject's self reported anxiety after the intervention (T1)}
-\item{\code{later_total}}{The sum of the subject's \code{later_*} scores}
+\item{\code{later_total}}{The sum of the subject's \verb{later_*} scores}
 \item{\code{last_pain}}{Subject's self reported pain after the intervention (T2)}
 \item{\code{last_depression}}{Subject's self reported depression after the intervention (T2)}
 \item{\code{last_anxiety}}{Subject's self reported anxiety after the intervention (T2)}
-\item{\code{last_total}}{The sum of the subject's \code{last_*} scores}
+\item{\code{last_total}}{The sum of the subject's \verb{last_*} scores}
 \item{\code{change_pain}}{The change in subject's pain from before the intervention to after}
 \item{\code{change_depression}}{The change in subject's depression from before the intervention
 to after}
-\item{\code{change_anxiety}}{The change in subject's anxiety from before the intervention to
-after}
-\item{\code{change_total}}{The sum of the subject's \code{change_*} scores}
+\item{\code{change_anxiety}}{The change in subject's anxiety from before the intervention to after}
+\item{\code{change_total}}{The sum of the subject's \verb{change_*} scores}
 \item{\code{provider_male}}{Was the health care provider male?}
 \item{\code{provider}}{The health care provider's status: either an \strong{Advanced Practitioner},
 \strong{Resident} physician, or \strong{Attending} physician}
