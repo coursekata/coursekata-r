@@ -30,7 +30,7 @@ Given a distribution, find which values lie in the upper, lower, or middle propo
 distribution. Useful when you want to do something like shade in the middle 95\% of a plot. This
 is a greedy operation, meaning that if the cutoff point is between two whole numbers the
 specified region will suck up the extra space. For example, the requesting the upper 30\% of the
-\code{[1 2 3 4]} will return \code{[FALSE FALSE TRUE TRUE]} because the 30\% was greedy.
+\verb{[1 2 3 4]} will return \verb{[FALSE FALSE TRUE TRUE]} because the 30\% was greedy.
 }
 \details{
 Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE}.

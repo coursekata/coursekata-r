@@ -8,8 +8,8 @@ coursekata_pkg_list <- c(
 #' @param check_remote_version Should the remote version number be checked? Requires internet, and
 #'   will take longer.
 #'
-#' @return A data frame with three variables: the name of the package \code{package}, the
-#'   \code{version}, and whether it is currently \code{attached}.
+#' @return A data frame with three variables: the name of the package `package`, the `version`, and
+#'   whether it is currently `attached`.
 #' @export
 #'
 #' @examples

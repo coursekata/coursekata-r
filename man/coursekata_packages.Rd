@@ -11,8 +11,8 @@ coursekata_packages(check_remote_version = FALSE)
 will take longer.}
 }
 \value{
-A data frame with three variables: the name of the package \code{package}, the
-\code{version}, and whether it is currently \code{attached}.
+A data frame with three variables: the name of the package \code{package}, the \code{version}, and
+whether it is currently \code{attached}.
 }
 \description{
 List all CourseKata course packages
