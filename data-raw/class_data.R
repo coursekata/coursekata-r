@@ -30,4 +30,4 @@ generate_data <- function(seed) {
 
 class_data <- generate_data(9900)
 class_data$outcome <- round(class_data$outcome, 0)
-usethis::use_data(class_data, overwrite = TRUE)
+usethis::use_data(class_data, overwrite = TRUE, compress = "xz")

@@ -248,6 +248,21 @@
 "TipExperiment"
 
 
+#' Simulated data for an experiment about smiley faces and tips
+#'
+#' These are simulated data that are similar to the `TipExperiment` data. Hypothetical tables
+#' were randomly assigned to receive checks that either included or did not include a drawing
+#' of a smiley face, either from a male or a female server.
+#'
+#' @format A data frame with 44 observations on the following 3 variables.
+#' \describe{
+#'   \item{`gender`}{Whether the server was **female** or **male**}
+#'   \item{`condition`}{Whether the check had a **smiley face** or not (**control**)}
+#'   \item{`tip_percent`}{The size of the tip as a percentage of the price of the meal}
+#' }
+"tip_exp"
+
+
 #' Simulated housing data
 #'
 #' These data are simulated to be similar to the Ames housing data, but with far fewer variables
