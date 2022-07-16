@@ -23,9 +23,10 @@
 #'   constituent terms are the term names prefixed by the function name (e.g. "f_a:b" for the
 #'   *F*-value of the `a:b` interaction term).
 #' @param predictor Filter the output down to just the statistics for these terms (e.g. "hp" to
-#'   just get the statistics for that term in the model).
+#'   just get the statistics for that term in the model). This argument is flexible: you can pass
+#'   a character vector of terms (`c("hp", "hp:cyl")`), a one-sided formula (`~hp`), or a list of
+#'   formulae (`c(~hp, ~hp:cyl)`).
 #' @inherit supernova::supernova
-#' @param ... Additional arguments passed through to [`lm`].
 #'
 #' @return The value of the estimate as a single number.
 #'
@@ -34,23 +35,10 @@
 
 #' @rdname estimate_extraction
 #' @export
-b0 <- function(object, data = NULL, ...) {
-  fit <- convert_lm(object, data, ...)
-  fit$coefficients[[1]]
-}
-
-#' @rdname estimate_extraction
-#' @export
-b1 <- function(object, data = NULL, ...) {
-  fit <- convert_lm(object, data, ...)
-  fit$coefficients[[2]]
-}
-
-#' @rdname estimate_extraction
-#' @export
-b <- function(object, data = NULL, all = FALSE, predictor = character(), ...) {
+b <- function(object, data = NULL, all = FALSE, predictor = character()) {
+  predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor)
-  fit <- convert_lm(object, data, ...)
+  fit <- convert_lm(object, data)
 
   # all is unused because there is no concept of an overall b
   # by default we just return all the available b's, and filter to requested terms
@@ -70,50 +58,39 @@ b <- function(object, data = NULL, all = FALSE, predictor = character(), ...) {
 
 #' @rdname estimate_extraction
 #' @export
-f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...) {
+f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
+  predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
-  fit <- convert_lm(object, data, ...)
+  fit <- convert_lm(object, data)
   stats <- extract_stat(fit, type, "F", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
 
 #' @rdname estimate_extraction
 #' @export
-pre <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...) {
+pre <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
+  predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
-  fit <- convert_lm(object, data, ...)
+  fit <- convert_lm(object, data)
   stats <- extract_stat(fit, type, "PRE", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
 
-p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3, ...) {
+p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
+  predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
-  fit <- convert_lm(object, data, ...)
+  fit <- convert_lm(object, data)
   stats <- extract_stat(fit, type, "p", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
 
-#' @rdname estimate_extraction
-#' @export
-sse <- function(object, data = NULL, ...) {
-  fit <- convert_lm(object, data, ...)
-  sum(fit$residuals^2)
+convert_predictor <- function(predictor) {
+  purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))) %>%
+    purrr::flatten_chr()
 }
 
-#' @rdname estimate_extraction
-#' @export
-ssm <- function(object, data = NULL, ...) {
-  fit <- convert_lm(object, data, ...)
-  sum((fit$fitted.values - mean(fit$model[[1]]))^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssr <- ssm
-
-
-convert_lm <- function(object, data, ...) {
-  return(if ("lm" %in% class(object)) object else lm(object, data, ...))
+convert_lm <- function(object, data) {
+  return(if ("lm" %in% class(object)) object else lm(object, data))
 }
 
 check_extract_args <- function(all, predictor, type = 3) {
@@ -145,36 +122,68 @@ extract_stat <- function(fit, type, stat, predictor = character(0)) {
 }
 
 
+#' @rdname estimate_extraction
+#' @export
+b0 <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  fit$coefficients[[1]]
+}
+
+#' @rdname estimate_extraction
+#' @export
+b1 <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  fit$coefficients[[2]]
+}
+
+#' @rdname estimate_extraction
+#' @export
+sse <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  sum(fit$residuals^2)
+}
+
+#' @rdname estimate_extraction
+#' @export
+ssm <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  sum((fit$fitted.values - mean(fit$model[[1]]))^2)
+}
+
+#' @rdname estimate_extraction
+#' @export
+ssr <- ssm
+
 # nolint start
 
 #' @rdname estimate_extraction
 #' @export
-fVal <- function(object, data = NULL, ...) {
-  f(object, data, ...)
+fVal <- function(object, data = NULL) {
+  f(object, data)
 }
 
 #' @rdname estimate_extraction
 #' @export
-PRE <- function(object, data = NULL, ...) {
-  pre(object, data, ...)
+PRE <- function(object, data = NULL) {
+  pre(object, data)
 }
 
 #' @rdname estimate_extraction
 #' @export
-SSE <- function(object, data = NULL, ...) {
-  sse(object, data, ...)
+SSE <- function(object, data = NULL) {
+  sse(object, data)
 }
 
 #' @rdname estimate_extraction
 #' @export
-SSM <- function(object, data = NULL, ...) {
-  sse(object, data, ...)
+SSM <- function(object, data = NULL) {
+  sse(object, data)
 }
 
 #' @rdname estimate_extraction
 #' @export
-SSR <- function(object, data = NULL, ...) {
-  ssr(object, data, ...)
+SSR <- function(object, data = NULL) {
+  ssr(object, data)
 }
 
 # nolint end

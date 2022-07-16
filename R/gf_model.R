@@ -149,8 +149,8 @@ gf_model <- function(object, model, ...) {
     } else {
       info$layer$plotter <- ggformula::gf_errorbar
       info$layer$geom <- ggplot2::GeomErrorbar
-      info$layer$args$size <- if_not_null(info$layer$args$size, 2)
-      info$layer$args$width <- if_not_null(info$layer$args$width, .2)
+      info$layer$args$size <- if_not_null(info$layer$args$size, 1)
+      info$layer$args$width <- if_not_null(info$layer$args$width, .4)
 
       if (info$plot$flipped) {
         info$layer$args$xmin <- name_to_frm(info$model$outcome)
