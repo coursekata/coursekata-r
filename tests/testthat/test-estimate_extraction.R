@@ -20,13 +20,12 @@ test_that("extracted values are correct", {
   expect_equal(sse(test_model), sum(resid(test_model)^2))
 })
 
-# test_that("values can be extracted from fitted lm or formula-and-data", {
-#   test_model <- lm(mpg ~ hp, data = mtcars)
-#   estimate_funs <- c(b0, b1, f, pre, p, sse, ssm, ssr)
-#   purrr::map(estimate_funs, function(f) {
-#     expect_identical(f(formula(test_model), test_model$model), f(test_model))
-#   })
-# })
+test_that("values can be extracted from fitted lm or formula-and-data", {
+  estimate_funs <- c(b0, b1, sse, ssm, ssr, b, f) # , pre, p)
+  # expected <- f(lm(mpg ~ hp, mtcars))
+  # actual <- f(mpg ~ hp, mtcars)
+  purrr::iwalk(estimate_funs, ~ expect_identical(.x(mpg ~ hp, mtcars), .x(lm(mpg ~ hp, mtcars))))
+})
 
 test_that("they can extract all related terms (not just full model terms)", {
   mult_model <- lm(mpg ~ hp * cyl, data = mtcars)

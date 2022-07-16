@@ -61,7 +61,7 @@ b <- function(object, data = NULL, all = FALSE, predictor = character()) {
 f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
-  fit <- convert_lm(object, data)
+  fit <- convert_lm(object, {{ data }})
   stats <- extract_stat(fit, type, "F", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -71,7 +71,7 @@ f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
 pre <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
-  fit <- convert_lm(object, data)
+  fit <- convert_lm(object, {{ data }})
   stats <- extract_stat(fit, type, "PRE", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -79,7 +79,7 @@ pre <- function(object, data = NULL, all = FALSE, predictor = character(), type 
 p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
-  fit <- convert_lm(object, data)
+  fit <- convert_lm(object, {{ data }})
   stats <- extract_stat(fit, type, "p", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -90,7 +90,16 @@ convert_predictor <- function(predictor) {
 }
 
 convert_lm <- function(object, data) {
-  return(if ("lm" %in% class(object)) object else lm(object, data))
+  if ("lm" %in% class(object) == FALSE) {
+    data_call <- rlang::enquo(data)
+    data_name <- rlang::quo_name(data_call)
+    call <- paste0("lm(formula = ", deparse(object), ", data = ", data_name, ")")
+    fit <- lm(object, data)
+    fit$call <- str2lang(call)
+  } else {
+    fit <- object
+  }
+  fit
 }
 
 check_extract_args <- function(all, predictor, type = 3) {
