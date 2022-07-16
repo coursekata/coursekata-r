@@ -100,6 +100,37 @@
 "er"
 
 
+#' Forced Expiratory Volume (FEV) Data
+#'
+#' @description
+#' Data from: Fundamentals of Biostatistics, 5th Ed.
+#' Notes from: Kahn, M.
+#'
+#' ## Abstract
+#' Sample of 654 youths, aged 3 to 19, in the area of East Boston during middle to late 1970's.
+#' Interest concerns the relationship between smoking and FEV. Since the study is necessarily
+#' observational, statistical adjustment via regression models clarifies the relationship.
+#'
+#' ## Pedagogical Notes:
+#' This is a versatile dataset that can be used throughout an introductory statistics course as
+#' well as an introductory modeling course. It includes many issues from statistical adjustment
+#' in observational studies, to subgroup analysis, quadratic regression and analysis of covariance.
+#'
+#' @references
+#' Kahn,M. (2003), "Data Sleuth," STATS, 37, 24. <http://jse.amstat.org/datasets/fev.txt>
+#' Rosner, B. (1999), Fundamentals of Biostatistics, 5th Ed., Pacific Grove, CA: Duxbury
+#'
+#' @format A data frame with 654 observations on the following 5 variables:
+#' \describe{
+#'   \item{`AGE`}{Age, in years}
+#'   \item{`FEV`}{Forced expiratory volume, in liters}
+#'   \item{`HEIGHT`}{Height, in inches}
+#'   \item{`SEX`}{`0` = Female, `1` = Male}
+#'   \item{`SMOKE`}{`0` = Non-smoker, `1` = Smoker}
+#' }
+"fevdata"
+
+
 #' Data from introductory statistics students at a university.
 #'
 #' Students at a university taking an introductory statistics course were asked to complete this
