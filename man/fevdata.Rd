@@ -18,7 +18,7 @@ A data frame with 654 observations on the following 5 variables:
 fevdata
 }
 \description{
-Data from: Fundamentals of Biostatistics, 5th Ed.
+Data from: Fundamentals of Biostatistics
 Notes from: Kahn, M.
 \subsection{Abstract}{
 
@@ -35,7 +35,7 @@ in observational studies, to subgroup analysis, quadratic regression and analysi
 }
 }
 \references{
-Kahn,M. (2003), "Data Sleuth," STATS, 37, 24. \url{http://jse.amstat.org/datasets/fev.txt}
-Rosner, B. (1999), Fundamentals of Biostatistics, 5th Ed., Pacific Grove, CA: Duxbury
+Kahn,M. (2003). Data Sleuth, STATS, 37, 24. \url{http://jse.amstat.org/datasets/fev.txt}
+Rosner, B. (1999). Fundamentals of Biostatistics, Pacific Grove, CA: Duxbury
 }
 \keyword{datasets}
