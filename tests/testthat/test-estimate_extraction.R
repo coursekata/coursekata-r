@@ -22,8 +22,6 @@ test_that("extracted values are correct", {
 
 test_that("values can be extracted from fitted lm or formula-and-data", {
   estimate_funs <- c(b0, b1, sse, ssm, ssr, b, f) # , pre, p)
-  # expected <- f(lm(mpg ~ hp, mtcars))
-  # actual <- f(mpg ~ hp, mtcars)
   purrr::iwalk(estimate_funs, ~ expect_identical(.x(mpg ~ hp, mtcars), .x(lm(mpg ~ hp, mtcars))))
 })
 
