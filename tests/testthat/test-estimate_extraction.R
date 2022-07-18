@@ -58,6 +58,14 @@ test_that("they can extract all related terms (not just full model terms)", {
   ))
 })
 
+test_that("it throws useful error messages when used with empty model inappropriately", {
+  empty_model <- lm(mpg ~ NULL, data = mtcars)
+  error_pattern <- ".*[Cc]an't.*empty model.*"
+  expect_error(f(empty_model), error_pattern)
+  expect_error(pre(empty_model), error_pattern)
+  expect_error(p(empty_model), error_pattern)
+})
+
 test_that("they return a scalar if a single term is requested", {
   mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
   terms <- c("hp")

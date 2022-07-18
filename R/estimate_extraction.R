@@ -62,6 +62,7 @@ f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
+  check_empty_model(fit)
   stats <- extract_stat(fit, type, "F", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -72,6 +73,7 @@ pre <- function(object, data = NULL, all = FALSE, predictor = character(), type 
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
+  check_empty_model(fit)
   stats <- extract_stat(fit, type, "PRE", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -80,6 +82,7 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
+  check_empty_model(fit)
   stats <- extract_stat(fit, type, "p", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -106,6 +109,13 @@ check_extract_args <- function(all, predictor, type = 3) {
   vctrs::vec_assert(all, logical(), 1)
   vctrs::vec_assert(predictor, character())
   vctrs::vec_assert(type, numeric(), 1)
+}
+
+check_empty_model <- function(fit) {
+  models <- supernova::generate_models(fit)
+  if (length(models) == 0) {
+    abort("Can't extract this estimate from an empty model (it doesn't exist).")
+  }
 }
 
 #' Extract a statistic from a supernova table and name the values
