@@ -8,7 +8,7 @@
 A data frame with 84 observations on the following 53 variables:
 \describe{
 \item{\code{id}}{Subject ID}
-\item{\code{condition}}{Whether the subject saw a \emph{Dog} or was in the \emph{Control} group}
+\item{\code{condition}}{Whether the subject saw a \code{Dog} or was in the \code{Control} group}
 \item{\code{age}}{Subject's age in years}
 \item{\code{gender}}{Subject's self-identified gender}
 \item{\code{race}}{Subject's self-identified race}
@@ -33,8 +33,8 @@ to after}
 \item{\code{change_anxiety}}{The change in subject's anxiety from before the intervention to after}
 \item{\code{change_total}}{The sum of the subject's \verb{change_*} scores}
 \item{\code{provider_male}}{Was the health care provider male?}
-\item{\code{provider}}{The health care provider's status: either an \emph{Advanced Practitioner},
-\emph{Resident} physician, or \emph{Attending} physician}
+\item{\code{provider}}{The health care provider's status: either an \verb{Advanced Practitioner},
+\code{Resident} physician, or \code{Attending} physician}
 \item{\code{heart_rate}}{The subject's heart rate at baseline (T0)}
 \item{\code{resp_rate}}{The subject's respiratory rate at baseline (T0)}
 \item{\code{sp_o2}}{The subject's SpO2 at baseline (T0)}

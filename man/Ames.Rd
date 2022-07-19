@@ -7,14 +7,14 @@
 \format{
 A data frame with 2930 observations on the following 80 variables:
 \describe{
-\item{\code{YearBuilt}}{Year home was built (YYYY).}
-\item{\code{YearSold}}{Year of home sale (YYYY). Note: all home sales in this dataset occurred
+\item{\code{YearBuilt}}{Year home was built (\code{YYYY}).}
+\item{\code{YearSold}}{Year of home sale (\code{YYYY}). Note: all home sales in this dataset occurred
 between 2006 - 2010. If a home was sold more than once between 2006 - 2010, only its latest
 sale is included in dataset.}
 \item{\code{Neighborhood}}{One of two neighborhoods in Ames county: \itemize{
-\item{College Creek (\emph{CollegeCreek}), a neighborhood located adjacent to Iowa State
+\item{College Creek (\code{CollegeCreek}), a neighborhood located adjacent to Iowa State
 University (the largest University in the state).}
-\item{Old Town (\emph{OldTown}), a nationally designated historic district in Ames. The old
+\item{Old Town (\code{OldTown}), a nationally designated historic district in Ames. The old
 neighborhood is located just north of the central business district.}
 }}
 \item{\code{HomeSizeR}}{Raw above-ground area of home, measured in square feet.}
@@ -23,45 +23,45 @@ neighborhood is located just north of the central business district.}
 \item{\code{LotSizeK}}{Total property lot size, in thousands of square feet.}
 \item{\code{Floors}}{Number of above-ground floors (1 story or 2 story).}
 \item{\code{BuildQuality}}{Assessor's rating of overall material and finish of the house. \itemize{
-\item{\emph{10}: Very Excellent}
-\item{\emph{9}: Excellent}
-\item{\emph{8}: Very Good}
-\item{\emph{7}: Good}
-\item{\emph{6}: Above Average}
-\item{\emph{5}: Average}
-\item{\emph{4}: Below Average}
-\item{\emph{3}: Fair}
-\item{\emph{2}: Poor}
-\item{\emph{1}: Very Poor}
+\item{\code{10}: Very Excellent}
+\item{\code{9}: Excellent}
+\item{\code{8}: Very Good}
+\item{\code{7}: Good}
+\item{\code{6}: Above Average}
+\item{\code{5}: Average}
+\item{\code{4}: Below Average}
+\item{\code{3}: Fair}
+\item{\code{2}: Poor}
+\item{\code{1}: Very Poor}
 }}
 \item{\code{Foundation}}{Type of foundation (ground material underneath the house). \itemize{
-\item{\emph{Brick&Tile}: Brick and Tile}
-\item{\emph{CinderBlock}: Cinder Blocks}
-\item{\emph{PouredConcrete}: Poured Contrete}
+\item{\code{Brick&Tile}: Brick and Tile}
+\item{\code{CinderBlock}: Cinder Blocks}
+\item{\code{PouredConcrete}: Poured Concrete}
 }}
 \item{\code{HasCentralAir}}{Indicator if home contains central air conditioning (0 = No, 1 = Yes).}
 \item{\code{Bathrooms}}{Number of full above-ground bathrooms.}
 \item{\code{Bedrooms}}{Number of full above-ground bedrooms.}
 \item{\code{TotalRooms}}{Number of above-ground rooms in home, excluding bathrooms.}
 \item{\code{KitchenQuality}}{Assessor's rating of kitchen material quality. \itemize{
-\item{\emph{Excellent}}
-\item{\emph{Good}}
-\item{\emph{Average}}
+\item{\code{Excellent}}
+\item{\code{Good}}
+\item{\code{Average}}
 }}
 \item{\code{HasFireplace}}{Indicator if home contains at least one fireplace (0 = No, 1 = Yes).}
 \item{\code{GarageType}}{Type of garage. \itemize{
-\item{\emph{Attached}: includes attached, built-in, basement, and dual-type garages}
-\item{\emph{Detached}: includes detatched and carport garages}
-\item{\emph{None}: home does not have a garage or carport}
+\item{\code{Attached}: includes attached, built-in, basement, and dual-type garages}
+\item{\code{Detached}: includes detached and carport garages}
+\item{\code{None}: home does not have a garage or carport}
 }}
 \item{\code{GarageCars}}{Number of cars that can fit in garage.}
 \item{\code{PriceR}}{Sale price of home, in raw USD ($)}
 \item{\code{PriceK}}{Sale price of home, in thousands of USD ($)}
-\item{\code{TinySet}}{(Ignore) Whether or not this row is in ames_tiny.csv}
+\item{\code{TinySet}}{(Ignore) Whether or not this row is in \code{ames_tiny.csv}}
 }
 }
 \source{
-https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data
+\url{https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data}
 }
 \usage{
 Ames
@@ -78,13 +78,13 @@ the references and data source for the full dataset.
 \subsection{Pedagogical Modifications}{
 
 To simplify the dataset for instructional purposes, the data were filtered to include only single
-family homes, residential zoning, 1-2 story homes, homes with brick, cinderblock, or concrete
+family homes, residential zoning, 1-2 story homes, homes with brick, cinder block, or concrete
 foundations, and average to excellent kitchen qualities. Further, the descriptive variables were
 reduced to the subset described in the format section.
 }
 }
 \references{
-De Cock, Dean, (2011). Ames, Iowa: Alternative to the Boston Housing Data as an end ofsemester
+De Cock, Dean, (2011). Ames, Iowa: Alternative to the Boston Housing Data as an end of semester
 regression project, \emph{Journal of Statistics Education, 19}(3).
 \url{https://dx.doi.org/10.1080/10691898.2011.11889627}
 }
