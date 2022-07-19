@@ -7,8 +7,8 @@
 \format{
 A data frame with 44 observations on the following 3 variables.
 \describe{
-\item{\code{gender}}{Whether the server was \strong{female} or \strong{male}}
-\item{\code{condition}}{Whether the check had a \strong{smiley face} or not (\strong{control})}
+\item{\code{gender}}{Whether the server was \code{female} or \code{male}}
+\item{\code{condition}}{Whether the check had a \verb{smiley face} or not (\code{control})}
 \item{\code{tip_percent}}{The size of the tip as a percentage of the price of the meal}
 }
 }

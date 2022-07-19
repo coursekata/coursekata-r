@@ -22,8 +22,6 @@ test_that("extracted values are correct", {
 
 test_that("values can be extracted from fitted lm or formula-and-data", {
   estimate_funs <- c(b0, b1, sse, ssm, ssr, b, f) # , pre, p)
-  # expected <- f(lm(mpg ~ hp, mtcars))
-  # actual <- f(mpg ~ hp, mtcars)
   purrr::iwalk(estimate_funs, ~ expect_identical(.x(mpg ~ hp, mtcars), .x(lm(mpg ~ hp, mtcars))))
 })
 
@@ -58,6 +56,14 @@ test_that("they can extract all related terms (not just full model terms)", {
     "p_cyl" = sup_out$tbl$p[[3]],
     "p_hp:cyl" = sup_out$tbl$p[[4]]
   ))
+})
+
+test_that("it throws useful error messages when used with empty model inappropriately", {
+  empty_model <- lm(mpg ~ NULL, data = mtcars)
+  error_pattern <- ".*[Cc]an't.*empty model.*"
+  expect_error(f(empty_model), error_pattern)
+  expect_error(pre(empty_model), error_pattern)
+  expect_error(p(empty_model), error_pattern)
 })
 
 test_that("they return a scalar if a single term is requested", {

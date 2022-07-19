@@ -1,3 +1,85 @@
+#' Ames, Iowa housing data
+#'
+#' @description
+#' Data describing all residential home sales in Ames, Iowa from the years 2006–2010 as reported by
+#' the Ames City Assessor's Office and compiled by De Cock (2011). Ames is located about 30 miles
+#' north of Des Moines (the stats capitol) and is home to Iowa State University (the largest
+#' university in the state). Each row represents the latest sale of a home (one row per home in the
+#' dataset). Columns represent home features and sale prices (outcome). The original dataset
+#' includes a uniquely detailed (81 features per home) and comprehensive look at the housing market.
+#' The data included here are only a subset used for examples in CourseKata course material. See
+#' the references and data source for the full dataset.
+#'
+#' ### Pedagogical Modifications
+#' To simplify the dataset for instructional purposes, the data were filtered to include only single
+#' family homes, residential zoning, 1-2 story homes, homes with brick, cinder block, or concrete
+#' foundations, and average to excellent kitchen qualities. Further, the descriptive variables were
+#' reduced to the subset described in the format section.
+#'
+#' @source <https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/data>
+#'
+#' @references
+#' De Cock, Dean, (2011). Ames, Iowa: Alternative to the Boston Housing Data as an end of semester
+#' regression project, *Journal of Statistics Education, 19*(3).
+#' <https://dx.doi.org/10.1080/10691898.2011.11889627>
+#'
+#' @format A data frame with 2930 observations on the following 80 variables:
+#' \describe{
+#'   \item{`YearBuilt`}{Year home was built (`YYYY`).}
+#'   \item{`YearSold`}{Year of home sale (`YYYY`). Note: all home sales in this dataset occurred
+#'     between 2006 - 2010. If a home was sold more than once between 2006 - 2010, only its latest
+#'     sale is included in dataset.}
+#'   \item{`Neighborhood`}{One of two neighborhoods in Ames county: \itemize{
+#'     \item{College Creek (`CollegeCreek`), a neighborhood located adjacent to Iowa State
+#'       University (the largest University in the state).}
+#'     \item{Old Town (`OldTown`), a nationally designated historic district in Ames. The old
+#'       neighborhood is located just north of the central business district.}
+#'   }}
+#'   \item{`HomeSizeR`}{Raw above-ground area of home, measured in square feet.}
+#'   \item{`HomeSizeK`}{Above-ground area of home, measured in thousands of square feet.}
+#'   \item{`LotSizeR`}{Raw total property lot size, measured in square feet.}
+#'   \item{`LotSizeK`}{Total property lot size, in thousands of square feet.}
+#'   \item{`Floors`}{Number of above-ground floors (1 story or 2 story).}
+#'   \item{`BuildQuality`}{Assessor's rating of overall material and finish of the house. \itemize{
+#'     \item{`10`: Very Excellent}
+#' 	   \item{`9`: Excellent}
+#'     \item{`8`: Very Good}
+#'     \item{`7`: Good}
+#'     \item{`6`: Above Average}
+#'     \item{`5`: Average}
+#'     \item{`4`: Below Average}
+#'     \item{`3`: Fair}
+#'     \item{`2`: Poor}
+#'     \item{`1`: Very Poor}
+#'   }}
+#'   \item{`Foundation`}{Type of foundation (ground material underneath the house). \itemize{
+#'     \item{`Brick&Tile`: Brick and Tile}
+#'     \item{`CinderBlock`: Cinder Blocks}
+#'     \item{`PouredConcrete`: Poured Concrete}
+#'   }}
+#'   \item{`HasCentralAir`}{Indicator if home contains central air conditioning (0 = No, 1 = Yes).}
+#'   \item{`Bathrooms`}{Number of full above-ground bathrooms.}
+#'   \item{`Bedrooms`}{Number of full above-ground bedrooms.}
+#'   \item{`TotalRooms`}{Number of above-ground rooms in home, excluding bathrooms.}
+#'   \item{`KitchenQuality`}{Assessor's rating of kitchen material quality. \itemize{
+#'     \item{`Excellent`}
+#'     \item{`Good`}
+#'     \item{`Average`}
+#'   }}
+#'   \item{`HasFireplace`}{Indicator if home contains at least one fireplace (0 = No, 1 = Yes).}
+#'   \item{`GarageType`}{Type of garage. \itemize{
+#'     \item{`Attached`: includes attached, built-in, basement, and dual-type garages}
+#'     \item{`Detached`: includes detached and carport garages}
+#'     \item{`None`: home does not have a garage or carport}
+#'   }}
+#'   \item{`GarageCars`}{Number of cars that can fit in garage.}
+#'   \item{`PriceR`}{Sale price of home, in raw USD ($)}
+#'   \item{`PriceK`}{Sale price of home, in thousands of USD ($)}
+#'   \item{`TinySet`}{(Ignore) Whether or not this row is in `ames_tiny.csv`}
+#' }
+"Ames"
+
+
 #' Emergency room canine therapy
 #'
 #' @description
@@ -35,14 +117,12 @@
 #' @references
 #' Kline, J. A., Fisher, M. A., Pettit, K. L., Linville, C. T., & Beck, A. M. (2019). Controlled
 #' clinical trial of canine therapy versus usual care to reduce patient anxiety in the emergency
-#' department. **PloS One, 14**(1), e0209232. <https://doi.org/10.1371/journal.pone.0209232>
+#' department. *PloS One, 14*(1), e0209232. <https://doi.org/10.1371/journal.pone.0209232>
 #'
 #' @format A data frame with 84 observations on the following 53 variables:
-#'   - **`id`**: Subject ID
-#'
 #' \describe{
 #'   \item{`id`}{Subject ID}
-#'   \item{`condition`}{Whether the subject saw a **Dog** or was in the **Control** group}
+#'   \item{`condition`}{Whether the subject saw a `Dog` or was in the `Control` group}
 #'   \item{`age`}{Subject's age in years}
 #'   \item{`gender`}{Subject's self-identified gender}
 #'   \item{`race`}{Subject's self-identified race}
@@ -67,8 +147,8 @@
 #'   \item{`change_anxiety`}{The change in subject's anxiety from before the intervention to after}
 #'   \item{`change_total`}{The sum of the subject's `change_*` scores}
 #'   \item{`provider_male`}{Was the health care provider male?}
-#'   \item{`provider`}{The health care provider's status: either an **Advanced Practitioner**,
-#'     **Resident** physician, or **Attending** physician}
+#'   \item{`provider`}{The health care provider's status: either an `Advanced Practitioner`,
+#'     `Resident` physician, or `Attending` physician}
 #'   \item{`heart_rate`}{The subject's heart rate at baseline (T0)}
 #'   \item{`resp_rate`}{The subject's respiratory rate at baseline (T0)}
 #'   \item{`sp_o2`}{The subject's SpO2 at baseline (T0)}
@@ -256,8 +336,8 @@
 #'
 #' @format A data frame with 44 observations on the following 3 variables.
 #' \describe{
-#'   \item{`gender`}{Whether the server was **female** or **male**}
-#'   \item{`condition`}{Whether the check had a **smiley face** or not (**control**)}
+#'   \item{`gender`}{Whether the server was `female` or `male`}
+#'   \item{`condition`}{Whether the check had a `smiley face` or not (`control`)}
 #'   \item{`tip_percent`}{The size of the tip as a percentage of the price of the meal}
 #' }
 "tip_exp"
