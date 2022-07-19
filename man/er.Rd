@@ -6,13 +6,9 @@
 \title{Emergency room canine therapy}
 \format{
 A data frame with 84 observations on the following 53 variables:
-\itemize{
-\item \strong{\code{id}}: Subject ID
-}
-
 \describe{
 \item{\code{id}}{Subject ID}
-\item{\code{condition}}{Whether the subject saw a \strong{Dog} or was in the \strong{Control} group}
+\item{\code{condition}}{Whether the subject saw a \emph{Dog} or was in the \emph{Control} group}
 \item{\code{age}}{Subject's age in years}
 \item{\code{gender}}{Subject's self-identified gender}
 \item{\code{race}}{Subject's self-identified race}
@@ -37,8 +33,8 @@ to after}
 \item{\code{change_anxiety}}{The change in subject's anxiety from before the intervention to after}
 \item{\code{change_total}}{The sum of the subject's \verb{change_*} scores}
 \item{\code{provider_male}}{Was the health care provider male?}
-\item{\code{provider}}{The health care provider's status: either an \strong{Advanced Practitioner},
-\strong{Resident} physician, or \strong{Attending} physician}
+\item{\code{provider}}{The health care provider's status: either an \emph{Advanced Practitioner},
+\emph{Resident} physician, or \emph{Attending} physician}
 \item{\code{heart_rate}}{The subject's heart rate at baseline (T0)}
 \item{\code{resp_rate}}{The subject's respiratory rate at baseline (T0)}
 \item{\code{sp_o2}}{The subject's SpO2 at baseline (T0)}
@@ -114,6 +110,6 @@ Exposure to therapy dogs plus handlers significantly reduced anxiety in ED patie
 \references{
 Kline, J. A., Fisher, M. A., Pettit, K. L., Linville, C. T., & Beck, A. M. (2019). Controlled
 clinical trial of canine therapy versus usual care to reduce patient anxiety in the emergency
-department. \strong{PloS One, 14}(1), e0209232. \url{https://doi.org/10.1371/journal.pone.0209232}
+department. \emph{PloS One, 14}(1), e0209232. \url{https://doi.org/10.1371/journal.pone.0209232}
 }
 \keyword{datasets}
