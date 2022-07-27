@@ -62,7 +62,7 @@ f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
-  check_empty_model(fit)
+  suppressMessages(check_empty_model(fit))
   stats <- extract_stat(fit, type, "F", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -177,32 +177,22 @@ ssr <- ssm
 
 #' @rdname estimate_extraction
 #' @export
-fVal <- function(object, data = NULL) {
-  f(object, data)
-}
+fVal <- f
 
 #' @rdname estimate_extraction
 #' @export
-PRE <- function(object, data = NULL) {
-  pre(object, data)
-}
+PRE <- pre
 
 #' @rdname estimate_extraction
 #' @export
-SSE <- function(object, data = NULL) {
-  sse(object, data)
-}
+SSE <- sse
 
 #' @rdname estimate_extraction
 #' @export
-SSM <- function(object, data = NULL) {
-  sse(object, data)
-}
+SSM <- ssm
 
 #' @rdname estimate_extraction
 #' @export
-SSR <- function(object, data = NULL) {
-  ssr(object, data)
-}
+SSR <- ssm
 
 # nolint end
