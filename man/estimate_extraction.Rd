@@ -33,9 +33,9 @@ ssm(object, data = NULL)
 
 ssr(object, data = NULL)
 
-fVal(object, data = NULL)
+fVal(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
-PRE(object, data = NULL)
+PRE(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 SSE(object, data = NULL)
 

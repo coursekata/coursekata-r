@@ -21,7 +21,7 @@ test_that("extracted values are correct", {
 })
 
 test_that("values can be extracted from fitted lm or formula-and-data", {
-  estimate_funs <- c(b0, b1, sse, ssm, ssr, b, f) # , pre, p)
+  estimate_funs <- c(b0, b1, sse, ssm, ssr, b, f, pre, p)
   purrr::iwalk(estimate_funs, ~ expect_identical(.x(mpg ~ hp, mtcars), .x(lm(mpg ~ hp, mtcars))))
 })
 
@@ -98,4 +98,90 @@ test_that("term filtering works with formulae", {
   expect_equal(f(mult_model, predictor = frms), f(mult_model, all = TRUE)[named("f")])
   expect_equal(pre(mult_model, predictor = frms), pre(mult_model, all = TRUE)[named("pre")])
   expect_equal(p(mult_model, predictor = frms), p(mult_model, all = TRUE)[named("p")])
+})
+
+test_that("using data with missing values doesn't result in mutliple refitting messages", {
+  data_missing <- mtcars
+  data_missing[1, "hp"] <- NA
+  expect_message(
+    f(mpg ~ hp, data = data_missing),
+    "(?!Refitting.*Refitting)Refitting",
+    perl = TRUE
+  )
+})
+
+
+# Repeat test for deprecated functions (remove in the future) -----------------------------------
+
+test_that("extracted values are correct", {
+  test_model <- lm(mpg ~ hp, data = mtcars)
+
+  expect_equal(PRE(test_model), summary(test_model)$r.squared)
+
+  f_full_expected <- summary(test_model)$fstatistic
+  expect_equal(fVal(test_model), f_full_expected[["value"]])
+
+  ssr_expected <- sum((test_model$fitted.values - mean(test_model$model[[1]]))^2)
+  expect_equal(SSR(test_model), ssr_expected)
+  expect_equal(SSM(test_model), ssr(test_model))
+  expect_equal(SSE(test_model), sum(resid(test_model)^2))
+})
+
+test_that("values can be extracted from fitted lm or formula-and-data", {
+  estimate_funs <- c(fVal, PRE)
+  purrr::iwalk(estimate_funs, ~ expect_identical(.x(mpg ~ hp, mtcars), .x(lm(mpg ~ hp, mtcars))))
+})
+
+test_that("they can extract all related terms (not just full model terms)", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  sup_out <- supernova(mult_model, type = 3)
+
+  expect_equal(fVal(mult_model, all = TRUE, type = 3), list(
+    "f" = sup_out$tbl$F[[1]],
+    "f_hp" = sup_out$tbl$F[[2]],
+    "f_cyl" = sup_out$tbl$F[[3]],
+    "f_hp:cyl" = sup_out$tbl$F[[4]]
+  ))
+
+  expect_equal(PRE(mult_model, all = TRUE, type = 3), list(
+    "pre" = sup_out$tbl$PRE[[1]],
+    "pre_hp" = sup_out$tbl$PRE[[2]],
+    "pre_cyl" = sup_out$tbl$PRE[[3]],
+    "pre_hp:cyl" = sup_out$tbl$PRE[[4]]
+  ))
+})
+
+test_that("it throws useful error messages when used with empty model inappropriately", {
+  empty_model <- lm(mpg ~ NULL, data = mtcars)
+  error_pattern <- ".*[Cc]an't.*empty model.*"
+  expect_error(fVal(empty_model), error_pattern)
+  expect_error(PRE(empty_model), error_pattern)
+})
+
+test_that("they return a scalar if a single term is requested", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  terms <- c("hp")
+  named <- function(x) paste(x, terms, sep = "_")
+
+  expect_equal(fVal(mult_model, predictor = terms), fVal(mult_model, all = TRUE)[[named("f")]])
+  expect_equal(PRE(mult_model, predictor = terms), PRE(mult_model, all = TRUE)[[named("pre")]])
+})
+
+test_that("they return a named list of the requested terms if 2+ terms are requested", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  terms <- c("hp", "hp:cyl")
+  named <- function(x) paste(x, terms, sep = "_")
+
+  expect_equal(fVal(mult_model, predictor = terms), fVal(mult_model, all = TRUE)[named("f")])
+  expect_equal(PRE(mult_model, predictor = terms), PRE(mult_model, all = TRUE)[named("pre")])
+})
+
+test_that("term filtering works with formulae", {
+  mult_model <- lm(mpg ~ hp * cyl, data = mtcars)
+  terms <- c("hp", "hp:cyl")
+  frms <- purrr::map(terms, asOneSidedFormula)
+  named <- function(x) paste(x, terms, sep = "_")
+
+  expect_equal(f(mult_model, predictor = frms), fVal(mult_model, all = TRUE)[named("f")])
+  expect_equal(pre(mult_model, predictor = frms), PRE(mult_model, all = TRUE)[named("pre")])
 })
