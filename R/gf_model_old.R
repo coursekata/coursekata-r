@@ -38,7 +38,12 @@
 #' gf_point(Thumb ~ Height, data = Fingers) %>%
 #'   gf_model_old() %>%
 #'   gf_model_old(Thumb ~ NULL)
-gf_model_old <- function(object = NULL, gformula = NULL, data = NULL, model = NULL, width = .3, ...) {
+gf_model_old <- function(object = NULL,
+                         gformula = NULL,
+                         data = NULL,
+                         model = NULL,
+                         width = .3,
+                         ...) {
   # phase 1: handle arguments in different positions
   if (inherits(object, "formula")) {
     gformula <- object
