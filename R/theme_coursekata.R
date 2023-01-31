@@ -17,12 +17,12 @@ theme_coursekata <- function() {
     axis.title = ggplot2::element_text(size = 11),
 
     # Legend
-    legend.background = ggplot2::element_rect(fill = "white", size = 4, colour = "white"),
+    legend.background = ggplot2::element_rect(fill = "white", linewidth = 4, colour = "white"),
     legend.position = "right",
 
     # Grid
-    axis.ticks = ggplot2::element_line(colour = "grey70", size = 0.2),
-    panel.grid.major = ggplot2::element_line(colour = "grey70", size = 0.2),
+    axis.ticks = ggplot2::element_line(colour = "grey70", linewidth = 0.2),
+    panel.grid.major = ggplot2::element_line(colour = "grey70", linewidth = 0.2),
     panel.grid.minor = ggplot2::element_blank(),
 
     # Facet labels
@@ -158,7 +158,7 @@ load_coursekata_themes <- function() {
   ggplot2::update_geom_defaults("bar", ggplot2::aes(
     `colour` = "black",
     `fill` = coursekata_palette(1),
-    `size` = 0.1,
+    `linewidth` = 0.1,
     `alpha` = 0.7
   ))
 
@@ -170,17 +170,17 @@ load_coursekata_themes <- function() {
 
   ggplot2::update_geom_defaults("hline", ggplot2::aes(
     `colour` = coursekata_palette("blue80"),
-    `size` = 1
+    `linewidth` = 1
   ))
 
   ggplot2::update_geom_defaults("line", ggplot2::aes(
     `colour` = "black",
-    `size` = 1
+    `linewidth` = 1
   ))
 
   ggplot2::update_geom_defaults("lm", ggplot2::aes(
     `colour` = coursekata_palette("blue80"),
-    `size` = 1
+    `linewidth` = 1
   ))
 
   ggplot2::update_geom_defaults("point", ggplot2::aes(
@@ -191,12 +191,12 @@ load_coursekata_themes <- function() {
 
   ggplot2::update_geom_defaults("segment", ggplot2::aes(
     `colour` = coursekata_palette("blue80"),
-    `size` = 1
+    `linewidth` = 1
   ))
 
   ggplot2::update_geom_defaults("smooth", ggplot2::aes(
     `colour` = coursekata_palette("blue80"),
-    `size` = 1
+    `linewidth` = 1
   ))
 
   ggplot2::update_geom_defaults("violin", ggplot2::aes(
@@ -207,7 +207,7 @@ load_coursekata_themes <- function() {
 
   ggplot2::update_geom_defaults("vline", ggplot2::aes(
     `colour` = coursekata_palette("blue80"),
-    `size` = 1
+    `linewidth` = 1
   ))
 
   ggplot2::theme_set(theme_coursekata())
@@ -237,7 +237,7 @@ restore_default_themes <- function() {
   ggplot2::update_geom_defaults("bar", ggplot2::aes(
     `colour` = NA,
     `fill` = "grey35",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `linetype` = 1,
     `alpha` = NA,
   ))
@@ -246,7 +246,7 @@ restore_default_themes <- function() {
     `weight` = 1,
     `colour` = "grey20",
     `fill` = "white",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `alpha` = NA,
     `shape` = 19,
     `linetype` = "solid"
@@ -254,14 +254,14 @@ restore_default_themes <- function() {
 
   ggplot2::update_geom_defaults("hline", ggplot2::aes(
     `colour` = "black",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `linetype` = 1,
     `alpha` = NA
   ))
 
   ggplot2::update_geom_defaults("line", ggplot2::aes(
     `colour` = "black",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `linetype` = 1,
     `alpha` = NA
   ))
@@ -277,7 +277,7 @@ restore_default_themes <- function() {
 
   ggplot2::update_geom_defaults("segment", ggplot2::aes(
     `colour` = "black",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `linetype` = 1,
     `alpha` = NA
   ))
@@ -285,7 +285,7 @@ restore_default_themes <- function() {
   ggplot2::update_geom_defaults("smooth", ggplot2::aes(
     `colour` = "#3366FF",
     `fill` = "grey60",
-    `size` = 1,
+    `linewidth` = 1,
     `linetype` = 1,
     `weight` = 1,
     `alpha` = 0.4
@@ -295,14 +295,14 @@ restore_default_themes <- function() {
     `weight` = 1,
     `colour` = "grey20",
     `fill` = "white",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `alpha` = NA,
     `linetype` = "solid"
   ))
 
   ggplot2::update_geom_defaults("vline", ggplot2::aes(
     `colour` = "black",
-    `size` = 0.5,
+    `linewidth` = 0.5,
     `linetype` = 1,
     `alpha` = NA
   ))

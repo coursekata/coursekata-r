@@ -42,7 +42,6 @@ test_that("requiring a package is quiet", {
   expect_message(pkg_require(pkgs), NA)
 })
 
-
 test_that("requiring a missing package calmly asks if you want to install it", {
   skip("Make sure to run this when testing locally.")
 
