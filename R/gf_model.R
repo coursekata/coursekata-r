@@ -149,7 +149,6 @@ gf_model <- function(object, model, ...) {
     } else {
       info$layer$plotter <- ggformula::gf_errorbar
       info$layer$geom <- ggplot2::GeomErrorbar
-      info$layer$args$size <- if_not_null(info$layer$args$size, 1)
       info$layer$args$width <- if_not_null(info$layer$args$width, .4)
 
       if (info$plot$flipped) {
@@ -162,12 +161,23 @@ gf_model <- function(object, model, ...) {
     }
   }
 
+  # translate dot size to linewidth if needed
+  info$layer$args$linewidth <- if_not_null(
+    info$layer$args$linewidth,
+    if_not_null(info$layer$args$size, 1)
+  )
+
   # TODO: no test case
   # re-map dynamic aesthetics from previous layers if they are predictors in the model
   remap <- info$plot$variables[info$plot$variables %in% info$model$predictors]
   remap <- remap[names(remap) %in% info$layer$geom$aesthetics()]
   remap <- remap[names(remap) %in% names(info$layer$args) == FALSE]
   info$layer$args[names(remap)] <- purrr::map(remap, name_to_frm)
+  # equivalent of point plot's `size` is roughly `linewidth`
+  if ("size" %in% names(info$plot$aesthetics)) {
+    info$layer$args$linewidth <- name_to_frm(info$plot$variables[["size"]])
+  }
+  # translate `fill` to `color`
   if (
     is.null(info$layer$args$color) &&
       "color" %in% names(info$plot$aesthetics) == FALSE &&
