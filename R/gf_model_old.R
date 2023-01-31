@@ -219,8 +219,17 @@ gf_model_old_single_variable <- function(object, gformula, data, ..., .density =
     }
   }
 
-  # we should have the formula by now: time to use it and return
+  # compute the placement of the lines
   stats <- mosaic::favstats(gformula, data = data)
+
+  # if needed re-cast the computed column back to its original type
+  var_to_type <- names(stats)[[1]]
+  var_type_in_data <- vctrs::vec_ptype(object$data[[var_to_type]])
+  if (is.numeric(var_type_in_data)) {
+    stats[[1]] <- as.numeric(stats[[1]])
+  }
+
+  # we should have the formula by now: time to use it and return
   if (identical(outcome, x)) {
     return(ggformula::gf_vline(object, xintercept = ~mean, data = stats, ...))
   } else {
