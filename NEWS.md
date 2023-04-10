@@ -1,6 +1,6 @@
 # `coursekata` change log
 
-## coursekata 0.7.0
+## coursekata 0.7.1
 
 - Add argument forwarding for installs
 

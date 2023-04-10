@@ -129,8 +129,9 @@ ask_to_install <- function(pkgs) {
 #' Install packages using appropriate repositories.
 #'
 #' @param pkgs A character vector of the packages to install.
+#' @param ... Arguments passed on to [`utils::install.packages()`].
 #'
 #' @keywords internal
-pkg_install <- function(pkgs) {
-  utils::install.packages(pkgs, repos = coursekata_repos())
+pkg_install <- function(pkgs, ...) {
+  utils::install.packages(pkgs, repos = coursekata_repos(), ...)
 }
