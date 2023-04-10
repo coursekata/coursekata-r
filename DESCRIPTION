@@ -18,7 +18,7 @@ License: AGPL (>= 3)
 URL: https://www.github.com/UCLTALL/coursekata-r
 BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
 Depends: 
-    R (>= 3.6.3)
+    R (>= 3.6)
 Imports: 
     cli (>= 3.2.0),
     crayon (>= 1.5.0),
