@@ -4,10 +4,12 @@
 \alias{pkg_install}
 \title{Install packages using appropriate repositories.}
 \usage{
-pkg_install(pkgs)
+pkg_install(pkgs, ...)
 }
 \arguments{
 \item{pkgs}{A character vector of the packages to install.}
+
+\item{...}{Arguments passed on to \code{\link[utils:install.packages]{utils::install.packages()}}.}
 }
 \description{
 Install packages using appropriate repositories.
