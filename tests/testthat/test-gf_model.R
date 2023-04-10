@@ -99,19 +99,18 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_boxplot"))
 
+  # TODO: can't get gf_boxploth working...
+  # gf_boxploth(~later_anxiety, data = er) %>%
+  #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+  #   expect_doppelganger(snap_name("gf_boxplot"))
+
   gf_violin(1 ~ later_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_violin", " -- 2"))
 
-  # broken only when run in testthat
-  # gf_violinh(1 ~ later_anxiety, data = er) %>%
-  #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-  #   expect_doppelganger(snap_name("gf_violinh"))
-
-  # inexplicably broken? geom can't be found
-  # gf_boxploth(1 ~ later_anxiety, data = er) %>%
-  #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-  #   expect_doppelganger(snap_name("gf_boxploth"))
+  gf_violin(later_anxiety ~ 1, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_violin horizontal"))
 })
 
 
@@ -136,7 +135,7 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
     glue("[{plot_name}] cond. mod., outcome on X{suffix}")
   }
 
-  # removed broken "gf_boxploth", "gf_violinh"
+  # TODO: removed broken "gf_boxploth"
   plot_args <- list(gformula = condition ~ later_anxiety, color = ~condition, data = er)
   plot_types <- c("gf_point")
   purrr::walk(plot_types, function(plot) {
@@ -405,10 +404,9 @@ test_that("it will translate color arguments if applicable (e.g. fill to color)"
 })
 
 test_that("it can use aesthetics other than color... just checking", {
-  gf_point(later_anxiety ~ base_anxiety, size = ~condition, data = er) %>%
+  gf_point(later_anxiety ~ base_anxiety, shape = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er)) %>%
-    expect_doppelganger("[gf_point] cond. mod., outcome on Y, pred. on size") %>%
-    expect_warning()
+    expect_doppelganger("[gf_point] cond. mod., outcome on Y, pred. on shape")
 })
 
 test_that("it allows mapping new aesthetics", {

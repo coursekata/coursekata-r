@@ -5,9 +5,12 @@
 \alias{coursekata_update}
 \title{Install or update all CourseKata packages.}
 \usage{
-coursekata_install()
+coursekata_install(...)
 
-coursekata_update()
+coursekata_update(...)
+}
+\arguments{
+\item{...}{Arguments passed on to \code{\link[utils:install.packages]{utils::install.packages()}}.}
 }
 \value{
 The state of all the packages after any updates have been performed.

@@ -4,5 +4,8 @@
     "NAMESPACE": "r",
     "DESCRIPTION": "debian-control.r"
   },
-  "r.bracketedPaste": true
+  "r.bracketedPaste": true,
+  "conventionalCommits.scopes": [
+    "gh-actions"
+  ]
 }
