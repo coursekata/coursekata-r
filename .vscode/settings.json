@@ -6,6 +6,7 @@
   },
   "r.bracketedPaste": true,
   "conventionalCommits.scopes": [
-    "gh-actions"
+    "gh-actions",
+    "install"
   ]
 }
