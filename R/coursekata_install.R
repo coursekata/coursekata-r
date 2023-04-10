@@ -1,10 +1,10 @@
 #' Install or update all CourseKata packages.
-#'
+#' @param ... Arguments passed on to [`utils::install.packages()`].
 #' @return The state of all the packages after any updates have been performed.
 #'
 #' @export
 #' @rdname coursekata_install
-coursekata_install <- function() {
+coursekata_install <- function(...) {
   pkgs <- coursekata_packages(TRUE)
   behind <- pkgs[!pkgs$installed | (!is.na(pkgs$behind) & pkgs$behind), ]
 
@@ -30,7 +30,7 @@ coursekata_install <- function() {
     cli::cat_line("install.packages(", pkg_str, ", repos = coursekata::coursekata_repos())")
   } else {
     cli::cat_line()
-    purrr::walk(behind$package, pkg_install)
+    purrr::walk(behind$package, pkg_install, ...)
   }
 
   invisible(coursekata_packages(TRUE))
