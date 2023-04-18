@@ -1,7 +1,7 @@
 Package: coursekata
 Title: Packages and Functions for CourseKata Courses
-Version: 0.7.2
-Date: 2023-04-10
+Version: 0.8.0
+Date: 2023-04-17
 Authors@R: c(
     person("Adam", "Blake", , "adamblake@g.ucla.edu", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
@@ -53,6 +53,7 @@ Suggests:
     vdiffr (>= 1.0.2),
     withr (>= 2.5.0)
 Config/testthat/edition: 3
+Language: en-US
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

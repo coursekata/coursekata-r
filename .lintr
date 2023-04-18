@@ -5,6 +5,7 @@ linters: linters_with_defaults(
   )
 exclusions: list(
     "DESCRIPTION",
-    "NAMESPACE"
+    "NAMESPACE",
+    "data-raw/game_data.R"
   )
 encoding: "UTF-8"

@@ -368,3 +368,18 @@
 #'   \item{`Any1_20`}{The random number between 1 and 20 that a student thought of.}
 #' }
 "Survey"
+
+
+#' Simulated math game data.
+#'
+#' The simulated results of a small study comparing the effectiveness of three different computer-
+#' based math games in a sample of 105 fifth-grade students. All three games focused on the same
+#' topic and had identical learning goals, and none of the students had any prior knowledge of the
+#' topic.
+#'
+#' @format A data frame with 105 observations on the following 2 variables:
+#' \describe{
+#'   \item{`game`}{The game the student was randomly assigned to, coded as "A", "B", or "C".}
+#'   \item{`outcome`}{Each student's score on the outcome test.}
+#' }
+"game_data"
