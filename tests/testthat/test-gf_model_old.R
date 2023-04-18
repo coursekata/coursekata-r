@@ -1,4 +1,3 @@
-
 # Main tests ----------------------------------------------------------------------------------
 
 test_that("it requires at least a formula and data or a model", {

@@ -20,7 +20,7 @@ pkg_is_attached <- function(pkgs) {
 #' @return Logical vector indicating whether the packages are installed.
 #' @keywords internal
 pkg_is_installed <- function(pkgs) {
-  purrr::map_lgl(pkgs, ~ identical(TRUE, requireNamespace(.x, quietly = TRUE)))
+  pkgs %in% pak::pkg_status(pkgs)$package
 }
 
 
@@ -29,15 +29,10 @@ pkg_is_installed <- function(pkgs) {
 #' @param pkgs A character vector of packages to check.
 #'
 #' @return A character vector of library directory paths the packages were loaded from, the default
-#'   location if the package is not loaded but is installed, or NULL if the package is not
-#'   installed.
+#'   location if the package is not loaded but is installed, or NA if the package is not installed.
 #' @keywords internal
 pkg_library_location <- function(pkgs) {
-  get_namespace_directory <- purrr::possibly(
-    function(pkg) dirname(getNamespaceInfo(pkg, "path")),
-    NA_character_
-  )
-  purrr::map_chr(pkgs, get_namespace_directory)
+  possibly_pkg_status(pkgs, "library")
 }
 
 
@@ -49,11 +44,21 @@ pkg_library_location <- function(pkgs) {
 #'   pulled from the library the package was loaded from, else the default library location.
 #' @keywords internal
 pkg_version <- function(pkgs) {
-  get_package_version <- purrr::possibly(
-    function(pkg) as.character(utils::packageVersion(pkg, lib.loc = pkg_library_location(pkg))),
-    NA_character_
-  )
-  purrr::map_chr(pkgs, get_package_version)
+  possibly_pkg_status(pkgs, "version")
+}
+
+#' Attempt to get package information using `pak`, but fail with NA
+#'
+#' @param pkgs A character vector of packages to look up.
+#' @param status_key The column to get from the [`pak::pkg_status()`] output.
+#'
+#' @return A character vector with each package's status information.
+#' @keywords internal
+possibly_pkg_status <- function(pkgs, status_key) {
+  purrr::map_chr(pkgs, function(pkg) {
+    x <- pak::pkg_status(pkg)[[status_key]]
+    if (length(x)) x else NA_character_
+  })
 }
 
 
@@ -129,9 +134,10 @@ ask_to_install <- function(pkgs) {
 #' Install packages using appropriate repositories.
 #'
 #' @param pkgs A character vector of the packages to install.
-#' @param ... Arguments passed on to [`utils::install.packages()`].
+#' @param ... Arguments passed on to [`pak::pkg_install()`].
 #'
 #' @keywords internal
 pkg_install <- function(pkgs, ...) {
-  utils::install.packages(pkgs, repos = coursekata_repos(), ...)
+  purrr::walk(coursekata_repos(), pak::repo_add)
+  pak::pkg_install(pkgs, ...)
 }

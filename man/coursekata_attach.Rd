@@ -10,8 +10,7 @@ coursekata_attach(startup = FALSE)
 \item{startup}{Is this being run at start-up?}
 }
 \value{
-A coursekata attachments object with info about which course packages are installed and
-attached.
+An object with info about which course packages are installed and attached.
 }
 \description{
 Attach the CourseKata course packages

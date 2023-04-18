@@ -10,7 +10,7 @@ coursekata_install(...)
 coursekata_update(...)
 }
 \arguments{
-\item{...}{Arguments passed on to \code{\link[utils:install.packages]{utils::install.packages()}}.}
+\item{...}{Arguments passed on to \code{\link[pak:pkg_install]{pak::pkg_install}}.}
 }
 \value{
 The state of all the packages after any updates have been performed.
