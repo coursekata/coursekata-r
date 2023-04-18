@@ -9,7 +9,7 @@ pkg_install(pkgs, ...)
 \arguments{
 \item{pkgs}{A character vector of the packages to install.}
 
-\item{...}{Arguments passed on to \code{\link[utils:install.packages]{utils::install.packages()}}.}
+\item{...}{Arguments passed on to \code{\link[pak:pkg_install]{pak::pkg_install()}}.}
 }
 \description{
 Install packages using appropriate repositories.

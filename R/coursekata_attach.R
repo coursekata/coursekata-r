@@ -2,8 +2,7 @@
 #'
 #' @param startup Is this being run at start-up?
 #'
-#' @return A coursekata attachments object with info about which course packages are installed and
-#'   attached.
+#' @return An object with info about which course packages are installed and attached.
 #' @export
 #'
 #' @examples
@@ -11,7 +10,7 @@
 coursekata_attach <- function(startup = FALSE) {
   to_attach <- coursekata_detached()
   if (length(to_attach)) {
-    suppressPackageStartupMessages(purrr::walk(to_attach, pkg_require))
+    suppressPackageStartupMessages(pkg_require(to_attach))
   }
 
   coursekata_attachments(startup)
