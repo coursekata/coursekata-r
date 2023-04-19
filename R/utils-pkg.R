@@ -138,6 +138,7 @@ ask_to_install <- function(pkgs) {
 #'
 #' @keywords internal
 pkg_install <- function(pkgs, ...) {
-  purrr::walk(coursekata_repos(), pak::repo_add)
-  pak::pkg_install(pkgs, ...)
+  is_538 <- pkgs %in% "fivethirtyeight"
+  if (any(is_538)) pak::pkg_install("fivethirtyeightdata/fivethirtyeightdata")
+  pak::pkg_install(pkgs[!is_538], ...)
 }
