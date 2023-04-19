@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.9.2
+
+- Use `pak` for package management
+
 ## coursekata 0.8.0
 
 - Add `game_data` dataset
