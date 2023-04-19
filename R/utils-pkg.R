@@ -138,7 +138,7 @@ ask_to_install <- function(pkgs) {
 #'
 #' @keywords internal
 pkg_install <- function(pkgs, ...) {
-  is_538 <- pkgs %in% "fivethirtyeight"
-  if (any(is_538)) pak::pkg_install("fivethirtyeightdata/fivethirtyeightdata")
-  pak::pkg_install(pkgs[!is_538], ...)
+  is_538 <- pkgs %in% "fivethirtyeightdata"
+  if (any(is_538)) pak::pkg_install("fivethirtyeightdata/fivethirtyeightdata", ...)
+  if (any(!is_538)) pak::pkg_install(pkgs[!is_538], ...)
 }
