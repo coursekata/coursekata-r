@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.9.4
+
+- Double digit `fevdata$AGE` values were truncated by first character. This has been fixed.
+
 ## coursekata 0.9.3
 
 - Fix issue installing missing packages where package could not be found.
