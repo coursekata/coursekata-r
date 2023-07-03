@@ -20,9 +20,10 @@ if (!file.exists(raw_path)) {
 }
 
 fevdata <- raw_path |>
-  read_fwf(
-    fwf_empty(raw_path, col_names = c("AGE", "FEV", "HEIGHT", "SEX", "SMOKE")),
-    col_types = "iddii"
+  read_table(
+    col_names = c("AGE", "FEV", "HEIGHT", "SEX", "SMOKE"),
+    col_types = "iddii",
+    guess_max = Inf
   ) |>
   mutate(
     SEX = factor(SEX, 0:1, c("Female", "Male")),
