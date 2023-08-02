@@ -1,5 +1,5 @@
 coursekata_pkg_list <- c(
-  "supernova", "mosaic", "lsr",
+  "supernova", "mosaic", "lsr", "Metrics",
   "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
 )
 
