@@ -8,7 +8,7 @@
 
 [![R build
 status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/coursekata/coursekata-r/actions)
-[![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://app.codecov.io/gh/coursekata/coursekata-r)
+[![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://codecov.io/gh/coursekata/coursekata-r)
 <!-- badges: end -->
 
 ## Overview
