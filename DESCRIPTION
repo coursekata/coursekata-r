@@ -1,7 +1,7 @@
 Package: coursekata
 Title: Packages and Functions for CourseKata Courses
-Version: 0.9.4
-Date: 2023-07-03
+Version: 0.10.0
+Date: 2023-08-02
 Authors@R: c(
     person("Adam", "Blake", , "adamblake@g.ucla.edu", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
@@ -17,9 +17,9 @@ Description: Easily install and load all packages and functions used in
 License: AGPL (>= 3)
 URL: https://www.github.com/UCLTALL/coursekata-r
 BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
-Depends: 
+Depends:
     R (>= 3.6)
-Imports: 
+Imports:
     cli (>= 3.2.0),
     crayon (>= 1.5.0),
     dslabs (>= 0.7.4),
@@ -30,6 +30,7 @@ Imports:
     Lock5withR (>= 1.2.2),
     lsr (>= 0.5.2),
     magrittr (>= 2.0.2),
+    Metrics,
     mosaic (>= 1.8.3),
     pak,
     purrr (>= 0.3.4),
@@ -38,7 +39,7 @@ Imports:
     supernova (>= 2.5.1),
     vctrs (>= 0.4.1),
     yesno (>= 0.1.2)
-Suggests: 
+Suggests:
     fivethirtyeight (>= 0.6.2),
     lubridate (>= 1.8.0),
     mockery (>= 0.4.3),

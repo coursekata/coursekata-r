@@ -1,7 +1,7 @@
 ^coursekata\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-^README\.Rmd$
+^README\.(?:Rmd|html)$
 ^\.github$
 ^codecov\.yml$
 ^data-raw$

@@ -14,4 +14,5 @@ NULL
 #' @importFrom lsr cohensD
 #' @importFrom mosaic qdist
 #' @importFrom supernova supernova
+#' @importFrom Metrics sse
 NULL
