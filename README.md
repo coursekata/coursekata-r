@@ -75,6 +75,8 @@ library(coursekata)
 - [ggformula](https://projectmosaic.github.io/ggformula/), for a formula
   interface to ggplot2.
 - [dplyr](https://dplyr.tidyverse.org), for data manipulation.
+- [Metrics](https://cran.r-project.org/web/packages/Metrics/index.html),
+  for model evaluation.
 
 In addition to useful functions, a great deal of data sets are used by
 instructors who teach the course. This package installs these:

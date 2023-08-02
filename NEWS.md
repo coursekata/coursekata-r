@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.10.0
+
+- Add [`Metrics` package](https://cran.r-project.org/web/packages/Metrics/index.html)
+
 ## coursekata 0.9.4
 
 - Double digit `fevdata$AGE` values were truncated by first character. This has been fixed.
