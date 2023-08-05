@@ -15,4 +15,5 @@ NULL
 #' @importFrom mosaic qdist
 #' @importFrom supernova supernova
 #' @importFrom Metrics sse
+#' @importFrom palmerpenguins path_to_file
 NULL
