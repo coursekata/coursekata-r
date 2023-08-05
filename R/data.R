@@ -383,3 +383,46 @@
 #'   \item{`outcome`}{Each student's score on the outcome test.}
 #' }
 "game_data"
+
+#' A modified form of the [`palmerpenguins::penguins`][palmerpenguins] data set.
+#'
+#' The modifications are to select only a subset of the variables, and convert some of the units.
+#'
+#' @format A data frame with 333 observations on the following 7 variables:
+#' \describe{
+#'  \item{`species`}{The species of penguin, coded as "Adelie", "Chinstrap", or "Gentoo".}
+#'  \item{`gentoo`}{Whether the penguin is a Gentoo penguin (1) or not (0).}
+#'  \item{`body_mass_kg`}{The mass of the penguin's body, in kilograms.}
+#'  \item{`flipper_length_m`}{The length of the penguin's flipper, in m.}
+#'  \item{`bill_length_cm`}{The length of the penguin's bill, in cm.}
+#'  \item{`female`}{Whether the penguin is female (1) or not (0).}
+#'  \item{`island`}{The island where the penguin was observed, coded as "Biscoe", "Dream", or "Torgersen".}
+#' }
+"penguins"
+
+#' Data on countries from the Happy Planet Index project.
+#'
+#' These data have been updated with some historical height data (from [Our World in
+#' Data](https://ourworldindata.org/human-height)), drinking data (collected by the World Health
+#' Organization featured in
+#' [fivethirtyeight](https://fivethirtyeight.com/features/dear-mona-followup-where-do-people-drink-the-most-beer-wine-and-spirits/)),
+#' population and land characteristics, and vaccination data (from March 2023).
+#'
+#' @format A data frame with 130 observations on the following 14 variables:
+#' \describe{
+#'  \item{`Country`}{Name of country}
+#'  \item{`Region`}{One of 5 UN defined regions: Africa, Americas, Asia, Europe, Oceania}
+#'  \item{`Code`}{Three-letter country codes defined by the International Organization for Standardization ([ISO](https://www.iso.org/iso-3166-country-codes.html)) to represent countries in a way that avoids errors since a country’s name changes depending on the language being used.}
+#'  \item{`LifeExpectancy`}{Average life expectancy (in years)}
+#'  \item{`GirlsH1900`}{The average of 18-year-old girls heights in 1900 (in cm)}
+#'  \item{`GirlsH1980`}{The average of 18-year-old girls heights in 1980 (in cm)}
+#'  \item{`Happiness`}{Score on a 0-10 scale for average level of happiness (10 being happiest)}
+#'  \item{`GDPperCapita`}{Gross Domestic Product (per capita)}
+#'  \item{`FertRate`}{The average number of children that will be born to a woman over her lifetime}
+#'  \item{`PeopleVacc`}{Total number of people vaccinated in the country}
+#'  \item{`PeopleVacc_per100`}{Total number of people vaccinated in the country (in percent)}
+#'  \item{`Population2010`}{Population (in millions) in 2010}
+#'  \item{`Population2020`}{Population (in millions) in 2020}
+#'  \item{`WineServ`}{Average wine consumption per capita for those age 15 and over per week (collected by WHO)}
+#' }
+"World"
