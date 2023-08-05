@@ -44,6 +44,7 @@ Suggests:
     lubridate (>= 1.8.0),
     mockery (>= 0.4.3),
     mockr (>= 0.1),
+    palmerpenguins,
     readr (>= 2.1.2),
     readxl (>= 1.4.0),
     rgdal,
