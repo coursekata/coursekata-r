@@ -2,11 +2,12 @@
 % Please edit documentation in R/estimate_extraction.R
 \name{estimate_extraction}
 \alias{estimate_extraction}
+\alias{b0}
+\alias{b1}
 \alias{b}
 \alias{f}
 \alias{pre}
-\alias{b0}
-\alias{b1}
+\alias{p}
 \alias{sse}
 \alias{ssm}
 \alias{ssr}
@@ -17,15 +18,17 @@
 \alias{SSR}
 \title{Extract estimates/statistics from a model}
 \usage{
+b0(object, data = NULL)
+
+b1(object, data = NULL)
+
 b(object, data = NULL, all = FALSE, predictor = character())
 
 f(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 pre(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
-b0(object, data = NULL)
-
-b1(object, data = NULL)
+p(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 sse(object, data = NULL)
 
