@@ -1,7 +1,8 @@
-coursekata_pkg_list <- c(
+# reversed so that most important packages are loaded last (and mask earlier ones)
+coursekata_pkg_list <- rev(c(
   "supernova", "mosaic", "lsr", "Metrics",
   "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
-)
+))
 
 #' List all CourseKata course packages
 #'
