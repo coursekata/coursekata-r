@@ -1,8 +1,18 @@
 # `coursekata` change log
 
+## coursekata 0.12.0
+
+- Remove `sse()`, `ssm()`, `ssr()`, `SSE()`, `SSM()`, `SSR()` functions: they conflict with `Metrics` package.
+- Reverse package load order (load most important last so that they mask others)
+
+## coursekata 0.11.0
+
+- Add `palmerpenguins` and `World`
+
 ## coursekata 0.10.0
 
 - Add [`Metrics` package](https://cran.r-project.org/web/packages/Metrics/index.html)
+- Remove `zargle`
 
 ## coursekata 0.9.4
 
