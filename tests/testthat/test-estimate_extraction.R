@@ -13,15 +13,10 @@ test_that("extracted values are correct", {
     f_full_expected[["dendf"]],
     lower.tail = FALSE
   ))
-
-  ssr_expected <- sum((test_model$fitted.values - mean(test_model$model[[1]]))^2)
-  expect_equal(ssr(test_model), ssr_expected)
-  expect_equal(ssm(test_model), ssr(test_model))
-  expect_equal(sse(test_model), sum(resid(test_model)^2))
 })
 
 test_that("values can be extracted from fitted lm or formula-and-data", {
-  estimate_funs <- c(b0, b1, sse, ssm, ssr, b, f, pre, p)
+  estimate_funs <- c(b0, b1, b, f, pre, p)
   purrr::iwalk(estimate_funs, ~ expect_identical(.x(mpg ~ hp, mtcars), .x(lm(mpg ~ hp, mtcars))))
 })
 
@@ -120,11 +115,6 @@ test_that("extracted values are correct", {
 
   f_full_expected <- summary(test_model)$fstatistic
   expect_equal(fVal(test_model), f_full_expected[["value"]])
-
-  ssr_expected <- sum((test_model$fitted.values - mean(test_model$model[[1]]))^2)
-  expect_equal(SSR(test_model), ssr_expected)
-  expect_equal(SSM(test_model), ssr(test_model))
-  expect_equal(SSE(test_model), sum(resid(test_model)^2))
 })
 
 test_that("values can be extracted from fitted lm or formula-and-data", {

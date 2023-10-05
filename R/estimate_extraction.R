@@ -173,26 +173,6 @@ extract_stat <- function(fit, type, stat, predictor = character(0)) {
   }
 }
 
-
-
-#' @rdname estimate_extraction
-#' @export
-sse <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  sum(fit$residuals^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssm <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  sum((fit$fitted.values - mean(fit$model[[1]]))^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssr <- ssm
-
 # nolint start
 
 #' @rdname estimate_extraction
@@ -202,17 +182,5 @@ fVal <- f
 #' @rdname estimate_extraction
 #' @export
 PRE <- pre
-
-#' @rdname estimate_extraction
-#' @export
-SSE <- sse
-
-#' @rdname estimate_extraction
-#' @export
-SSM <- ssm
-
-#' @rdname estimate_extraction
-#' @export
-SSR <- ssm
 
 # nolint end

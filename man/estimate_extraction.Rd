@@ -8,14 +8,8 @@
 \alias{f}
 \alias{pre}
 \alias{p}
-\alias{sse}
-\alias{ssm}
-\alias{ssr}
 \alias{fVal}
 \alias{PRE}
-\alias{SSE}
-\alias{SSM}
-\alias{SSR}
 \title{Extract estimates/statistics from a model}
 \usage{
 b0(object, data = NULL)
@@ -30,21 +24,9 @@ pre(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 p(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
-sse(object, data = NULL)
-
-ssm(object, data = NULL)
-
-ssr(object, data = NULL)
-
 fVal(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 PRE(object, data = NULL, all = FALSE, predictor = character(), type = 3)
-
-SSE(object, data = NULL)
-
-SSM(object, data = NULL)
-
-SSR(object, data = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{lm}} object, or \code{\link{formula}}.}
