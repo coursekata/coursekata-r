@@ -112,7 +112,7 @@ convert_predictor <- function(predictor) {
     purrr::flatten_chr()
 }
 
-#' Convert a formula and data to an lm object.
+#' Convert a formula and data to an [`lm`] object.
 #' @param object A [`lm`] object, or [`formula`].
 #' @param data If `object` is a formula, the data to fit the formula to as a [`data.frame`].
 #' @return An [`lm`] object.

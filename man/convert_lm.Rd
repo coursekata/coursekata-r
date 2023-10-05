@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimate_extraction.R
 \name{convert_lm}
 \alias{convert_lm}
-\title{Convert a formula and data to an lm object.}
+\title{Convert a formula and data to an \code{\link{lm}} object.}
 \usage{
 convert_lm(object, data)
 }
@@ -15,6 +15,6 @@ convert_lm(object, data)
 An \code{\link{lm}} object.
 }
 \description{
-Convert a formula and data to an lm object.
+Convert a formula and data to an \code{\link{lm}} object.
 }
 \keyword{internal}
