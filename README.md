@@ -54,14 +54,11 @@ package:
 
 ``` r
 library(coursekata)
-#> Registered S3 method overwritten by 'mosaic':
-#>   method                           from   
-#>   fortify.SpatialPolygonsDataFrame ggplot2
-#> ── CourseKata packages ───────────────────────────────────── coursekata 0.9.4 ──
-#> ✔ supernova           2.5.6         ✔ fivethirtyeightdata 0.1.0  
-#> ✔ mosaic              1.8.4.2       ✔ Lock5withR          1.2.2  
-#> ✔ lsr                 0.5.2         ✔ dslabs              0.7.6  
-#> ✔ fivethirtyeight     0.6.2
+#> ── CourseKata packages ──────────────────────────────────── coursekata 0.11.0 ──
+#> ✔ dslabs              0.7.6         ✔ Metrics             0.1.4  
+#> ✔ Lock5withR          1.2.2         ✔ lsr                 0.5.2  
+#> ✔ fivethirtyeightdata 0.1.0         ✔ mosaic              1.8.4.2
+#> ✔ fivethirtyeight     0.6.2         ✔ supernova           2.5.7
 ```
 
 - [supernova](https://github.com/UCLATALL/supernova), for
@@ -109,21 +106,25 @@ b0(fit)
 b1(fit)
 #> [1] -0.06822828
 
+# all the estimates
+b(fit)
+#> $b_0
+#> [1] 30.09886
+#> 
+#> $b_hp
+#> [1] -0.06822828
+
 # the proportional reduction in error
-PRE(fit)
+pre(fit)
 #> [1] 0.6024373
 
 # Fisher's F value
-fVal(fit)
+f(fit)
 #> [1] 45.4598
 
-# the sum of the squared errors from the model
-SSE(fit)
-#> [1] 447.6743
-
-# the sum of squares model/regression
-SSM(fit)
-#> [1] 678.3729
+# the p-value for the F test
+p(fit)
+#> [1] 1.787835e-07
 ```
 
 The estimate extraction functions help to simplify the ability to create

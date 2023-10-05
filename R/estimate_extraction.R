@@ -35,6 +35,20 @@
 
 #' @rdname estimate_extraction
 #' @export
+b0 <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  fit$coefficients[[1]]
+}
+
+#' @rdname estimate_extraction
+#' @export
+b1 <- function(object, data = NULL) {
+  fit <- convert_lm(object, data)
+  fit$coefficients[[2]]
+}
+
+#' @rdname estimate_extraction
+#' @export
 b <- function(object, data = NULL, all = FALSE, predictor = character()) {
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor)
@@ -78,6 +92,8 @@ pre <- function(object, data = NULL, all = FALSE, predictor = character(), type 
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
 
+#' @rdname estimate_extraction
+#' @export
 p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 3) {
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
@@ -87,11 +103,20 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
 
+#' Convert a potentially complex predictor to a character vector of terms.
+#' @param predictor The predictor(s) to return estimates for.
+#' @return A character vector of terms.
+#' @keywords internal
 convert_predictor <- function(predictor) {
   purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))) %>%
     purrr::flatten_chr()
 }
 
+#' Convert a formula and data to an [`lm`] object.
+#' @param object A [`lm`] object, or [`formula`].
+#' @param data If `object` is a formula, the data to fit the formula to as a [`data.frame`].
+#' @return An [`lm`] object.
+#' @keywords internal
 convert_lm <- function(object, data) {
   if ("lm" %in% class(object) == FALSE) {
     data_call <- rlang::enquo(data)
@@ -105,12 +130,20 @@ convert_lm <- function(object, data) {
   fit
 }
 
+#' Assert that the arguments to the estimate extraction functions are valid.
+#' @param all Whether to return all the estimates (e.g. all *F*-values).
+#' @param predictor The predictor(s) to return estimates for.
+#' @param type The type (1, 2, 3) of sums of squares to use.
+#' @keywords internal
 check_extract_args <- function(all, predictor, type = 3) {
   vctrs::vec_assert(all, logical(), 1)
   vctrs::vec_assert(predictor, character())
   vctrs::vec_assert(type, numeric(), 1)
 }
 
+#' Determine if the fitted model is the empty/null model.
+#' @param fit A fitted linear model to pass to supernova.
+#' @keywords internal
 check_empty_model <- function(fit) {
   models <- supernova::generate_models(fit)
   if (length(models) == 0) {
@@ -140,39 +173,6 @@ extract_stat <- function(fit, type, stat, predictor = character(0)) {
   }
 }
 
-
-#' @rdname estimate_extraction
-#' @export
-b0 <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  fit$coefficients[[1]]
-}
-
-#' @rdname estimate_extraction
-#' @export
-b1 <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  fit$coefficients[[2]]
-}
-
-#' @rdname estimate_extraction
-#' @export
-sse <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  sum(fit$residuals^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssm <- function(object, data = NULL) {
-  fit <- convert_lm(object, data)
-  sum((fit$fitted.values - mean(fit$model[[1]]))^2)
-}
-
-#' @rdname estimate_extraction
-#' @export
-ssr <- ssm
-
 # nolint start
 
 #' @rdname estimate_extraction
@@ -182,17 +182,5 @@ fVal <- f
 #' @rdname estimate_extraction
 #' @export
 PRE <- pre
-
-#' @rdname estimate_extraction
-#' @export
-SSE <- sse
-
-#' @rdname estimate_extraction
-#' @export
-SSM <- ssm
-
-#' @rdname estimate_extraction
-#' @export
-SSR <- ssm
 
 # nolint end

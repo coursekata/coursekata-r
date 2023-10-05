@@ -85,17 +85,17 @@ b0(fit)
 # the estimate for β₁, the slope
 b1(fit)
 
+# all the estimates
+b(fit)
+
 # the proportional reduction in error
-PRE(fit)
+pre(fit)
 
 # Fisher's F value
-fVal(fit)
+f(fit)
 
-# the sum of the squared errors from the model
-SSE(fit)
-
-# the sum of squares model/regression
-SSM(fit)
+# the p-value for the F test
+p(fit)
 ```
 
 The estimate extraction functions help to simplify the ability to create bootstrapped sampling distributions of those estimates. Here is an example of bootstrapping the slope:

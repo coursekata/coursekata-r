@@ -1,7 +1,7 @@
-pkgs <- c(
+pkgs <- rev(c(
   "supernova", "mosaic", "lsr", "Metrics",
   "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
-)
+))
 
 
 test_that("all course packages are listed with version and whether attached", {

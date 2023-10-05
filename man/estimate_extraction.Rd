@@ -2,46 +2,31 @@
 % Please edit documentation in R/estimate_extraction.R
 \name{estimate_extraction}
 \alias{estimate_extraction}
+\alias{b0}
+\alias{b1}
 \alias{b}
 \alias{f}
 \alias{pre}
-\alias{b0}
-\alias{b1}
-\alias{sse}
-\alias{ssm}
-\alias{ssr}
+\alias{p}
 \alias{fVal}
 \alias{PRE}
-\alias{SSE}
-\alias{SSM}
-\alias{SSR}
 \title{Extract estimates/statistics from a model}
 \usage{
+b0(object, data = NULL)
+
+b1(object, data = NULL)
+
 b(object, data = NULL, all = FALSE, predictor = character())
 
 f(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 pre(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
-b0(object, data = NULL)
-
-b1(object, data = NULL)
-
-sse(object, data = NULL)
-
-ssm(object, data = NULL)
-
-ssr(object, data = NULL)
+p(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 fVal(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 PRE(object, data = NULL, all = FALSE, predictor = character(), type = 3)
-
-SSE(object, data = NULL)
-
-SSM(object, data = NULL)
-
-SSR(object, data = NULL)
 }
 \arguments{
 \item{object}{A \code{\link{lm}} object, or \code{\link{formula}}.}
