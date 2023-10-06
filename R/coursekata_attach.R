@@ -1,12 +1,11 @@
 #' Attach the CourseKata course packages
-#' @return The packages that were attached.
+#' @return A named logical vector indicating which packages were attached.
 #' @export
 #' @examples
 #' coursekata_attach()
 coursekata_attach <- function() {
   to_attach <- coursekata_detached()
-  suppressPackageStartupMessages(pkg_require(to_attach))
-  invisible(to_attach)
+  invisible(suppressPackageStartupMessages(pkg_require(to_attach)))
 }
 
 

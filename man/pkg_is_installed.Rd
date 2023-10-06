@@ -12,7 +12,7 @@ pkg_is_installed(pkgs, statuses = NULL)
 \item{statuses}{The output of \code{\link[pak:pkg_status]{pak::pkg_status()}} (computed if not supplied).}
 }
 \value{
-Logical vector indicating whether the packages are installed.
+Named logical vector indicating whether the packages are installed.
 }
 \description{
 Note: this function differs from \code{\link[rlang:is_installed]{rlang::is_installed()}} in two regards: it is quieter and will

@@ -7,7 +7,7 @@
 coursekata_attach()
 }
 \value{
-The packages that were attached.
+A named logical vector indicating which packages were attached.
 }
 \description{
 Attach the CourseKata course packages
