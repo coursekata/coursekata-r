@@ -54,11 +54,6 @@ package:
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────────────── coursekata 0.11.0 ──
-#> ✔ dslabs              0.7.6         ✔ Metrics             0.1.4  
-#> ✔ Lock5withR          1.2.2         ✔ lsr                 0.5.2  
-#> ✔ fivethirtyeightdata 0.1.0         ✔ mosaic              1.8.4.2
-#> ✔ fivethirtyeight     0.6.2         ✔ supernova           2.5.7
 ```
 
 - [supernova](https://github.com/UCLATALL/supernova), for
@@ -179,7 +174,7 @@ gf_histogram(~Thumb, data = Fingers, fill = ~ middle(Thumb, .80))
 ### Toggling the Theme
 
 The `ggplot2` theme is loaded by default but can be toggled on and off
-via `load_coursekata_themes()` and `restore_default_themes()`. The
+via `coursekata_load_theme()` and `coursekata_unload_theme()`. The
 actual plot theme and scale components are also provided for advanced
 users as `theme_coursekata()` and `scale_discrete_coursekata()`
 (`viridis` is used for continuous color scales).
