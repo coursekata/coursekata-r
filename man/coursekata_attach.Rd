@@ -4,13 +4,10 @@
 \alias{coursekata_attach}
 \title{Attach the CourseKata course packages}
 \usage{
-coursekata_attach(startup = FALSE)
-}
-\arguments{
-\item{startup}{Is this being run at start-up?}
+coursekata_attach()
 }
 \value{
-An object with info about which course packages are installed and attached.
+A named logical vector indicating which packages were attached.
 }
 \description{
 Attach the CourseKata course packages

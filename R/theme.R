@@ -3,7 +3,7 @@
 #' The `coursekata` package automatically loads this theme when the package is loaded. This is in
 #' addition to a number of other plot tweaks and option settings. To just restore the theme to the
 #' default, you can run `set_theme(theme_grey)`. If you want to restore all plot related settings
-#' and/or prevent them when loading the package, see [`restore_default_themes`].
+#' and/or prevent them when loading the package, see [`coursekata_unload_theme`].
 #'
 #' @return A gg theme object
 #' @export
@@ -93,10 +93,12 @@ coursekata_palette <- function(indices = integer(0)) {
 }
 
 #' Create a function that provides a colorblind palette.
-#'
 #' @return A function that accepts one argument `n`, which is the number of colors you want to use
 #'   in the plot. This function is used by scales like `scale_color_discrete` to provide colorblind-
-#'   safe palettes. See [`scale_discrete_coursekata`] for more information.
+#'   safe palettes. Where possible, the function will use the hand-picked colors from
+#' [`coursekata_palette()`], and when more colors are needed than are available, it will use the
+#' [`viridisLite::viridis()`] palette.
+#' @seealso scale_discrete_coursekata
 #' @export
 coursekata_palette_provider <- function() {
   unwrap <- function(x) {
@@ -111,13 +113,10 @@ coursekata_palette_provider <- function() {
 
   provider <- function(n) {
     if (n > max_values) {
-      rlang::warn(paste(
-        glue::glue("This manual palette can handle a maximum of {max_values}."),
-        glue::glue("You are requesting {n}.")
-      ))
+      viridisLite::viridis(n)
+    } else {
+      palette[seq_len(n)]
     }
-
-    palette[seq_len(n)]
   }
 
   structure(provider, max_n = max_values)
@@ -146,15 +145,15 @@ scale_discrete_coursekata <- function(...) {
 #' Utility function for loading all themes.
 #'
 #' This function is called at package start-up and should rarely be needed by the user. The
-#' exception is when the user has called [`restore_default_themes()`] and wants to go back to the
+#' exception is when the user has called [`coursekata_unload_theme()`] and wants to go back to the
 #' CourseKata look and feel. When run, this function sets the CourseKata color palettes
 #' [`coursekata_palette()`], sets the default theme to [`theme_coursekata()`], and tweaks some
 #' default settings for specific plots. To restore the original `ggplot2` settings, run
-#' [`restore_default_themes()`].
+#' [`coursekata_unload_theme()`].
 #'
-#' @seealso coursekata_palette theme_coursekata scale_discrete_coursekata restore_default_themes
+#' @seealso coursekata_palette theme_coursekata scale_discrete_coursekata coursekata_unload_theme
 #' @export
-load_coursekata_themes <- function() {
+coursekata_load_theme <- function() {
   ggplot2::update_geom_defaults("bar", ggplot2::aes(
     `colour` = "black",
     `fill` = coursekata_palette(1),
@@ -227,11 +226,11 @@ load_coursekata_themes <- function() {
 #'
 #' This function will restore all of the tweaks to themes and plotting to the original `ggplot2`
 #' defaults. If you want to go back to the CourseKata look and feel, run
-#' [`load_coursekata_themes()`].
+#' [`coursekata_load_theme()`].
 #'
-#' @seealso load_coursekata_themes
+#' @seealso coursekata_load_theme
 #' @export
-restore_default_themes <- function() {
+coursekata_unload_theme <- function() {
   # find these values by creating a plot, storing it to a variable, and, e.g.
   # p$layers[[1]]$geom$default_aes
   ggplot2::update_geom_defaults("bar", ggplot2::aes(

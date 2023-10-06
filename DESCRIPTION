@@ -1,6 +1,6 @@
 Package: coursekata
 Title: Packages and Functions for CourseKata Courses
-Version: 0.12.0
+Version: 0.13.0
 Date: 2023-10-05
 Authors@R: c(
     person("Adam", "Blake", , "adamblake@g.ucla.edu", role = c("cre", "aut"),
@@ -39,6 +39,7 @@ Imports:
     rstudioapi (>= 0.13),
     supernova (>= 2.5.1),
     vctrs (>= 0.4.1),
+    viridisLite,
     yesno (>= 0.1.2)
 Suggests:
     fivethirtyeight (>= 0.6.2),

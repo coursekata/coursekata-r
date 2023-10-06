@@ -4,13 +4,15 @@
 \alias{pkg_is_installed}
 \title{Check if packages are installed}
 \usage{
-pkg_is_installed(pkgs)
+pkg_is_installed(pkgs, statuses = NULL)
 }
 \arguments{
 \item{pkgs}{Character vector of the names of the packages to check.}
+
+\item{statuses}{The output of \code{\link[pak:pkg_status]{pak::pkg_status()}} (computed if not supplied).}
 }
 \value{
-Logical vector indicating whether the packages are installed.
+Named logical vector indicating whether the packages are installed.
 }
 \description{
 Note: this function differs from \code{\link[rlang:is_installed]{rlang::is_installed()}} in two regards: it is quieter and will

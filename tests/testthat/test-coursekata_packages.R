@@ -1,14 +1,8 @@
-pkgs <- rev(c(
-  "supernova", "mosaic", "lsr", "Metrics",
-  "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
-))
-
-
 test_that("all course packages are listed with version and whether attached", {
   packages <- suppressMessages(coursekata_packages())
-  expect_identical(packages$package, pkgs)
-  expect_identical(packages$version, pkg_version(pkgs))
-  expect_identical(packages$attached, pkg_is_attached(pkgs))
+  expect_identical(packages$package, coursekata_pkgs)
+  expect_identical(packages$version, unname(pkg_version(coursekata_pkgs)))
+  expect_identical(packages$attached, unname(pkg_is_attached(coursekata_pkgs)))
 })
 
 

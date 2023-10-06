@@ -1,8 +1,9 @@
 # reversed so that most important packages are loaded last (and mask earlier ones)
-coursekata_pkg_list <- rev(c(
+coursekata_pkgs <- rev(c(
   "supernova", "mosaic", "lsr", "Metrics",
   "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
 ))
+
 
 #' List all CourseKata course packages
 #'
@@ -16,12 +17,13 @@ coursekata_pkg_list <- rev(c(
 #' @examples
 #' coursekata_packages()
 coursekata_packages <- function(check_remote_version = FALSE) {
-  pkgs <- coursekata_pkg_list
+  pkgs <- coursekata_pkgs
+  statuses <- pak::pkg_status(pkgs)
   info <- data.frame(
     package = pkgs,
-    installed = pkg_is_installed(pkgs),
+    installed = pkg_is_installed(pkgs, statuses),
     attached = pkg_is_attached(pkgs),
-    version = pkg_version(pkgs),
+    version = pkg_version(pkgs, statuses),
     stringsAsFactors = FALSE
   )
 
@@ -35,20 +37,16 @@ coursekata_packages <- function(check_remote_version = FALSE) {
 
 
 #' List all currently attached CourseKata course packages
-#'
 #' @return A character vector of the course packages that have been attached.
 #' @keywords internal
 coursekata_attached <- function() {
-  info <- coursekata_packages()
-  info$package[info$attached]
+  coursekata_pkgs[pkg_is_attached(coursekata_pkgs)]
 }
 
 
 #' List all currently NOT attached CourseKata course packages
-#'
 #' @return A character vector of the course packages that are not attached.
 #' @keywords internal
 coursekata_detached <- function() {
-  info <- coursekata_packages()
-  info$package[!info$attached]
+  coursekata_pkgs[!pkg_is_attached(coursekata_pkgs)]
 }
