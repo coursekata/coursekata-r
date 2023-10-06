@@ -85,7 +85,7 @@ pkg_require <- function(pkgs, do_not_ask = FALSE) {
   pkg_load <- function(pkg) {
     suppressPackageStartupMessages(suppressWarnings(require(
       pkg,
-      lib.loc = pkg_library_location(pkg),
+      lib.loc = if (quickstart()) NULL else pkg_library_location(pkg),
       character.only = TRUE,
       warn.conflicts = FALSE,
       quietly = TRUE
