@@ -4,10 +4,12 @@
 \alias{pkg_version}
 \title{Get the local package version numbers.}
 \usage{
-pkg_version(pkgs)
+pkg_version(pkgs, statuses = NULL)
 }
 \arguments{
 \item{pkgs}{A character vector of packages to look up.}
+
+\item{statuses}{The output of \code{\link[pak:pkg_status]{pak::pkg_status()}} (computed if not supplied).}
 }
 \value{
 A character vector of the package versions. If the package is already loaded, this is

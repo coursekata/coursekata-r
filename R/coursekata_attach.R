@@ -1,31 +1,24 @@
 #' Attach the CourseKata course packages
-#'
-#' @param startup Is this being run at start-up?
-#'
-#' @return An object with info about which course packages are installed and attached.
+#' @return The packages that were attached.
 #' @export
-#'
 #' @examples
 #' coursekata_attach()
-coursekata_attach <- function(startup = FALSE) {
+coursekata_attach <- function() {
   to_attach <- coursekata_detached()
-  if (length(to_attach)) {
-    suppressPackageStartupMessages(pkg_require(to_attach))
-  }
-
-  coursekata_attachments(startup)
+  suppressPackageStartupMessages(pkg_require(to_attach))
+  invisible(to_attach)
 }
 
 
 #' Information about CourseKata packages.
-#'
-#' @param startup Is this being run at start-up?
-#'
+#' @param pkgs A character vector of packages being loaded.
 #' @return A coursekata_attachments object, also of class data.frame with a row for each course
 #'   package and a column for each of the `package` name, `version`, and whether it is currently
 #'   `attached`.
 #' @keywords internal
-coursekata_attachments <- function(startup = FALSE) {
+coursekata_attach_message <- function(pkgs) {
+  if (length(pkgs) == 0) return(NULL)
+
   is_dark_theme <- rstudioapi::isAvailable() &&
     rstudioapi::hasFun("getThemeInfo") &&
     rstudioapi::getThemeInfo()$dark
@@ -39,7 +32,7 @@ coursekata_attachments <- function(startup = FALSE) {
     cli::ansi_align(version, max(cli::ansi_nchar(version)))
   ))
 
-  msg <- paste(
+  paste(
     cli::rule(
       left = cli::style_bold("CourseKata packages"),
       right = cli::style_bold("coursekata ", utils::packageVersion("coursekata"))
@@ -47,11 +40,8 @@ coursekata_attachments <- function(startup = FALSE) {
     to_cols(pkgs, 2),
     sep = "\n"
   )
-
-  if (startup) packageStartupMessage(msg) else message(msg)
-
-  invisible(info)
 }
+
 
 themes <- list(
   light = list(

@@ -1,12 +1,16 @@
 test_that("all course packages are listed with version and whether attached", {
-  attachments <- suppressMessages(coursekata_attach())
-  expect_identical(attachments, coursekata_packages())
+  pkgs <- "fivethirtyeight" # use this package because it is not imported
+  detacher(pkgs)
+  withr::defer(attacher(pkgs))
+
+  attachments <- coursekata_attach()
+  expect_identical(attachments, pkgs)
 })
 
 
 test_that("a nicely formatted message is displayed when attaching the packages", {
-  info <- coursekata_packages()
-  purrr::walk(info$package, function(package) {
-    expect_message(coursekata_attach(), sprintf(".*[vx] %s +.*", package))
+  msg <- coursekata_attach_message(coursekata_pkgs)
+  purrr::walk(coursekata_pkgs, function(package) {
+    expect_match(msg, sprintf(".*[vx] %s +.*", package))
   })
 })

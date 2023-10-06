@@ -4,12 +4,14 @@
 \alias{possibly_pkg_status}
 \title{Attempt to get package information using \code{pak}, but fail with NA}
 \usage{
-possibly_pkg_status(pkgs, status_key)
+possibly_pkg_status(pkgs, status_key, statuses = NULL)
 }
 \arguments{
 \item{pkgs}{A character vector of packages to look up.}
 
 \item{status_key}{The column to get from the \code{\link[pak:pkg_status]{pak::pkg_status()}} output.}
+
+\item{statuses}{The output of \code{\link[pak:pkg_status]{pak::pkg_status()}} (computed if not supplied).}
 }
 \value{
 A character vector with each package's status information.

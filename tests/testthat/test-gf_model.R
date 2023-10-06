@@ -419,22 +419,6 @@ test_that("it allows mapping new aesthetics", {
 
 # Alternate specification ---------------------------------------------------------------------
 
-# TODO: empty tests
-# test_that("it can handle data$var syntax", {
-#   # info <- gf_point(er$later_anxiety ~ er$condition, color = ~ er$condition) %>%
-#   #   gf_model(lm(er$later_anxiety ~ er$condition))
-#   #   expect_doppelganger("cond. mod. with data$var syntax")
-# })
-
-# test_that("it allows modified variables as long as they match", {
-#   # maybe the problem with this is that we use model$model which doesn't have the
-#   # unaltered variables in it
-
-#   # gf_point(later_anxiety ~ factor(base_anxiety), color = ~condition, data = er) %>%
-#   #   gf_model(lm(later_anxiety ~ factor(base_anxiety), data = er)) %>%
-#   #   load_before()
-# })
-
 test_that("you can pass it a formula instead of an `lm()` object", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(later_anxiety ~ condition) %>%

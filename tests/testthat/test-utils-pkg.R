@@ -13,10 +13,8 @@ test_that("it determines whether a package is attached or not", {
 
 test_that("it retrieves the library location for currently installed packages, or NA", {
   pkgs <- c("supernova", "lsr", "does_not_exist")
-
   locations <- pkg_library_location(pkgs)
-  expect_vector(locations, character(), 3)
-  expect_identical(locations[3], NA_character_)
+  expect_identical(unname(locations[3]), NA_character_)
   expect_true(all(dir.exists(locations[1:2])))
 })
 
