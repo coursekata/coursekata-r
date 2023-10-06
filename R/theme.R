@@ -93,10 +93,12 @@ coursekata_palette <- function(indices = integer(0)) {
 }
 
 #' Create a function that provides a colorblind palette.
-#'
 #' @return A function that accepts one argument `n`, which is the number of colors you want to use
 #'   in the plot. This function is used by scales like `scale_color_discrete` to provide colorblind-
-#'   safe palettes. See [`scale_discrete_coursekata`] for more information.
+#'   safe palettes. Where possible, the function will use the hand-picked colors from
+#' [`coursekata_palette()`], and when more colors are needed than are available, it will use the
+#' [`viridisLite::viridis()`] palette.
+#' @seealso scale_discrete_coursekata
 #' @export
 coursekata_palette_provider <- function() {
   unwrap <- function(x) {
@@ -111,13 +113,10 @@ coursekata_palette_provider <- function() {
 
   provider <- function(n) {
     if (n > max_values) {
-      rlang::warn(paste(
-        glue::glue("This manual palette can handle a maximum of {max_values}."),
-        glue::glue("You are requesting {n}.")
-      ))
+      viridisLite::viridis(n)
+    } else {
+      palette[seq_len(n)]
     }
-
-    palette[seq_len(n)]
   }
 
   structure(provider, max_n = max_values)

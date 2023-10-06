@@ -29,7 +29,7 @@ test_that("it retrieves the package version for currently installed packages, or
 test_that("requiring a package is vectorized", {
   pkgs <- "fivethirtyeight" # use this package because it is not imported
   purrr::walk(pkgs, detacher)
-  expect_identical(pkg_require(pkgs), rep(TRUE, length(pkgs)))
+  expect_identical(pkg_require(pkgs), pkg_is_installed(pkgs))
 })
 
 

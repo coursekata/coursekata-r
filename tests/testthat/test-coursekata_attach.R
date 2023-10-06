@@ -1,10 +1,17 @@
 test_that("all course packages are listed with version and whether attached", {
-  pkgs <- "fivethirtyeight" # use this package because it is not imported
-  detacher(pkgs)
-  withr::defer(attacher(pkgs))
+  # use these packages because they are not imported
+  # they need to be in the order they appear in the coursekata_pkgs object
+  pkgs <- c("fivethirtyeightdata", "fivethirtyeight")
+  # fivethirtyeightdata is not always installed, and if so, it won't get attached
+  # detach/re-attach only if it is installed
+  installed <- pkg_is_installed(pkgs)
+  detacher(pkgs[installed])
+  withr::defer(attacher(pkgs[installed]))
 
+  # only the installed package will be attached
   attachments <- coursekata_attach()
-  expect_identical(attachments, pkgs)
+  names(installed) <- pkgs
+  expect_identical(attachments, installed)
 })
 
 

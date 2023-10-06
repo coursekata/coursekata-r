@@ -15,11 +15,12 @@ pkg_is_attached <- function(pkgs) {
 #'
 #' @param pkgs Character vector of the names of the packages to check.
 #' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
-#' @return Logical vector indicating whether the packages are installed.
+#' @return Named logical vector indicating whether the packages are installed.
 #' @keywords internal
 pkg_is_installed <- function(pkgs, statuses = NULL) {
   statuses <- if (is.null(statuses)) pak::pkg_status(pkgs) else statuses
-  pkgs %in% statuses$package
+  checker <- function(pkg) pkg %in% statuses$package
+  vapply(pkgs, checker, logical(1))
 }
 
 
@@ -100,7 +101,7 @@ pkg_require <- function(pkgs, do_not_ask = FALSE) {
     } else {
       loaded
     }
-  }, logical(1), USE.NAMES = FALSE)
+  }, logical(1))
 }
 
 

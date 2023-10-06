@@ -1,5 +1,12 @@
 # `coursekata` change log
 
+## coursekata 0.13.0
+
+- Add `coursekata.quickstart` option, which can reduce load times significantly.
+- Reduce expensive lookups when attaching packages, further reducing load times.
+- Re-introduce `gf_model` tests for density plots now that upstream is fixed.
+- Add `test_fit()` simple model stats to help teachers evaluate student models.
+
 ## coursekata 0.12.0
 
 - Remove `sse()`, `ssm()`, `ssr()`, `SSE()`, `SSM()`, `SSR()` functions: they conflict with `Metrics` package.
