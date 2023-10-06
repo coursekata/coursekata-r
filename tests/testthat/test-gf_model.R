@@ -39,12 +39,6 @@ test_that("it plots the empty model as a vertical line when outcome is on Y, one
   # but these stat funs are in ggstance, so idk... if you're here and you're worried, just
   # test by hand because it usually only doesn't work in testthat
   # bin_plots <- c("gf_histogramh", "gf_dhistogramh")
-  # purrr::walk(bin_plots, function(plot) {
-  #   do.call(plot, append(plot_args, list(bins = 30))) %>%
-  #     gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
-  #     expect_doppelganger(snap_name(plot))
-  # })
-
   other_plots <- c("gf_rugy")
   purrr::walk(other_plots, function(plot) {
     do.call(plot, plot_args) %>%
@@ -76,18 +70,15 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
 
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
 
-  # skip `gf_dhistogram`
-  # https://github.com/ProjectMOSAIC/ggformula/issues/156
-  bin_plots <- c("gf_histogram", "gf_freqpoly")
+  bin_plots <- c("gf_histogram", "gf_dhistogram", "gf_freqpoly")
   purrr::walk(bin_plots, function(plot) {
     do.call(plot, append(plot_args, list(bins = 30))) %>%
       gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
       expect_doppelganger(snap_name(plot))
   })
 
-  # skip "gf_dens2", "gf_density", "gf_dens"
-  # https://github.com/ProjectMOSAIC/ggformula/issues/156
-  other_plots <- c("gf_rug", "gf_rugx")
+  # TODO: "gf_dens2": Can't find geom called "density_line"
+  other_plots <- c("gf_rug", "gf_rugx", "gf_density", "gf_dens")
   purrr::walk(other_plots, function(plot) {
     do.call(plot, plot_args) %>%
       gf_model(lm(later_anxiety ~ NULL, data = er), color = "brown") %>%
@@ -99,11 +90,6 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_boxplot"))
 
-  # TODO: can't get gf_boxploth working...
-  # gf_boxploth(~later_anxiety, data = er) %>%
-  #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-  #   expect_doppelganger(snap_name("gf_boxplot"))
-
   gf_violin(1 ~ later_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_violin", " -- 2"))
@@ -111,6 +97,11 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
   gf_violin(later_anxiety ~ 1, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_violin horizontal"))
+
+  # TODO: Can't find geom called "boxploth"
+  # gf_boxploth(~later_anxiety, data = er) %>%
+  #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+  #   expect_doppelganger(snap_name("gf_boxplot"))
 })
 
 
@@ -135,7 +126,7 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
     glue("[{plot_name}] cond. mod., outcome on X{suffix}")
   }
 
-  # TODO: removed broken "gf_boxploth"
+  # TODO: Can't find geom called "boxploth"
   plot_args <- list(gformula = condition ~ later_anxiety, color = ~condition, data = er)
   plot_types <- c("gf_point")
   purrr::walk(plot_types, function(plot) {
@@ -163,7 +154,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
   })
 
   # plot where one axis is calculated
-  # skip "gf_histogramh", "gf_dhistogramh" funs because their related stat funs can't be found
+  # TODO: skip "gf_histogramh", "gf_dhistogramh" funs because their related stat funs can't be found
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
   plot_types <- c("gf_rugy")
   purrr::walk(plot_types, function(plot) {
@@ -188,10 +179,8 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
   })
 
   # plots where one axis is calculated
-  # skip `gf_dhistogram`:
-  # https://github.com/ProjectMOSAIC/ggformula/issues/156
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
-  plot_types <- c("gf_histogram", "gf_rug", "gf_rugx")
+  plot_types <- c("gf_histogram", "gf_dhistogram", "gf_rug", "gf_rugx")
   purrr::walk(plot_types, function(plot) {
     do.call(plot, plot_args) %>%
       gf_model(lm(later_anxiety ~ condition, data = er)) %>%
@@ -252,10 +241,8 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
   })
 
   # plots where one axis is calculated
-  # skip `gf_dhistogram`:
-  # https://github.com/ProjectMOSAIC/ggformula/issues/156
   plot_args <- list(gformula = ~ later_anxiety | condition, data = er)
-  plot_types <- c("gf_histogram", "gf_rug", "gf_rugx")
+  plot_types <- c("gf_histogram", "gf_dhistogram", "gf_rug", "gf_rugx")
 
   purrr::walk(plot_types, function(plot) {
     do.call(plot, plot_args) %>%
