@@ -1,5 +1,13 @@
 # `coursekata` change log
 
+## coursekata 0.13.1
+
+- Fix issue where startup message was not being displayed
+- Make dependent startup package messages visible by default
+- Add `coursekata.quiet` option to suppress startup messages
+- Document `coursekata.quickstart` and `coursekata.quiet` options in README
+- Trim unused packages in preparation for CRAN submission
+
 ## coursekata 0.13.0
 
 - Add `coursekata.quickstart` option, which can reduce load times significantly.
