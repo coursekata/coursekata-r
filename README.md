@@ -48,12 +48,17 @@ they are not already installed.
 
 ## Loading Packages Used in CourseKata Courses
 
-`library(coursekata)` will load these core packages in addition to the
-[functions and theme](#functions-and-theme) included in the `coursekata`
-package:
+`library(coursekata)` will load the following core packages in addition
+to the [functions and theme](#functions-and-theme) included in the
+`coursekata` package:
 
 ``` r
 library(coursekata)
+#> ── CourseKata packages ──────────────────────────────────── coursekata 0.13.0 ──
+#> ✔ dslabs              0.7.6         ✔ Metrics             0.1.4  
+#> ✔ Lock5withR          1.2.2         ✔ lsr                 0.5.2  
+#> ✔ fivethirtyeightdata 0.1.0         ✔ mosaic              1.8.4.2
+#> ✔ fivethirtyeight     0.6.2         ✔ supernova           2.5.7
 ```
 
 - [supernova](https://github.com/UCLATALL/supernova), for
@@ -77,6 +82,17 @@ instructors who teach the course. This package installs these:
   fivethirtyeightdata](https://cran.r-project.org/web/packages/fivethirtyeight/vignettes/fivethirtyeight.html)
 - [Lock5withR](https://github.com/rpruim/Lock5withR)
 - [dslabs](https://github.com/rafalab/dslabs)
+
+### Startup options
+
+- By default, the package will show all startup messages from the
+  dependent packages. To quiet these (like in the output above), you can
+  set `options(coursekata.quiet = TRUE)`
+- By default, a few checks are performed on startup to check that the
+  packages are installed, up-to-date, and loading from the correct
+  locations. This can take a couple of seconds; to disable this in
+  environments where time is critical set
+  `options(coursekata.quickstart = TRUE)`
 
 ## Functions and Theme
 

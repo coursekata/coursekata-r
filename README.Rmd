@@ -11,6 +11,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+options(coursekata.quiet = TRUE)
 ```
 
 # coursekata <img src='man/figures/logo.png' align="right" height="138.5" />
@@ -44,7 +45,7 @@ Note that installing the package will install all of the functions that are used
 
 ## Loading Packages Used in CourseKata Courses
 
-`library(coursekata)` will load these core packages in addition to the [functions and theme](#functions-and-theme) included in the `coursekata` package:
+`library(coursekata)` will load the following core packages in addition to the [functions and theme](#functions-and-theme) included in the `coursekata` package:
 
 ```{r}
 library(coursekata)
@@ -67,6 +68,10 @@ In addition to useful functions, a great deal of data sets are used by instructo
 * [Lock5withR](https://github.com/rpruim/Lock5withR)
 * [dslabs](https://github.com/rafalab/dslabs)
 
+### Startup options
+
+- By default, the package will show all startup messages from the dependent packages. To quiet these (like in the output above), you can set `options(coursekata.quiet = TRUE)`
+- By default, a few checks are performed on startup to check that the packages are installed, up-to-date, and loading from the correct locations. This can take a couple of seconds; to disable this in environments where time is critical set `options(coursekata.quickstart = TRUE)`
 
 ## Functions and Theme
 
