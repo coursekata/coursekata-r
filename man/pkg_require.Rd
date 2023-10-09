@@ -6,7 +6,7 @@
 versions of packages installed, so if the package is currently loaded, make sure to load from the
 place it was already loaded from.}
 \usage{
-pkg_require(pkgs, do_not_ask = FALSE)
+pkg_require(pkgs, do_not_ask = FALSE, quietly = TRUE)
 }
 \arguments{
 \item{pkgs}{A character vector of packages to load.}

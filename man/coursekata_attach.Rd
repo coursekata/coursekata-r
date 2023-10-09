@@ -4,7 +4,10 @@
 \alias{coursekata_attach}
 \title{Attach the CourseKata course packages}
 \usage{
-coursekata_attach()
+coursekata_attach(quietly = FALSE)
+}
+\arguments{
+\item{quietly}{Whether to suppress messages.}
 }
 \value{
 A named logical vector indicating which packages were attached.
