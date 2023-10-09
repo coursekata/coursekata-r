@@ -13,10 +13,10 @@ Authors@R: c(
 Description: Easily install and load all packages and functions used in
     CourseKata courses. Aid teaching with helper functions and augment
     generic functions to provide cohesion between the network of packages.
-    Learn more about CourseKata at <https://www.coursekata.org>.
+    Learn more about CourseKata at <https://coursekata.org>.
 License: AGPL (>= 3)
-URL: https://www.github.com/UCLTALL/coursekata-r
-BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
+URL: https://www.github.com/coursekata/coursekata-r
+BugReports: https://www.github.com/coursekata/coursekata-r/issues
 Depends:
     R (>= 3.6)
 Imports:

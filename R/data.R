@@ -21,7 +21,7 @@
 #' @references
 #' De Cock, Dean, (2011). Ames, Iowa: Alternative to the Boston Housing Data as an end of semester
 #' regression project, *Journal of Statistics Education, 19*(3).
-#' <https://dx.doi.org/10.1080/10691898.2011.11889627>
+#' \doi{10.1080/10691898.2011.11889627}
 #'
 #' @format A data frame with 2930 observations on the following 80 variables:
 #' \describe{
@@ -117,7 +117,7 @@
 #' @references
 #' Kline, J. A., Fisher, M. A., Pettit, K. L., Linville, C. T., & Beck, A. M. (2019). Controlled
 #' clinical trial of canine therapy versus usual care to reduce patient anxiety in the emergency
-#' department. *PloS One, 14*(1), e0209232. <https://doi.org/10.1371/journal.pone.0209232>
+#' department. *PloS One, 14*(1), e0209232. \doi{10.1371/journal.pone.0209232}
 #'
 #' @format A data frame with 84 observations on the following 53 variables:
 #' \describe{
