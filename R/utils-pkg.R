@@ -127,7 +127,7 @@ ask_to_install <- function(pkgs) {
   line <- function(x = "") {
     sprintf("%s\n", x)
   }
-  yesno::yesno(crayon::red(paste0(
+  yesno::yesno(cli::col_red(paste0(
     line(),
     line("The following packages could not be found:"),
     line(paste0("  - ", pkgs, "\n", collapse = "")),
