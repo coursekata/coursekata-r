@@ -1,15 +1,15 @@
 detacher <- function(pkgs) {
-  detach_ <- function(pkg) {
+  lapply(pkgs, function(pkg) {
     try(detach(paste0("package:", pkg), unload = TRUE, character.only = TRUE), silent = TRUE)
-  }
-  lapply(pkgs, detach_)
+  })
 }
 
 attacher <- function(pkgs) {
-  attach_ <- function(pkg) {
-    suppressMessages(library(pkg, character.only = TRUE))
-  }
-  lapply(pkgs, attach_)
+  lapply(pkgs, function(pkg) {
+    suppressPackageStartupMessages(suppressWarnings(require(
+      pkg, character.only = TRUE, quietly = TRUE
+    )))
+  })
 }
 
 expect_doppelganger <- function(plot, name) {
