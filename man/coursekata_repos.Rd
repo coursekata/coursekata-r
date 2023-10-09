@@ -7,8 +7,7 @@
 coursekata_repos(repos = getOption("repos"))
 }
 \arguments{
-\item{repos}{Optionally set a repository character vector to augment. If one of the values is not
-named CRAN, the RStudio CRAN server will be added.}
+\item{repos}{Optionally set a repository character vector to augment.}
 }
 \value{
 A set of repositories that can be used to install or update the CourseKata packages.

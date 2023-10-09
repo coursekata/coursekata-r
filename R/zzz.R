@@ -3,7 +3,7 @@
   attached <- coursekata_attach()
   coursekata_load_theme()
   if (!quickstart()) {
-    coursekata_attach_message(attached)
+    rlang::inform(coursekata_attach_message(attached), class = "packageStartupMessage")
   }
 }
 

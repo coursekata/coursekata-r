@@ -18,18 +18,13 @@ coursekata_attach <- function() {
 coursekata_attach_message <- function(pkgs) {
   if (length(pkgs) == 0) return(NULL)
 
-  is_dark_theme <- rstudioapi::isAvailable() &&
-    rstudioapi::hasFun("getThemeInfo") &&
-    rstudioapi::getThemeInfo()$dark
-  theme <- themes[[if (is_dark_theme) "dark" else "light"]]
-
   info <- coursekata_packages()
   version <- ifelse(is.na(info$version), "", info$version)
-  pkgs <- theme$pkg(paste(
-    ifelse(info$attached, theme$good(cli::symbol$tick), theme$bad("x")),
-    theme$text(format(info$package)),
+  pkgs <- paste(
+    ifelse(info$attached, cli::col_green(cli::symbol$tick), cli::col_red("x")),
+    cli::col_green(format(info$package)),
     cli::ansi_align(version, max(cli::ansi_nchar(version)))
-  ))
+  )
 
   paste(
     cli::rule(
@@ -40,19 +35,3 @@ coursekata_attach_message <- function(pkgs) {
     sep = "\n"
   )
 }
-
-
-themes <- list(
-  light = list(
-    text = cli::col_black,
-    pkg = cli::col_blue,
-    good = cli::col_green,
-    bad = cli::col_red
-  ),
-  dark = list(
-    text = cli::col_white,
-    pkg = cli::col_br_blue,
-    good = cli::col_br_green,
-    bad = cli::col_br_red
-  )
-)

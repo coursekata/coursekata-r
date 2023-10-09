@@ -3,8 +3,7 @@
 #' Ensures a default CRAN is set if one is not already set, and adds the repository for
 #' fivethirtyeightdata.
 #'
-#' @param repos Optionally set a repository character vector to augment. If one of the values is not
-#'   named CRAN, the RStudio CRAN server will be added.
+#' @param repos Optionally set a repository character vector to augment.
 #'
 #' @return A set of repositories that can be used to install or update the CourseKata packages.
 #' @export
