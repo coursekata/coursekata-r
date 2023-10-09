@@ -82,15 +82,25 @@ pkg_remote_version <- function(pkgs) {
 #' @param do_not_ask Prevent asking the user to install missing packages (they are skipped).
 #' @param quietly Prevent package startup messages.
 #' @keywords internal
-pkg_require <- function(pkgs, do_not_ask = FALSE) {
-  pkg_load <- function(pkg) {
-    suppressPackageStartupMessages(suppressWarnings(require(
-      pkg,
-      lib.loc = if (quickstart()) NULL else pkg_library_location(pkg),
-      character.only = TRUE,
-      warn.conflicts = FALSE,
-      quietly = TRUE
-    )))
+pkg_require <- function(pkgs, do_not_ask = FALSE, quietly = TRUE) {
+  pkg_load <- if (quietly) {
+    function(pkg) {
+      suppressPackageStartupMessages(suppressWarnings(require(
+        pkg,
+        lib.loc = if (quickstart()) NULL else pkg_library_location(pkg),
+        character.only = TRUE,
+        warn.conflicts = FALSE,
+        quietly = TRUE
+      )))
+    }
+  } else {
+    function(pkg) {
+      require(
+        pkg,
+        lib.loc = if (quickstart()) NULL else pkg_library_location(pkg),
+        character.only = TRUE,
+      )
+    }
   }
 
   vapply(pkgs, function(pkg) {
