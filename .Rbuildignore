@@ -8,3 +8,4 @@
 ^\.vscode$
 ^.lintr$
 ^CHANGELOG\.md$
+^cran-comments\.md$
