@@ -52,7 +52,7 @@ test_that("it plots the empty model as a vertical line when outcome is on Y, one
     expect_doppelganger(snap_name("gf_boxplot", " -- 2"))
 
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
@@ -101,7 +101,7 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
   #   expect_doppelganger(snap_name("gf_boxplot"))
 
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
@@ -119,7 +119,7 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
 
 test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on Y", {
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
@@ -156,7 +156,7 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
 
 test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on Y", {
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
@@ -186,7 +186,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 
 test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on X", {
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
@@ -218,7 +218,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 
 test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on Y", {
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
@@ -258,7 +258,7 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
 
 test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on X", {
   testthat::skip_if(
-    "development" %in% R.version.string,
+    grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
 
