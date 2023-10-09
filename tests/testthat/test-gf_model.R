@@ -87,14 +87,6 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_boxplot"))
 
-  gf_violin(1 ~ later_anxiety, data = er) %>%
-    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-    expect_doppelganger(snap_name("gf_violin", " -- 2"))
-
-  gf_violin(later_anxiety ~ 1, data = er) %>%
-    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-    expect_doppelganger(snap_name("gf_violin horizontal"))
-
   # TODO: Can't find geom called "boxploth"
   # gf_boxploth(~later_anxiety, data = er) %>%
   #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
@@ -104,6 +96,14 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
     grepl("development", R.version.string, fixed = TRUE),
     "These have been visually checked to be correct on R-devel, but the vdiffr fails."
   )
+
+  gf_violin(1 ~ later_anxiety, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_violin", " -- 2"))
+
+  gf_violin(later_anxiety ~ 1, data = er) %>%
+    gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
+    expect_doppelganger(snap_name("gf_violin horizontal"))
 
   # TODO: "gf_dens2": Can't find geom called "density_line"
   other_plots <- c("gf_rug", "gf_rugx", "gf_density", "gf_dens")
