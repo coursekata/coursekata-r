@@ -1,6 +1,6 @@
 Package: coursekata
 Title: Packages and Functions for CourseKata Courses
-Version: 0.13.1
+Version: 0.14.0
 Date: 2023-10-09
 Authors@R: c(
     person("Adam", "Blake", , "adamblake@g.ucla.edu", role = c("cre", "aut"),

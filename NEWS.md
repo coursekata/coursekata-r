@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.14.0
+
+- Remove deprecated `gf_model_old()` function
+
 ## coursekata 0.13.1
 
 - Fix issue where startup message was not being displayed
