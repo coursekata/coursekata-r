@@ -8,7 +8,7 @@
 
 [![R build
 status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/coursekata/coursekata-r/actions)
-[![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://codecov.io/gh/coursekata/coursekata-r)
+[![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://app.codecov.io/gh/coursekata/coursekata-r)
 <!-- badges: end -->
 
 ## Overview
@@ -54,34 +54,35 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────────────── coursekata 0.13.0 ──
+#> ── CourseKata packages ──────────────────────────────────── coursekata 0.14.0 ──
 #> ✔ dslabs              0.7.6         ✔ Metrics             0.1.4  
 #> ✔ Lock5withR          1.2.2         ✔ lsr                 0.5.2  
 #> ✔ fivethirtyeightdata 0.1.0         ✔ mosaic              1.8.4.2
 #> ✔ fivethirtyeight     0.6.2         ✔ supernova           2.5.7
 ```
 
-- [supernova](https://github.com/UCLATALL/supernova), for
+- [supernova](https://cran.r-project.org/package=supernova), for
   - creating ANOVA tables.
   - tools for extracting information from fitted models (`b0()`, `b1()`,
     `PRE()`, `fVal()`)
   - an augmented `print.lm()` which prints the fitted equation as well
   - … and more!
-- [mosaic](https://projectmosaic.github.io/mosaic/), for a unified
+- [mosaic](https://cran.r-project.org/package=mosaic), for a unified
   interface to most statistical tools.
-- [ggformula](https://projectmosaic.github.io/ggformula/), for a formula
-  interface to ggplot2.
-- [dplyr](https://dplyr.tidyverse.org), for data manipulation.
-- [Metrics](https://cran.r-project.org/web/packages/Metrics/index.html),
-  for model evaluation.
+- [ggformula](https://cran.r-project.org/package=ggformula), for a
+  formula interface to ggplot2.
+- [dplyr](https://cran.r-project.org/package=dplyr), for data
+  manipulation.
+- [Metrics](https://cran.r-project.org/package=Metrics), for model
+  evaluation.
 
 In addition to useful functions, a great deal of data sets are used by
 instructors who teach the course. This package installs these:
 
-- [fivethirtyeight and
-  fivethirtyeightdata](https://cran.r-project.org/web/packages/fivethirtyeight/vignettes/fivethirtyeight.html)
-- [Lock5withR](https://github.com/rpruim/Lock5withR)
-- [dslabs](https://github.com/rafalab/dslabs)
+- [fivethirtyeight](https://cran.r-project.org/package=fivethirtyeight)
+- [fivethirtyeightdata](https://fivethirtyeightdata.github.io/fivethirtyeightdata/index.html)
+- [Lock5withR](https://cran.r-project.org/package=Lock5withR)
+- [dslabs](https://cran.r-project.org/package=dslabs)
 
 ### Startup options
 
