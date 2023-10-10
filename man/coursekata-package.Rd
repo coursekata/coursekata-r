@@ -13,8 +13,8 @@ Easily install and load all packages and functions used in CourseKata courses. A
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://www.github.com/coursekata/coursekata-r}
-  \item Report bugs at \url{https://www.github.com/coursekata/coursekata-r/issues}
+  \item \url{https://github.com/coursekata/coursekata-r}
+  \item Report bugs at \url{https://github.com/coursekata/coursekata-r/issues}
 }
 
 }

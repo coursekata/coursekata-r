@@ -30,7 +30,7 @@
 
 ## coursekata 0.10.0
 
-- Add [`Metrics` package](https://cran.r-project.org/web/packages/Metrics/index.html)
+- Add [`Metrics` package](https://CRAN.R-project.org/package=Metrics)
 - Remove `zargle`
 
 ## coursekata 0.9.4
