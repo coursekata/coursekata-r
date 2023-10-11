@@ -104,19 +104,25 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
 }
 
 #' Convert a potentially complex predictor to a character vector of terms.
+#'
 #' @param predictor The predictor(s) to return estimates for.
+#'
 #' @return A character vector of terms.
-#' @keywords internal
+#'
+#' @noRd
 convert_predictor <- function(predictor) {
   purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))) %>%
     purrr::flatten_chr()
 }
 
 #' Convert a formula and data to an [`lm`] object.
+#'
 #' @param object A [`lm`] object, or [`formula`].
 #' @param data If `object` is a formula, the data to fit the formula to as a [`data.frame`].
+#'
 #' @return An [`lm`] object.
-#' @keywords internal
+#'
+#' @noRd
 convert_lm <- function(object, data) {
   if ("lm" %in% class(object) == FALSE) {
     data_call <- rlang::enquo(data)
@@ -131,10 +137,14 @@ convert_lm <- function(object, data) {
 }
 
 #' Assert that the arguments to the estimate extraction functions are valid.
+#'
 #' @param all Whether to return all the estimates (e.g. all *F*-values).
 #' @param predictor The predictor(s) to return estimates for.
 #' @param type The type (1, 2, 3) of sums of squares to use.
-#' @keywords internal
+#'
+#' @return Nothing, but throws an error if the arguments are invalid.
+#'
+#' @noRd
 check_extract_args <- function(all, predictor, type = 3) {
   vctrs::vec_assert(all, logical(), 1)
   vctrs::vec_assert(predictor, character())
@@ -142,8 +152,12 @@ check_extract_args <- function(all, predictor, type = 3) {
 }
 
 #' Determine if the fitted model is the empty/null model.
+#'
 #' @param fit A fitted linear model to pass to supernova.
-#' @keywords internal
+#'
+#' @return Nothing, but throws an error if the model is empty.
+#'
+#' @noRd
 check_empty_model <- function(fit) {
   models <- supernova::generate_models(fit)
   if (length(models) == 0) {
@@ -152,11 +166,15 @@ check_empty_model <- function(fit) {
 }
 
 #' Extract a statistic from a supernova table and name the values
+#'
 #' @param fit A fitted linear model to pass to supernova.
 #' @param type The type (1, 2, 3) of sums of squares to use.
 #' @param stat The statistic from the supernova (as named in the `supernova(...)$tbl`).
 #' @param predictor Optionally specify which terms to return (instead of all of them).
-#' @keywords internal
+#'
+#' @return A named list (one for each term, where term is the name) of the values of the statistic.
+#'
+#' @noRd
 extract_stat <- function(fit, type, stat, predictor = character(0)) {
   sup_out <- supernova(fit, type)
   vals <- sup_out$tbl[[stat]]

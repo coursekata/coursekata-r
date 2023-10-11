@@ -1,6 +1,19 @@
 ## Release summary
 
-- This is a new package.
+- This is a new package. This is the second time submitting this package to CRAN, and it has been
+  updated to address the feedback from the first submission.
+
+- Requested changes:
+
+  - The Title and Description now use single quotes around 'CourseKata'
+  - All exported functions have been checked to ensure that their return values
+    are documented in the `@return` section of the function documentation.
+    - coursekata_load_theme
+    - coursekata_unload_theme
+    - gf_model
+
+- Additional changes:
+  - Removed internal docs and opted for @noRd tags as suggested by tidyverse
 
 ## Test environments
 

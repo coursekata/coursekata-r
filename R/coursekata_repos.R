@@ -6,8 +6,8 @@
 #' @param repos Optionally set a repository character vector to augment.
 #'
 #' @return A set of repositories that can be used to install or update the CourseKata packages.
-#' @export
 #'
+#' @export
 #' @examples
 #' coursekata_repos()
 coursekata_repos <- function(repos = getOption("repos")) {

@@ -1,5 +1,7 @@
 #' Install or update all CourseKata packages.
+#'
 #' @param ... Arguments passed on to [`pak::pkg_install`].
+#'
 #' @return The state of all the packages after any updates have been performed.
 #'
 #' @export

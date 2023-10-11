@@ -6,6 +6,9 @@
 \usage{
 coursekata_unload_theme()
 }
+\value{
+No return value, called to restore the global state of \code{ggplot2}.
+}
 \description{
 This function will restore all of the tweaks to themes and plotting to the original \code{ggplot2}
 defaults. If you want to go back to the CourseKata look and feel, run

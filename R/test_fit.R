@@ -1,7 +1,10 @@
 #' Split data into train and test sets.
+#'
 #' @param data A data frame.
 #' @param prop The proportion of rows to assign to the training set.
+#'
 #' @return A list with two data frames, `train` and `test`.
+#'
 #' @export
 split_data <- function(data, prop = .7) {
   row_numbers <- seq_len(nrow(data))
@@ -10,10 +13,13 @@ split_data <- function(data, prop = .7) {
 }
 
 #' Test the fit of a model on a train and test set.
+#'
 #' @param model An [`lm`] model.
 #' @param df_train A data frame with the training data.
 #' @param df_test A data frame with the test data.
+#'
 #' @return A data frame with the fit statistics.
+#'
 #' @export
 fit_stats <- function(model, df_train, df_test) {
   fit_train <- stats::update(model, data = df_train)
