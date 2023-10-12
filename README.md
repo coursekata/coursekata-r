@@ -4,11 +4,12 @@
 # coursekata <img src='man/figures/logo.png' align="right" height="138.5" />
 
 <!-- badges: start -->
-<!-- [![CRAN status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata) -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata)
 [![R build
 status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/coursekata/coursekata-r/actions)
-[![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://codecov.io/gh/coursekata/coursekata-r)
+[![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://app.codecov.io/gh/coursekata/coursekata-r)
 <!-- badges: end -->
 
 ## Overview
@@ -33,9 +34,14 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 ## Installation
 
 ``` r
+# Install from CRAN
+install.packages("coursekata")
+```
+
+``` r
 # Install the development version from GitHub
-# install.packages("remotes")
-remotes::install_github("coursekata/coursekata-r")
+# install.packages("pak")
+pak::pak("coursekata/coursekata-r")
 ```
 
 Note that installing the package will install all of the functions that
@@ -44,39 +50,57 @@ installed: `fivethirtyeight` and `fivethirtyeightdata`. These packages
 only contain data, so the R package building process complains when
 functions are not imported from them. The first time you call
 `library(coursekata)` you will be prompted to install the packages if
-they are not already installed.
+they are not already installed, or you can call
+`coursekata::coursekata_install()` to install them at any time.
 
 ## Loading Packages Used in CourseKata Courses
 
-`library(coursekata)` will load these core packages in addition to the
-[functions and theme](#functions-and-theme) included in the `coursekata`
-package:
+`library(coursekata)` will load the following core packages in addition
+to the [functions and theme](#functions-and-theme) included in the
+`coursekata` package:
 
 ``` r
 library(coursekata)
+#> ── CourseKata packages ──────────────────────────────────── coursekata 0.14.0 ──
+#> ✔ dslabs              0.7.6         ✔ Metrics             0.1.4  
+#> ✔ Lock5withR          1.2.2         ✔ lsr                 0.5.2  
+#> ✔ fivethirtyeightdata 0.1.0         ✔ mosaic              1.8.4.2
+#> ✔ fivethirtyeight     0.6.2         ✔ supernova           2.5.7
 ```
 
-- [supernova](https://github.com/UCLATALL/supernova), for
+- [supernova](https://cran.r-project.org/package=supernova), for
   - creating ANOVA tables.
   - tools for extracting information from fitted models (`b0()`, `b1()`,
     `PRE()`, `fVal()`)
   - an augmented `print.lm()` which prints the fitted equation as well
   - … and more!
-- [mosaic](https://projectmosaic.github.io/mosaic/), for a unified
+- [mosaic](https://cran.r-project.org/package=mosaic), for a unified
   interface to most statistical tools.
-- [ggformula](https://projectmosaic.github.io/ggformula/), for a formula
-  interface to ggplot2.
-- [dplyr](https://dplyr.tidyverse.org), for data manipulation.
-- [Metrics](https://cran.r-project.org/web/packages/Metrics/index.html),
-  for model evaluation.
+- [ggformula](https://cran.r-project.org/package=ggformula), for a
+  formula interface to ggplot2.
+- [dplyr](https://cran.r-project.org/package=dplyr), for data
+  manipulation.
+- [Metrics](https://cran.r-project.org/package=Metrics), for model
+  evaluation.
 
 In addition to useful functions, a great deal of data sets are used by
 instructors who teach the course. This package installs these:
 
-- [fivethirtyeight and
-  fivethirtyeightdata](https://cran.r-project.org/web/packages/fivethirtyeight/vignettes/fivethirtyeight.html)
-- [Lock5withR](https://github.com/rpruim/Lock5withR)
-- [dslabs](https://github.com/rafalab/dslabs)
+- [fivethirtyeight](https://cran.r-project.org/package=fivethirtyeight)
+- [fivethirtyeightdata](https://fivethirtyeightdata.github.io/fivethirtyeightdata/index.html)
+- [Lock5withR](https://cran.r-project.org/package=Lock5withR)
+- [dslabs](https://cran.r-project.org/package=dslabs)
+
+### Startup options
+
+- By default, the package will show all startup messages from the
+  dependent packages. To quiet these (like in the output above), you can
+  set `options(coursekata.quiet = TRUE)`
+- By default, a few checks are performed on startup to check that the
+  packages are installed, up-to-date, and loading from the correct
+  locations. This can take a couple of seconds; to disable this in
+  environments where time is critical set
+  `options(coursekata.quickstart = TRUE)`
 
 ## Functions and Theme
 

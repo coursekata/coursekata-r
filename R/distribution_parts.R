@@ -16,7 +16,6 @@
 #'
 #' @rdname distribution_parts
 #' @export
-#'
 #' @examples
 #'
 #' upper(1:10, .1)
@@ -66,6 +65,15 @@ upper <- function(x, prop = .025, greedy = TRUE) {
   values[order(values$original_pos), "in_zone", drop = TRUE]
 }
 
+#' Calculate the number of values in the tail of a distribution
+#'
+#' @param x The distribution of values to check.
+#' @param prop The proportion of values to find.
+#' @param greedy Whether the function should be greedy, as per the description above.
+#'
+#' @return The number of values in the tail of the distribution.
+#'
+#' @noRd
 tail_size <- function(x, prop, greedy) {
   na_rm <- stats::na.omit(x)
   tail_unbiased <- length(na_rm) * prop

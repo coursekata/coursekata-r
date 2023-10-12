@@ -110,6 +110,6 @@ Exposure to therapy dogs plus handlers significantly reduced anxiety in ED patie
 \references{
 Kline, J. A., Fisher, M. A., Pettit, K. L., Linville, C. T., & Beck, A. M. (2019). Controlled
 clinical trial of canine therapy versus usual care to reduce patient anxiety in the emergency
-department. \emph{PloS One, 14}(1), e0209232. \url{https://doi.org/10.1371/journal.pone.0209232}
+department. \emph{PloS One, 14}(1), e0209232. \doi{10.1371/journal.pone.0209232}
 }
 \keyword{datasets}

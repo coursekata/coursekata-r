@@ -29,15 +29,14 @@ test_that("it retrieves the package version for currently installed packages, or
 test_that("requiring a package is vectorized", {
   pkgs <- "fivethirtyeight" # use this package because it is not imported
   purrr::walk(pkgs, detacher)
-  expect_identical(pkg_require(pkgs), pkg_is_installed(pkgs))
+  expect_identical(pkg_require(pkgs, quietly = TRUE), pkg_is_installed(pkgs))
 })
 
 
-test_that("requiring a package is quiet", {
+test_that("requiring a package can be quiet", {
   pkgs <- "fivethirtyeight" # use this package because it is not imported
   purrr::walk(pkgs, detacher)
-  expect_message(pkg_require(pkgs), NA)
-  expect_message(pkg_require(pkgs), NA)
+  expect_message(pkg_require(pkgs, quietly = TRUE), NA)
 })
 
 test_that("requiring a missing package calmly asks if you want to install it", {

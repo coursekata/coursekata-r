@@ -1,5 +1,17 @@
 # `coursekata` change log
 
+## coursekata 0.14.0
+
+- Remove deprecated `gf_model_old()` function
+
+## coursekata 0.13.1
+
+- Fix issue where startup message was not being displayed
+- Make dependent startup package messages visible by default
+- Add `coursekata.quiet` option to suppress startup messages
+- Document `coursekata.quickstart` and `coursekata.quiet` options in README
+- Trim unused packages in preparation for CRAN submission
+
 ## coursekata 0.13.0
 
 - Add `coursekata.quickstart` option, which can reduce load times significantly.
@@ -18,7 +30,7 @@
 
 ## coursekata 0.10.0
 
-- Add [`Metrics` package](https://cran.r-project.org/web/packages/Metrics/index.html)
+- Add [`Metrics` package](https://CRAN.R-project.org/package=Metrics)
 - Remove `zargle`
 
 ## coursekata 0.9.4

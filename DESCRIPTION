@@ -1,7 +1,7 @@
 Package: coursekata
-Title: Packages and Functions for CourseKata Courses
-Version: 0.13.0
-Date: 2023-10-05
+Title: Packages and Functions for 'CourseKata' Courses
+Version: 0.14.0
+Date: 2023-10-11
 Authors@R: c(
     person("Adam", "Blake", , "adamblake@g.ucla.edu", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
@@ -11,32 +11,28 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-6107-7827"))
   )
 Description: Easily install and load all packages and functions used in
-    CourseKata courses. Aid teaching with helper functions and augment
+    'CourseKata' courses. Aid teaching with helper functions and augment
     generic functions to provide cohesion between the network of packages.
-    Learn more about CourseKata at <https://www.coursekata.org>.
+    Learn more about 'CourseKata' at <https://coursekata.org>.
 License: AGPL (>= 3)
-URL: https://www.github.com/UCLTALL/coursekata-r
-BugReports: https://www.github.com/UCLTALL/coursekata-r/issues
+URL: https://github.com/coursekata/coursekata-r
+BugReports: https://github.com/coursekata/coursekata-r/issues
 Depends:
     R (>= 3.6)
 Imports:
     cli (>= 3.2.0),
-    crayon (>= 1.5.0),
     dslabs (>= 0.7.4),
     ggformula (>= 0.10.1),
     ggplot2 (>= 3.3.5),
     glue (>= 1.6.2),
-    lifecycle (>= 1.0.1),
     Lock5withR (>= 1.2.2),
     lsr (>= 0.5.2),
-    magrittr (>= 2.0.2),
     Metrics,
     mosaic (>= 1.8.3),
     pak,
     palmerpenguins,
     purrr (>= 0.3.4),
     rlang (>= 1.0.2),
-    rstudioapi (>= 0.13),
     supernova (>= 2.5.1),
     vctrs (>= 0.4.1),
     viridisLite,
@@ -48,7 +44,6 @@ Suggests:
     mockr (>= 0.1),
     readr (>= 2.1.2),
     readxl (>= 1.4.0),
-    rgdal,
     usethis (>= 2.1.6),
     simstudy (>= 0.5.0),
     testthat (>= 3.1.2),

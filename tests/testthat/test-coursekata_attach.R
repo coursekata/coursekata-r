@@ -9,7 +9,7 @@ test_that("all course packages are listed with version and whether attached", {
   withr::defer(attacher(pkgs[installed]))
 
   # only the installed package will be attached
-  attachments <- coursekata_attach()
+  attachments <- coursekata_attach(quietly = TRUE)
   names(installed) <- pkgs
   expect_identical(attachments, installed)
 })

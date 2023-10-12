@@ -12,8 +12,8 @@ coursekata_pkgs <- rev(c(
 #'
 #' @return A data frame with three variables: the name of the package `package`, the `version`, and
 #'   whether it is currently `attached`.
-#' @export
 #'
+#' @export
 #' @examples
 #' coursekata_packages()
 coursekata_packages <- function(check_remote_version = FALSE) {
@@ -37,16 +37,20 @@ coursekata_packages <- function(check_remote_version = FALSE) {
 
 
 #' List all currently attached CourseKata course packages
+#'
 #' @return A character vector of the course packages that have been attached.
-#' @keywords internal
+#'
+#' @noRd
 coursekata_attached <- function() {
   coursekata_pkgs[pkg_is_attached(coursekata_pkgs)]
 }
 
 
 #' List all currently NOT attached CourseKata course packages
+#'
 #' @return A character vector of the course packages that are not attached.
-#' @keywords internal
+#'
+#' @noRd
 coursekata_detached <- function() {
   coursekata_pkgs[!pkg_is_attached(coursekata_pkgs)]
 }

@@ -8,7 +8,8 @@
 #' @param space_between What to put between the columns.
 #'
 #' @return A string that prints to the terminal as columns.
-#' @keywords internal
+#'
+#' @noRd
 to_cols <- function(strings, n_cols = 2, space_between = "       ") {
   items_per_col <- ceiling(length(strings) / n_cols)
   spacers <- rep("", items_per_col * n_cols - length(strings))

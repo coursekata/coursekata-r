@@ -15,6 +15,9 @@ gf_model(object, model, ...)
 \code{attribute = value}, (b) ggplot2 aesthetics to be mapped with \code{attribute = ~ expression}, or
 (c) attributes of the layer as a whole, which are set with \code{attribute = value}.}
 }
+\value{
+a gg object (a plot layer) that can be added to a plot.
+}
 \description{
 When teaching about regression it can be useful to visualize the data as a point plot with the
 outcome on the y-axis and the explanatory variable on the x-axis. For regression models, this is
