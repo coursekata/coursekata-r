@@ -1,33 +1,3 @@
-check_aesthetics <- function(args, predictor_vars) {
-  mappable <- c(ggplot2::GeomLine$aesthetics(), "color")
-  to_map <- union(names(args), mappable)
-
-  purrr::walk(to_map, function(aesthetic) {
-    if (inherits(args[[aesthetic]], "formula")) {
-      var_name <- deparse(f_rhs(args[[aesthetic]]))
-      if (!var_name %in% predictor_vars) {
-        abort(c(
-          "Cannot apply an aesthetic using variables that are not predictors in the model",
-          glue("trying to apply: `{aesthetic} ~ {var_name}`"),
-          glue("predictor variables: {paste(predictor_vars, collapse = ', ')}")
-        ))
-      }
-    }
-  })
-}
-
-sd_spread <- list(
-  "-1 SD" = function(x) mean(x, na.rm = TRUE) - stats::sd(x, na.rm = TRUE),
-  "mean" = function(x) mean(x, na.rm = TRUE),
-  "+1 SD" = function(x) mean(x, na.rm = TRUE) + stats::sd(x, na.rm = TRUE)
-)
-
-is_categorical <- function(x) !is.numeric(x)
-collapse <- function(x) glue::glue_collapse(x, sep = ", ")
-name_to_frm <- function(x) stats::formula(glue("~{x}"))
-if_not_null <- function(x, other) if (!is.null(x)) x else other
-
-
 #' Add a model to a plot
 #'
 #' When teaching about regression it can be useful to visualize the data as a point plot with the
@@ -44,6 +14,8 @@ if_not_null <- function(x, other) if (!is.null(x)) x else other
 #' @param ... Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
 #'   `attribute = value`, (b) ggplot2 aesthetics to be mapped with `attribute = ~ expression`, or
 #'   (c) attributes of the layer as a whole, which are set with `attribute = value`.
+#'
+#' @return a gg object (a plot layer) that can be added to a plot.
 #'
 #' @export
 gf_model <- function(object, model, ...) {
@@ -220,7 +192,6 @@ gf_model <- function(object, model, ...) {
   return(do.call(info$layer$plotter, info$layer$args))
 }
 
-
 fortify_layer <- function(object, ...) {
   args <- list2(...)
   args$object <- object
@@ -262,3 +233,33 @@ fortify_plot <- function(object, fortified_model) {
     flipped = flipped, env = object$plot_env
   )
 }
+
+check_aesthetics <- function(args, predictor_vars) {
+  mappable <- c(ggplot2::GeomLine$aesthetics(), "color")
+  to_map <- union(names(args), mappable)
+
+  purrr::walk(to_map, function(aesthetic) {
+    if (inherits(args[[aesthetic]], "formula")) {
+      var_name <- deparse(f_rhs(args[[aesthetic]]))
+      if (!var_name %in% predictor_vars) {
+        abort(c(
+          "Cannot apply an aesthetic using variables that are not predictors in the model",
+          glue("trying to apply: `{aesthetic} ~ {var_name}`"),
+          glue("predictor variables: {paste(predictor_vars, collapse = ', ')}")
+        ))
+      }
+    }
+  })
+}
+
+
+sd_spread <- list(
+  "-1 SD" = function(x) mean(x, na.rm = TRUE) - stats::sd(x, na.rm = TRUE),
+  "mean" = function(x) mean(x, na.rm = TRUE),
+  "+1 SD" = function(x) mean(x, na.rm = TRUE) + stats::sd(x, na.rm = TRUE)
+)
+is_categorical <- function(x) !is.numeric(x)
+collapse <- function(x) glue::glue_collapse(x, sep = ", ")
+name_to_frm <- function(x) stats::formula(glue("~{x}"))
+if_not_null <- function(x, other) if (!is.null(x)) x else other
+

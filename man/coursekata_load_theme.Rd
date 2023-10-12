@@ -6,6 +6,9 @@
 \usage{
 coursekata_load_theme()
 }
+\value{
+No return value, called to adjust the global state of \code{ggplot2}.
+}
 \description{
 This function is called at package start-up and should rarely be needed by the user. The
 exception is when the user has called \code{\link[=coursekata_unload_theme]{coursekata_unload_theme()}} and wants to go back to the

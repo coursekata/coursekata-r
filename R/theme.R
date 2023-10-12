@@ -6,8 +6,8 @@
 #' and/or prevent them when loading the package, see [`coursekata_unload_theme`].
 #'
 #' @return A gg theme object
-#' @export
 #'
+#' @export
 #' @examples
 #' gf_boxplot(Thumb ~ RaceEthnic, data = Fingers, fill = ~RaceEthnic)
 theme_coursekata <- function() {
@@ -35,7 +35,9 @@ theme_coursekata <- function() {
 #' The color palettes used in our theme system
 #'
 #' @param indices The indices of the colors to pull (or all colors if no indices are given).
+#'
 #' @return A named list of the requested colors in the palette.
+#'
 #' @export
 coursekata_palette <- function(indices = integer(0)) {
   # original order (carbon palette)
@@ -93,11 +95,13 @@ coursekata_palette <- function(indices = integer(0)) {
 }
 
 #' Create a function that provides a colorblind palette.
+#'
 #' @return A function that accepts one argument `n`, which is the number of colors you want to use
 #'   in the plot. This function is used by scales like `scale_color_discrete` to provide colorblind-
 #'   safe palettes. Where possible, the function will use the hand-picked colors from
 #' [`coursekata_palette()`], and when more colors are needed than are available, it will use the
 #' [`viridisLite::viridis()`] palette.
+#'
 #' @seealso scale_discrete_coursekata
 #' @export
 coursekata_palette_provider <- function() {
@@ -130,6 +134,7 @@ coursekata_palette_provider <- function() {
 #' @param ... Additional parameters passed on to the scale type.
 #'
 #' @return A discrete color scale.
+#'
 #' @seealso coursekata_palette
 #' @export
 scale_discrete_coursekata <- function(...) {
@@ -150,6 +155,8 @@ scale_discrete_coursekata <- function(...) {
 #' [`coursekata_palette()`], sets the default theme to [`theme_coursekata()`], and tweaks some
 #' default settings for specific plots. To restore the original `ggplot2` settings, run
 #' [`coursekata_unload_theme()`].
+#'
+#' @return No return value, called to adjust the global state of `ggplot2`.
 #'
 #' @seealso coursekata_palette theme_coursekata scale_discrete_coursekata coursekata_unload_theme
 #' @export
@@ -219,6 +226,8 @@ coursekata_load_theme <- function() {
     ggplot2.continuous.fill = "viridis",
     ggplot2.continuous.colour = "viridis"
   )
+
+  invisible()
 }
 
 
@@ -227,6 +236,8 @@ coursekata_load_theme <- function() {
 #' This function will restore all of the tweaks to themes and plotting to the original `ggplot2`
 #' defaults. If you want to go back to the CourseKata look and feel, run
 #' [`coursekata_load_theme()`].
+#'
+#' @return No return value, called to restore the global state of `ggplot2`.
 #'
 #' @seealso coursekata_load_theme
 #' @export
@@ -316,4 +327,6 @@ coursekata_unload_theme <- function() {
     ggplot2.continuous.fill = NULL,
     ggplot2.continuous.colour = NULL
   )
+
+  invisible()
 }

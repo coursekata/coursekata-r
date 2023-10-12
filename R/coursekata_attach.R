@@ -1,6 +1,9 @@
 #' Attach the CourseKata course packages
+#'
 #' @param quietly Whether to suppress messages.
+#'
 #' @return A named logical vector indicating which packages were attached.
+#'
 #' @export
 #' @examples
 #' coursekata_attach()
@@ -11,11 +14,14 @@ coursekata_attach <- function(quietly = FALSE) {
 
 
 #' Information about CourseKata packages.
+#'
 #' @param pkgs A character vector of packages being loaded.
+#'
 #' @return A coursekata_attachments object, also of class data.frame with a row for each course
 #'   package and a column for each of the `package` name, `version`, and whether it is currently
 #'   `attached`.
-#' @keywords internal
+#'
+#' @noRd
 coursekata_attach_message <- function(pkgs) {
   if (length(pkgs) == 0) return(NULL)
 

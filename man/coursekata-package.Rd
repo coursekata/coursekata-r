@@ -4,17 +4,17 @@
 \name{coursekata-package}
 \alias{coursekata}
 \alias{coursekata-package}
-\title{coursekata: Packages and Functions for CourseKata Courses}
+\title{coursekata: Packages and Functions for 'CourseKata' Courses}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Easily install and load all packages and functions used in CourseKata courses. Aid teaching with helper functions and augment generic functions to provide cohesion between the network of packages. Learn more about CourseKata at \url{https://www.coursekata.org}.
+Easily install and load all packages and functions used in 'CourseKata' courses. Aid teaching with helper functions and augment generic functions to provide cohesion between the network of packages. Learn more about 'CourseKata' at \url{https://coursekata.org}.
 }
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://www.github.com/UCLTALL/coursekata-r}
-  \item Report bugs at \url{https://www.github.com/UCLTALL/coursekata-r/issues}
+  \item \url{https://github.com/coursekata/coursekata-r}
+  \item Report bugs at \url{https://github.com/coursekata/coursekata-r/issues}
 }
 
 }

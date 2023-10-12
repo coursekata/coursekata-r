@@ -86,6 +86,6 @@ reduced to the subset described in the format section.
 \references{
 De Cock, Dean, (2011). Ames, Iowa: Alternative to the Boston Housing Data as an end of semester
 regression project, \emph{Journal of Statistics Education, 19}(3).
-\url{https://dx.doi.org/10.1080/10691898.2011.11889627}
+\doi{10.1080/10691898.2011.11889627}
 }
 \keyword{datasets}
