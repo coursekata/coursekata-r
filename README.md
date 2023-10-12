@@ -4,8 +4,9 @@
 # coursekata <img src='man/figures/logo.png' align="right" height="138.5" />
 
 <!-- badges: start -->
-<!-- [![CRAN status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata) -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project.org/package=coursekata)
 [![R build
 status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/coursekata/coursekata-r/actions)
 [![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://app.codecov.io/gh/coursekata/coursekata-r)
@@ -33,9 +34,14 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 ## Installation
 
 ``` r
+# Install from CRAN
+install.packages("coursekata")
+```
+
+``` r
 # Install the development version from GitHub
-# install.packages("remotes")
-remotes::install_github("coursekata/coursekata-r")
+# install.packages("pak")
+pak::pak("coursekata/coursekata-r")
 ```
 
 Note that installing the package will install all of the functions that
@@ -44,7 +50,8 @@ installed: `fivethirtyeight` and `fivethirtyeightdata`. These packages
 only contain data, so the R package building process complains when
 functions are not imported from them. The first time you call
 `library(coursekata)` you will be prompted to install the packages if
-they are not already installed.
+they are not already installed, or you can call
+`coursekata::coursekata_install()` to install them at any time.
 
 ## Loading Packages Used in CourseKata Courses
 
