@@ -59,3 +59,12 @@ jobs:
         with:
           upload-snapshots: true
           args: 'c("--no-manual", "--as-cran")'
+
+      - name: Test loading in non-interactive mode (normal)
+        run: bin/load-non-interactive.r
+
+      - name: Test loading in non-interactive mode (quiet)
+        run: bin/load-non-interactive-quiet.r
+
+      - name: Test loading in non-interactive mode (quickstart)
+        run: bin/load-non-interactive-quickstart.r
