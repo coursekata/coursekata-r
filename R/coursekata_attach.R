@@ -10,7 +10,9 @@
 #' coursekata_attach()
 coursekata_attach <- function(do_not_ask = FALSE, quietly = FALSE) {
   !do_not_ask && pkg_check_installed(coursekata_pkgs)
-  invisible(pkg_require(coursekata_detached(), quietly = quietly))
+  detached <- coursekata_detached()
+  installed <- coursekata_pkgs[pkg_is_installed(coursekata_pkgs)]
+  invisible(pkg_require(detached[detached %in% installed], quietly = quietly))
 }
 
 
