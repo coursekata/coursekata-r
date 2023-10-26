@@ -1,5 +1,6 @@
 #' Attach the CourseKata course packages
 #'
+#' @param do_not_ask Prevent asking the user to install missing packages (they are skipped).
 #' @param quietly Whether to suppress messages.
 #'
 #' @return A named logical vector indicating which packages were attached.
@@ -7,9 +8,9 @@
 #' @export
 #' @examples
 #' coursekata_attach()
-coursekata_attach <- function(quietly = FALSE) {
-  to_attach <- coursekata_detached()
-  invisible(pkg_require(to_attach, quietly = quietly))
+coursekata_attach <- function(do_not_ask = FALSE, quietly = FALSE) {
+  !do_not_ask && pkg_check_installed(coursekata_pkgs)
+  invisible(pkg_require(coursekata_detached(), quietly = quietly))
 }
 
 
@@ -23,7 +24,9 @@ coursekata_attach <- function(quietly = FALSE) {
 #'
 #' @noRd
 coursekata_attach_message <- function(pkgs) {
-  if (length(pkgs) == 0) return(NULL)
+  if (length(pkgs) == 0) {
+    return(NULL)
+  }
 
   info <- coursekata_packages()
   version <- ifelse(is.na(info$version), "", info$version)
@@ -41,4 +44,14 @@ coursekata_attach_message <- function(pkgs) {
     to_cols(pkgs, 2),
     sep = "\n"
   )
+}
+
+
+#' List all currently NOT attached CourseKata course packages
+#'
+#' @return A character vector of the course packages that are not attached.
+#'
+#' @noRd
+coursekata_detached <- function() {
+  coursekata_pkgs[!pkg_is_attached(coursekata_pkgs)]
 }

@@ -18,7 +18,7 @@ coursekata_install <- function(...) {
   }
 
   cli::cat_line()
-  pkg_install(behind$package, ...)
+  pak::pkg_install(pkg_fix_remote_names(behind$package), ...)
   invisible(coursekata_packages(TRUE))
 }
 
