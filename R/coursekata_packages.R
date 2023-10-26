@@ -21,7 +21,7 @@ coursekata_packages <- function(check_remote_version = FALSE) {
   statuses <- pak::pkg_status(pkgs)
   info <- data.frame(
     package = pkgs,
-    installed = pkg_is_installed(pkgs, statuses),
+    installed = pkg_is_installed(pkgs),
     attached = pkg_is_attached(pkgs),
     version = pkg_version(pkgs, statuses),
     stringsAsFactors = FALSE

@@ -10,36 +10,15 @@ pkg_is_attached <- function(pkgs) {
 }
 
 
-#' Check if packages are installed
-#'
-#' Note: this function differs from [`rlang::is_installed()`] in two regards: it is quieter and will
-#' show no messages, and it returns a vector indicating which packages are installed or not (rather
-#' than a single Boolean value regarding the packages as a set). It is similar to
+#' Check if packages are installed.
 #'
 #' @param pkgs Character vector of the names of the packages to check.
-#' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
 #'
 #' @return Named logical vector indicating whether the packages are installed.
 #'
 #' @noRd
-pkg_is_installed <- function(pkgs, statuses = NULL) {
-  statuses <- if (is.null(statuses)) pak::pkg_status(pkgs) else statuses
-  checker <- function(pkg) pkg %in% statuses$package
-  vapply(pkgs, checker, logical(1))
-}
-
-
-#' Determine which libraries packages were loaded from
-#'
-#' @param pkgs A character vector of packages to check.
-#' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
-#'
-#' @return A character vector of library directory paths the packages were loaded from, the default
-#'   location if the package is not loaded but is installed, or NA if the package is not installed.
-#'
-#' @noRd
-pkg_library_location <- function(pkgs, statuses = NULL) {
-  possibly_pkg_status(pkgs, "library", statuses = statuses)
+pkg_is_installed <- function(pkgs) {
+  vapply(pkgs, rlang::is_installed, logical(1))
 }
 
 
@@ -108,13 +87,12 @@ pkg_require <- function(pkgs, quietly = TRUE) {
   }
 
   pkg_load <- function(pkg) {
-    lib_loc <- if (quickstart()) NULL else pkg_library_location(pkg)
-    lib_loc <- if (!is.null(lib_loc) && is.na(lib_loc)) NULL else lib_loc
+    lib_loc <- if (pkg %in% loadedNamespaces()) dirname(getNamespaceInfo(pkg, "path")) else NULL
     require(pkg, lib.loc = lib_loc, character.only = TRUE, quietly = quietly)
   }
 
   loader <- if (quietly) quiet_wrap(pkg_load) else pkg_load
-  vapply(pkgs, quiet_wrap(pkg_load), logical(1))
+  vapply(pkgs, loader, logical(1))
 }
 
 
