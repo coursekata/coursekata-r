@@ -8,10 +8,18 @@ suppressMessages(try(remove.packages("fivethirtyeightdata"), silent = TRUE))
 
 # function to compare output to a snapshot
 test_output_snapshot <- function(expr, snapshot) {
+  replace_smart_quotes <- function(x) {
+    x <- gsub("’", "'", x)
+    x <- gsub("‘", "'", x)
+    x <- gsub("“", '"', x)
+    x <- gsub("”", '"', x)
+    x
+  }
+
   output <- capture.output(expr, type = "message")
   output <- trimws(output, "right")
   output <- paste(output, collapse = "\n")
-  comp <- waldo::compare(output, snapshot)
+  comp <- waldo::compare(replace_smart_quotes(output), replace_smart_quotes(snapshot))
   if (length(comp) > 0) stop(paste0(comp, collapse = "\n\n"), call. = FALSE)
 }
 
