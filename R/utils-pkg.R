@@ -10,36 +10,15 @@ pkg_is_attached <- function(pkgs) {
 }
 
 
-#' Check if packages are installed
-#'
-#' Note: this function differs from [`rlang::is_installed()`] in two regards: it is quieter and will
-#' show no messages, and it returns a vector indicating which packages are installed or not (rather
-#' than a single Boolean value regarding the packages as a set).
+#' Check if packages are installed.
 #'
 #' @param pkgs Character vector of the names of the packages to check.
-#' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
 #'
 #' @return Named logical vector indicating whether the packages are installed.
 #'
 #' @noRd
-pkg_is_installed <- function(pkgs, statuses = NULL) {
-  statuses <- if (is.null(statuses)) pak::pkg_status(pkgs) else statuses
-  checker <- function(pkg) pkg %in% statuses$package
-  vapply(pkgs, checker, logical(1))
-}
-
-
-#' Determine which libraries packages were loaded from
-#'
-#' @param pkgs A character vector of packages to check.
-#' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
-#'
-#' @return A character vector of library directory paths the packages were loaded from, the default
-#'   location if the package is not loaded but is installed, or NA if the package is not installed.
-#'
-#' @noRd
-pkg_library_location <- function(pkgs, statuses = NULL) {
-  possibly_pkg_status(pkgs, "library", statuses = statuses)
+pkg_is_installed <- function(pkgs) {
+  vapply(pkgs, rlang::is_installed, logical(1))
 }
 
 
@@ -97,79 +76,55 @@ pkg_remote_version <- function(pkgs) {
 #' place it was already loaded from.
 #'
 #' @param pkgs A character vector of packages to load.
-#' @param do_not_ask Prevent asking the user to install missing packages (they are skipped).
 #' @param quietly Prevent package startup messages.
 #'
 #' @return A named logical indicating whether each package was loaded.
 #'
 #' @noRd
-pkg_require <- function(pkgs, do_not_ask = FALSE, quietly = TRUE) {
-  pkg_load <- if (quietly) {
-    function(pkg) {
-      suppressPackageStartupMessages(suppressWarnings(require(
-        pkg,
-        lib.loc = if (quickstart()) NULL else pkg_library_location(pkg),
-        character.only = TRUE,
-        warn.conflicts = FALSE,
-        quietly = TRUE
-      )))
-    }
-  } else {
-    function(pkg) {
-      require(
-        pkg,
-        lib.loc = if (quickstart()) NULL else pkg_library_location(pkg),
-        character.only = TRUE,
-      )
-    }
+pkg_require <- function(pkgs, quietly = TRUE) {
+  quiet_wrap <- function(fn) {
+    function(...) suppressPackageStartupMessages(suppressWarnings(fn(...)))
   }
 
-  vapply(pkgs, function(pkg) {
-    loaded <- pkg_load(pkg)
-    if (!loaded && !do_not_ask && ask_to_install(pkg)) {
-      pkg_install(pkg)
-      pkg_load(pkg)
-    } else {
-      loaded
-    }
-  }, logical(1))
+  pkg_load <- function(pkg) {
+    lib_loc <- if (pkg %in% loadedNamespaces()) dirname(getNamespaceInfo(pkg, "path")) else NULL
+    require(pkg, lib.loc = lib_loc, character.only = TRUE, quietly = quietly)
+  }
+
+  loader <- if (quietly) quiet_wrap(pkg_load) else pkg_load
+  vapply(pkgs, loader, logical(1))
 }
 
 
-#' Ask the user if they want to install packages
+#' Ask the user if they want to install packages then install them.
 #'
 #' @param pkgs A character vector of packages to ask about.
 #'
-#' @return A logical indicating whether the user answered yes or no.
+#' @return Whether the packages were installed or not.
 #'
 #' @noRd
-ask_to_install <- function(pkgs) {
+pkg_check_installed <- function(pkgs) {
   if (!interactive()) {
     return(FALSE)
   }
 
-  line <- function(x = "") {
-    sprintf("%s\n", x)
-  }
-  yesno::yesno(cli::col_red(paste0(
-    line(),
-    line("The following packages could not be found:"),
-    line(paste0("  - ", pkgs, "\n", collapse = "")),
-    "Install missing packages?"
-  )))
+  withRestarts(
+    is.null(rlang::check_installed(pkgs, action = function(pkgs, ...) {
+      pkgs <- pkg_fix_remote_names(pkgs)
+      pak::pkg_install(pkgs, ask = FALSE, ...)
+    })),
+    abort = function(e) FALSE
+  )
 }
 
-
-#' Install packages using appropriate repositories.
+#' Replace package names with their remote names (i.e. qualify with repo name).
 #'
-#' @param pkgs A character vector of the packages to install.
-#' @param ... Arguments passed on to [`pak::pkg_install()`].
+#' @param pkgs A character vector of package names.
 #'
-#' @return The output of [`pak::pkg_install()`] if any packages were installed, else `NULL`.
+#' @return A character vector of package names with remote names.
 #'
 #' @noRd
-pkg_install <- function(pkgs, ...) {
-  is_538 <- pkgs %in% "fivethirtyeightdata"
-  if (any(is_538)) pak::pkg_install("fivethirtyeightdata/fivethirtyeightdata", ...)
-  if (any(!is_538)) pak::pkg_install(pkgs[!is_538], ...)
+pkg_fix_remote_names <- function(pkgs) {
+  pkgs[pkgs == "fivethirtyeightdata"] <- "fivethirtyeightdata/fivethirtyeightdata"
+  pkgs
 }

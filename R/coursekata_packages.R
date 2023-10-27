@@ -21,7 +21,7 @@ coursekata_packages <- function(check_remote_version = FALSE) {
   statuses <- pak::pkg_status(pkgs)
   info <- data.frame(
     package = pkgs,
-    installed = pkg_is_installed(pkgs, statuses),
+    installed = pkg_is_installed(pkgs),
     attached = pkg_is_attached(pkgs),
     version = pkg_version(pkgs, statuses),
     stringsAsFactors = FALSE
@@ -33,24 +33,4 @@ coursekata_packages <- function(check_remote_version = FALSE) {
   }
 
   info
-}
-
-
-#' List all currently attached CourseKata course packages
-#'
-#' @return A character vector of the course packages that have been attached.
-#'
-#' @noRd
-coursekata_attached <- function() {
-  coursekata_pkgs[pkg_is_attached(coursekata_pkgs)]
-}
-
-
-#' List all currently NOT attached CourseKata course packages
-#'
-#' @return A character vector of the course packages that are not attached.
-#'
-#' @noRd
-coursekata_detached <- function() {
-  coursekata_pkgs[!pkg_is_attached(coursekata_pkgs)]
 }

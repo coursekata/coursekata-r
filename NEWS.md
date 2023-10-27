@@ -1,5 +1,11 @@
 # `coursekata` change log
 
+## coursekata 0.14.1
+
+- Reduce calls to `pak::pkg_status()` to improve startup time
+- Address issue where `require(lib.loc = ...)` was sometimes being passed `NA`
+- Appropriately skip actions that require the user when running in non-interactive mode (and add related tests)
+
 ## coursekata 0.14.0
 
 - Remove deprecated `gf_model_old()` function
