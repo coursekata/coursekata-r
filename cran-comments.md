@@ -1,19 +1,13 @@
 ## Release summary
 
-- This is a new package. This is the second time submitting this package to CRAN, and it has been
-  updated to address the feedback from the first submission.
+Package was failing on CRAN checks and asking for user input in non-interactive mode. The check is for a missing package that should be installed for full functionality, but is not required. The fix was to add a check for interactive mode before asking for user input.
 
-- Requested changes:
+Additional comments from Uwe Ligges were that the user prompt was confusing. Instead of using `yesno` to generate the prompt, we are now using `rlang::check_installed()` to handle the prompt and subsequent installation.
 
-  - The Title and Description now use single quotes around 'CourseKata'
-  - All exported functions have been checked to ensure that their return values
-    are documented in the `@return` section of the function documentation.
-    - coursekata_load_theme
-    - coursekata_unload_theme
-    - gf_model
+Other changes:
 
-- Additional changes:
-  - Removed internal docs and opted for @noRd tags as suggested by tidyverse
+- Reduce calls to `pak::pkg_status()` to improve startup time
+- Address issue where `require(lib.loc = ...)` was sometimes being passed `NA` instead of `NULL`
 
 ## Test environments
 
