@@ -4,11 +4,19 @@ on:
       - main
       - release/*
       - hotfix/*
+    paths-ignore:
+      - "*.md"
+      - "*.Rmd"
+      - ".vscode/**"
   pull_request:
     branches:
       - develop
       - release/*
       - hotfix/*
+    paths-ignore:
+      - "*.md"
+      - "*.Rmd"
+      - ".vscode/**"
   workflow_dispatch:
 
 name: Test non-interactive
