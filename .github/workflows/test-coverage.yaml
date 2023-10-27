@@ -1,8 +1,18 @@
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "*.Rmd"
+      - ".vscode/**"
+      - "bin/**"
   pull_request:
     branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "*.Rmd"
+      - ".vscode/**"
+      - "bin/**"
 
 name: test-coverage
 

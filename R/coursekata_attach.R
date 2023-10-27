@@ -12,7 +12,11 @@ coursekata_attach <- function(do_not_ask = FALSE, quietly = FALSE) {
   !do_not_ask && pkg_check_installed(coursekata_pkgs)
   detached <- coursekata_detached()
   installed <- coursekata_pkgs[pkg_is_installed(coursekata_pkgs)]
-  invisible(pkg_require(detached[detached %in% installed], quietly = quietly))
+  attached <- pkg_require(detached[detached %in% installed], quietly = quietly)
+
+  result <- rep_named(detached, FALSE)
+  result[names(attached)] <- TRUE
+  invisible(result)
 }
 
 
