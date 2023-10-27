@@ -16,6 +16,8 @@ Other changes:
   - macOS: 12.6.9; R: 4.3.1
   - Microsoft Windows Server 2022: 10.0.20348; R: 4.3.1, 3.6.3
   - Ubuntu: 22.04.3; R: devel, 4.3.1, 4.2.3
+- devtools::check_rhub()
+- devtools::check_win_devel()
 
 ## R CMD check results
 
