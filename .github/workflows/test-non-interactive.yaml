@@ -50,6 +50,9 @@ jobs:
 
       # https://github.com/r-lib/actions/tree/v2/setup-r-dependencies
       - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::devtools
+          needs: check
 
       - name: Install the package
         run: Rscript -e 'devtools::install()'
