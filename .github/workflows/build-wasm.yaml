@@ -1,0 +1,33 @@
+on:
+  push:
+    paths-ignore:
+      - "*.md"
+      - "*.Rmd"
+      - ".vscode/**"
+      - "bin/**"
+    branches:
+      - main
+      - release/*
+      - hotfix/*
+  pull_request:
+    branches:
+      - develop
+      - release/*
+      - hotfix/*
+    paths-ignore:
+      - "*.md"
+      - "*.Rmd"
+      - ".vscode/**"
+      - "bin/**"
+  workflow_dispatch:
+
+name: Build WASM R package
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ghcr.io/r-wasm/webr:main
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build wasm packages
+        uses: r-wasm/actions/build-wasm-packages@v1
