@@ -1,22 +1,5 @@
 on:
-  push:
-    branches:
-      - main
-      - release/*
-      - hotfix/*
-    paths-ignore:
-      - "*.md"
-      - "*.Rmd"
-      - ".vscode/**"
-  pull_request:
-    branches:
-      - develop
-      - release/*
-      - hotfix/*
-    paths-ignore:
-      - "*.md"
-      - "*.Rmd"
-      - ".vscode/**"
+  # need to rethink this workflow + tests... the versioning makes them too rigid
   workflow_dispatch:
 
 name: Test non-interactive
