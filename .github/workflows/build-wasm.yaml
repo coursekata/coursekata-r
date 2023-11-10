@@ -6,7 +6,6 @@ on:
       - ".vscode/**"
       - "bin/**"
     branches:
-      - main
       - release/*
       - hotfix/*
   pull_request:
@@ -28,6 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/r-wasm/webr:main
     steps:
+      # https://github.com/actions/checkout
       - uses: actions/checkout@v3
+
+      # https://github.com/r-wasm/actions
       - name: Build wasm packages
         uses: r-wasm/actions/build-wasm-packages@v1
