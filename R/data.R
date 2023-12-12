@@ -284,7 +284,7 @@
 #'   \item{`Height`}{Height in inches.}
 #'   \item{`Weight`}{Weight in pounds.}
 #' }
-"Fingers.messy"
+"FingersMessy"
 
 
 #' Generated "class data" for exploring pairwise tests
