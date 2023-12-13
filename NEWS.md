@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.15.0
+
+- Change name of dataset `Fingers.messy` to `FingersMessy`
+
 ## coursekata 0.14.1
 
 - Reduce calls to `pak::pkg_status()` to improve startup time

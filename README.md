@@ -57,11 +57,11 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────────────── coursekata 0.14.0 ──
-#> ✔ dslabs              0.7.6         ✔ Metrics             0.1.4  
-#> ✔ Lock5withR          1.2.2         ✔ lsr                 0.5.2  
-#> ✔ fivethirtyeightdata 0.1.0         ✔ mosaic              1.8.4.2
-#> ✔ fivethirtyeight     0.6.2         ✔ supernova           2.5.7
+#> ── CourseKata packages ──────────────────────────────────── coursekata 0.14.1 ──
+#> ✔ dslabs              0.7.6       ✔ Metrics             0.1.4
+#> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
+#> x fivethirtyeightdata             ✔ mosaic              1.9.0
+#> x fivethirtyeight                 ✔ supernova           2.5.8
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for

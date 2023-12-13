@@ -1,7 +1,7 @@
 Package: coursekata
 Title: Packages and Functions for 'CourseKata' Courses
-Version: 0.14.1
-Date: 2023-10-26
+Version: 0.15.0
+Date: 2023-12-12
 Authors@R: c(
     person("Adam", "Blake", , "adam@coursekata.org", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
