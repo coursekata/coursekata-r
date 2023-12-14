@@ -19,12 +19,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Adam Blake \email{adamblake@g.ucla.edu} (\href{https://orcid.org/0000-0001-7881-8652}{ORCID})
+\strong{Maintainer}: Adam Blake \email{adam@coursekata.org} (\href{https://orcid.org/0000-0001-7881-8652}{ORCID})
 
 Authors:
 \itemize{
-  \item Ji Son \email{json2@calstatela.edu} (\href{https://orcid.org/0000-0002-4258-4791}{ORCID})
-  \item Jim Stigler \email{jstigler@gmail.com} (\href{https://orcid.org/0000-0001-6107-7827}{ORCID})
+  \item Ji Son \email{ji@coursekata.org} (\href{https://orcid.org/0000-0002-4258-4791}{ORCID})
+  \item Jim Stigler \email{jim@coursekata.org} (\href{https://orcid.org/0000-0001-6107-7827}{ORCID})
 }
 
 }
