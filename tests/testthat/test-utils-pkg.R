@@ -37,18 +37,3 @@ test_that("requiring a package can be quiet", {
   purrr::walk(pkgs, detacher)
   expect_message(pkg_require(pkgs, quietly = TRUE), NA)
 })
-
-
-test_that("installing fivethirtyeightdata works as intended", {
-  skip("Make sure to run this when testing locally.")
-
-  detacher("fivethirtyeightdata")
-
-  tryCatch(
-    suppressMessages(remove.packages("fivethirtyeightdata")),
-    error = function(e) invisible(NULL)
-  )
-
-  pkg_check_installed("fivethirtyeightdata")
-  expect_true(require("fivethirtyeightdata"))
-})

@@ -24,7 +24,7 @@ Imports:
     dslabs (>= 0.7.4),
     fivethirtyeightdata,
     ggformula (>= 0.10.1),
-    ggplot2 (>= 3.3.5),
+    ggplot2 (>= 3.5.0),
     glue (>= 1.6.2),
     Lock5withR,
     lsr (>= 0.5.2),

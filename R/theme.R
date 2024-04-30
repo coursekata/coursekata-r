@@ -139,9 +139,8 @@ coursekata_palette_provider <- function() {
 #' @export
 scale_discrete_coursekata <- function(...) {
   ggplot2::discrete_scale(
-    c("colour", "fill"),
-    "coursekata",
-    coursekata_palette_provider(),
+    aesthetics = c("colour", "fill"),
+    palette = coursekata_palette_provider(),
     ...
   )
 }
