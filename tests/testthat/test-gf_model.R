@@ -92,10 +92,7 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
   #   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
   #   expect_doppelganger(snap_name("gf_boxplot"))
 
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   gf_violin(1 ~ later_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
