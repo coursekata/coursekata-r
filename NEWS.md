@@ -1,5 +1,10 @@
 # `coursekata` change log
 
+## coursekata 0.16.0
+
+- Make fivethirtyeight and Lock5withR required packages using the Remotes field (this is non-standard, but we aren't on CRAN anyway)
+- Update to ggplot 3.5.0, which required some small changes to the theme parameters
+
 ## coursekata 0.15.0
 
 - Change name of dataset `Fingers.messy` to `FingersMessy`
