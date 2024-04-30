@@ -51,10 +51,7 @@ test_that("it plots the empty model as a vertical line when outcome is on Y, one
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_boxplot", " -- 2"))
 
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   gf_violin(later_anxiety ~ 1, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
@@ -111,10 +108,7 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
 # Single predictor, on axis, categorical ------------------------------------------------------
 
 test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on Y", {
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., outcome on Y{suffix}")
@@ -147,10 +141,7 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
 # Single predictor, on aesthetic, categorical -------------------------------------------------
 
 test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on Y", {
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., outcome on Y, pred. on color")
@@ -176,10 +167,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 })
 
 test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on X", {
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., outcome on X, pred. on color")
@@ -208,10 +196,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 # Single predictor, on facet, categorical -----------------------------------------------------
 
 test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on Y", {
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., outcome on Y, pred. on facet")
@@ -248,10 +233,7 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
 })
 
 test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on X", {
-  testthat::skip_if(
-    grepl("development", R.version.string, fixed = TRUE),
-    "These have been visually checked to be correct on R-devel, but the vdiffr fails."
-  )
+  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., outcome on X, pred. on facet")
