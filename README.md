@@ -38,7 +38,7 @@ cases, the installation is two-part: first install the package, then
 install the data packages `fivethirtyeight` and `fivethirtyeightdata`:
 
 ``` r
-install.packages("coursekata")
+install.packages("coursekata/coursekata-r")
 coursekata::coursekata_install()
 ```
 
