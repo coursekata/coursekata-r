@@ -1,7 +1,7 @@
 test_that("all course packages are listed with version and whether attached", {
   # these packages are not imported, but are still in the load out
   # (important because they can be detached and re-attached during testing)
-  pkgs <- c("fivethirtyeightdata", "fivethirtyeight")
+  pkgs <- c("fivethirtyeightdata", "fivethirtyeight", "Lock5withR")
 
   # they need to be in the order they appear in the coursekata_pkgs object
   pkgs <- pkgs[order(match(pkgs, coursekata_pkgs))]

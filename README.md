@@ -47,6 +47,19 @@ remotes::install_github("coursekata/coursekata-r")
 pak::pak("coursekata/coursekata-r")
 ```
 
+After installing the core packages, you might want to install the
+supplementary data packages used in the course. These are not required
+for the package to work, but they are used in the course materials. You
+can install them with the following command:
+
+``` r
+coursekata::coursekata_install()
+```
+
+If you don’t install these packages, you will be prompted to install
+them when you load the package. If you want to disable that message, you
+can set `options(coursekata.quickstart = TRUE)`.
+
 ## Loading Packages Used in CourseKata Courses
 
 `library(coursekata)` will load the following core packages in addition
@@ -59,7 +72,7 @@ library(coursekata)
 #> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
 #> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
 #> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
-#> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
+#> x fivethirtyeight                 ✔ supernova           3.0.0
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for
@@ -91,7 +104,7 @@ instructors who teach the course. This package installs these:
   `library(coursekata)`) a check is run to ensure that all the
   dependencies are installed and reasonably up-to-date. If they are not,
   you will be prompted to install missing packages. This can be disabled
-  by setting `options(coursekata.quickstart = FALSE)`.
+  by setting `options(coursekata.quickstart = TRUE)`.
 
 - `coursekata.quiet`: By default, the package will show all startup
   messages from the dependent packages. To quiet these (like in the
