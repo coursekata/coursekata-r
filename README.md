@@ -59,7 +59,7 @@ library(coursekata)
 #> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
 #> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
 #> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
-#> x fivethirtyeight                 ✔ supernova           3.0.0
+#> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for
