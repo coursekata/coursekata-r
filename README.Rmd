@@ -34,18 +34,14 @@ This package makes it easy to install and load all packages and functions used i
 
 ## Installation
 
-This package is available on CRAN and via the source on GitHub. In both cases, the installation is two-part: first install the package, then install the data packages `fivethirtyeight` and `fivethirtyeightdata`:
+This package is *not* available on CRAN, it is only available on GitHub. You can install it using any package manager that supports GitHub installations, such as [remotes](https://cran.r-project.org/package=remotes) or [pak](https://cran.r-project.org/package=pak).
 
 ```{r eval = FALSE}
-install.packages("coursekata")
-coursekata::coursekata_install()
-```
+# install.packages("remotes")
+remotes::install_github("coursekata/coursekata-r")
 
-```{r eval = FALSE}
-# Install the development version from GitHub
 # install.packages("pak")
 pak::pak("coursekata/coursekata-r")
-coursekata::coursekata_install()
 ```
 
 
