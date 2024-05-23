@@ -3,6 +3,7 @@ on:
     paths-ignore:
       - "*.md"
       - "*.Rmd"
+      - "man/figures/README*"
       - ".vscode/**"
       - "bin/**"
     branches:

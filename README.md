@@ -33,20 +33,18 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 
 ## Installation
 
-This package is available on CRAN and via the source on GitHub. In both
-cases, the installation is two-part: first install the package, then
-install the data packages `fivethirtyeight` and `fivethirtyeightdata`:
+This package is *not* available on CRAN, it is only available on GitHub.
+You can install it using any package manager that supports GitHub
+installations, such as
+[remotes](https://cran.r-project.org/package=remotes) or
+[pak](https://cran.r-project.org/package=pak).
 
 ``` r
-install.packages("coursekata")
-coursekata::coursekata_install()
-```
+# install.packages("remotes")
+remotes::install_github("coursekata/coursekata-r")
 
-``` r
-# Install the development version from GitHub
 # install.packages("pak")
 pak::pak("coursekata/coursekata-r")
-coursekata::coursekata_install()
 ```
 
 ## Loading Packages Used in CourseKata Courses
@@ -57,11 +55,11 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────────────── coursekata 0.14.1 ──
-#> ✔ dslabs              0.7.6       ✔ Metrics             0.1.4
+#> ── CourseKata packages ──────────────────────────────────── coursekata 0.16.1 ──
+#> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
 #> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
-#> x fivethirtyeightdata             ✔ mosaic              1.9.0
-#> x fivethirtyeight                 ✔ supernova           2.5.8
+#> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
+#> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for
@@ -117,10 +115,16 @@ fit <- lm(mpg ~ hp, data = mtcars)
 # the estimate for β₀, the intercept
 b0(fit)
 #> [1] 30.09886
+```
+
+``` r
 
 # the estimate for β₁, the slope
 b1(fit)
 #> [1] -0.06822828
+```
+
+``` r
 
 # all the estimates
 b(fit)
@@ -129,14 +133,23 @@ b(fit)
 #> 
 #> $b_hp
 #> [1] -0.06822828
+```
+
+``` r
 
 # the proportional reduction in error
 pre(fit)
 #> [1] 0.6024373
+```
+
+``` r
 
 # Fisher's F value
 f(fit)
 #> [1] 45.4598
+```
+
+``` r
 
 # the p-value for the F test
 p(fit)
