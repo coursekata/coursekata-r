@@ -1,14 +1,14 @@
 ## Release summary
 
-- Change name of dataset `Fingers.messy` to `FingersMessy`
+- Re-submitting to CRAN after fixing Windows build errors.
 
 ## Test environments
 
-- Local install on macOS Sonoma 14.1.2 (ARM); R 4.3.2
+- Local install on macOS Sonoma 14.5 (ARM); R 4.4.0
 - GitHub Actions
-  - macOS: 12.6.9; R: 4.3.2
-  - Microsoft Windows Server 2022: 10.0.20348; R: 4.3.2, 3.6.3
-  - Ubuntu: 22.04.3; R: devel, 4.3.2, 4.2.3
+  - macOS: 14.4.1; R: R 4.4.0
+  - Microsoft Windows Server 2022: 10.0.20348; R: 4.4.0, 4.3.3
+  - Ubuntu: 22.04.4; R: devel, 4.4.0, 4.3.3
 - devtools::check_rhub(platforms = rhub::platforms()$name)
 - devtools::check_win_devel()
 
