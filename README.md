@@ -36,8 +36,8 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 This package is *not* available on CRAN, it is only available on GitHub.
 You can install it using any package manager that supports GitHub
 installations, such as
-[remotes](https://cran.r-project.org/package=remotes) or
-[pak](https://cran.r-project.org/package=pak).
+[`remotes`](https://cran.r-project.org/package=remotes) or
+[`pak`](https://cran.r-project.org/package=pak).
 
 ``` r
 # install.packages("remotes")
@@ -46,6 +46,19 @@ remotes::install_github("coursekata/coursekata-r")
 # install.packages("pak")
 pak::pak("coursekata/coursekata-r")
 ```
+
+After installing the core packages, you might want to install the
+supplementary data packages used in the course. These are not required
+for the package to work, but they are used in the course materials. You
+can install them with the following command:
+
+``` r
+coursekata::coursekata_install()
+```
+
+If you don’t install these packages, you will be prompted to install
+them when you load the package. If you want to disable that message, you
+can set `options(coursekata.quickstart = TRUE)`.
 
 ## Loading Packages Used in CourseKata Courses
 
@@ -91,7 +104,7 @@ instructors who teach the course. This package installs these:
   `library(coursekata)`) a check is run to ensure that all the
   dependencies are installed and reasonably up-to-date. If they are not,
   you will be prompted to install missing packages. This can be disabled
-  by setting `options(coursekata.quickstart = FALSE)`.
+  by setting `options(coursekata.quickstart = TRUE)`.
 
 - `coursekata.quiet`: By default, the package will show all startup
   messages from the dependent packages. To quiet these (like in the

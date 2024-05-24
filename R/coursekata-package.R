@@ -8,7 +8,6 @@
 NULL
 
 # Suppress R CMD check note
-#' @importFrom Lock5withR locket
 #' @importFrom dslabs take_poll
 #' @importFrom lsr cohensD
 #' @importFrom mosaic qdist

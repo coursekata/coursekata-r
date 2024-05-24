@@ -126,6 +126,6 @@ pkg_check_installed <- function(pkgs) {
 #' @noRd
 pkg_fix_remote_names <- function(pkgs) {
   pkgs[pkgs == "fivethirtyeightdata"] <- "fivethirtyeightdata/fivethirtyeightdata"
-  # pkgs[pkgs == "Lock5withR"] <- "rpruim/Lock5withR"
+  pkgs[pkgs == "Lock5withR"] <- "rpruim/Lock5withR"
   pkgs
 }
