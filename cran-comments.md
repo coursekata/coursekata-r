@@ -9,8 +9,8 @@
   - macOS: 14.4.1; R: R 4.4.0
   - Microsoft Windows Server 2022: 10.0.20348; R: 4.4.0, 4.3.3
   - Ubuntu: 22.04.4; R: devel, 4.4.0, 4.3.3
-- devtools::check_rhub(platforms = rhub::platforms()$name)
-- devtools::check_win_devel()
+- rhub::rhub_check(rhub::rhub_platforms()$name[c(1, 2, 3, 4, 8, 9, 11, 16, 17, 18, 19)])
+  - linux, macos, macos-arm64, windows, clang17, clang18, gcc13, ubuntu-clang, ubuntu-gcc12, ubuntu-next, ubuntu-release
 
 ## R CMD check results
 
