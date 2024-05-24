@@ -1,5 +1,11 @@
 # `coursekata` change log
 
+## coursekata 0.17.0
+
+- Make CRAN compatible by removing `Remotes` field from DESCRIPTION
+- Update visual snapshot tests
+- Improve handling of non-CRAN package installs
+
 ## coursekata 0.16.1
 
 - Ignore some tests on CI where `vdiffr` gave erroneous results

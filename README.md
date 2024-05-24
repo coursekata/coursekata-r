@@ -36,8 +36,8 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 This package is *not* available on CRAN, it is only available on GitHub.
 You can install it using any package manager that supports GitHub
 installations, such as
-[remotes](https://cran.r-project.org/package=remotes) or
-[pak](https://cran.r-project.org/package=pak).
+[`remotes`](https://cran.r-project.org/package=remotes) or
+[`pak`](https://cran.r-project.org/package=pak).
 
 ``` r
 # install.packages("remotes")
@@ -72,7 +72,7 @@ library(coursekata)
 #> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
 #> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
 #> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
-#> x fivethirtyeight                 ✔ supernova           3.0.0
+#> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for

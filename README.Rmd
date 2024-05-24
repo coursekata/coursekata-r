@@ -34,7 +34,7 @@ This package makes it easy to install and load all packages and functions used i
 
 ## Installation
 
-This package is *not* available on CRAN, it is only available on GitHub. You can install it using any package manager that supports GitHub installations, such as [remotes](https://cran.r-project.org/package=remotes) or [pak](https://cran.r-project.org/package=pak).
+This package is *not* available on CRAN, it is only available on GitHub. You can install it using any package manager that supports GitHub installations, such as [`remotes`](https://cran.r-project.org/package=remotes) or [`pak`](https://cran.r-project.org/package=pak).
 
 ```{r eval = FALSE}
 # install.packages("remotes")
