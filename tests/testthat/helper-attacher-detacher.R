@@ -7,11 +7,8 @@ detacher <- function(pkgs) {
 attacher <- function(pkgs) {
   lapply(pkgs, function(pkg) {
     suppressPackageStartupMessages(suppressWarnings(require(
-      pkg, character.only = TRUE, quietly = TRUE
+      pkg,
+      character.only = TRUE, quietly = TRUE
     )))
   })
-}
-
-expect_doppelganger <- function(plot, name) {
-  vdiffr::expect_doppelganger(name, plot)
 }
