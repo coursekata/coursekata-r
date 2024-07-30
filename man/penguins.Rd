@@ -3,7 +3,7 @@
 \docType{data}
 \name{penguins}
 \alias{penguins}
-\title{A modified form of the \code{\link[=palmerpenguins]{palmerpenguins::penguins}} data set.}
+\title{A modified form of the \code{\link[palmerpenguins:penguins]{palmerpenguins::penguins}} data set.}
 \format{
 A data frame with 333 observations on the following 7 variables:
 \describe{

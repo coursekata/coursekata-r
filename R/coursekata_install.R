@@ -1,6 +1,7 @@
 #' Install or update all CourseKata packages.
 #'
-#' @param ... Arguments passed on to [`pak::pkg_install`].
+#' @param ... Arguments passed on to [`remotes::install_cran`] or [`remotes::install_github`]
+#' depending on whether the package appears to be from CRAN or GitHub.
 #'
 #' @return The state of all the packages after any updates have been performed.
 #'
@@ -18,7 +19,7 @@ coursekata_install <- function(...) {
   }
 
   cli::cat_line()
-  pak::pkg_install(pkg_fix_remote_names(behind$package), ...)
+  pkg_install(behind$package, ...)
   invisible(coursekata_packages(TRUE))
 }
 

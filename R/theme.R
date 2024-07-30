@@ -1,4 +1,4 @@
-#' A simple theme built on top of [`theme_bw()`]
+#' A simple theme built on top of [`ggplot2::theme_bw`]
 #'
 #' The `coursekata` package automatically loads this theme when the package is loaded. This is in
 #' addition to a number of other plot tweaks and option settings. To just restore the theme to the

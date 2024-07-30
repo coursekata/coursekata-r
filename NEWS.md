@@ -1,5 +1,10 @@
 # `coursekata` change log
 
+## coursekata 0.18.0
+
+- Remove `pak` dependency to improve compatibility with platforms that do not have `curl` (e.g. WASM). This should also fix the CRAN check error about the bad `vapply` result as we now use `packageVersion` instead of the more complicated `pak::pkg_status`.
+- Add missing package anchors to link targets to fix CRAN check notes
+
 ## coursekata 0.17.0
 
 - Make CRAN compatible by removing `Remotes` field from DESCRIPTION

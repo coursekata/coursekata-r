@@ -21,8 +21,9 @@ a gg object (a plot layer) that can be added to a plot.
 \description{
 When teaching about regression it can be useful to visualize the data as a point plot with the
 outcome on the y-axis and the explanatory variable on the x-axis. For regression models, this is
-most easily achieved by calling \code{\link[=gf_lm]{gf_lm()}}, with empty models \code{\link[=gf_hline]{gf_hline()}} using the mean,
-and a more complicated call to \code{\link[=gf_segment]{gf_segment()}} for group models. This function simplifies this
+most easily achieved by calling \code{\link[ggformula:gf_smooth]{ggformula::gf_lm()}}, with empty models
+\code{\link[ggformula:gf_lines]{ggformula::gf_hline()}} using the mean, and a more complicated call to
+\code{\link[ggformula:gf_segment]{ggformula::gf_segment()}} for group models. This function simplifies this
 by making a guess about what kind of model you are plotting (empty/null, regression, group) and
 then making the appropriate plot layer for it.
 }

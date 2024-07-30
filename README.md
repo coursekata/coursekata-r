@@ -68,10 +68,10 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────── coursekata 0.17.0 ──
+#> ── CourseKata packages ──────────────────────────── coursekata 0.18.0 ──
 #> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
-#> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
-#> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
+#> x Lock5withR                      ✔ lsr                 0.5.2
+#> x fivethirtyeightdata             ✔ mosaic              1.9.1
 #> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
 ```
 
@@ -128,16 +128,10 @@ fit <- lm(mpg ~ hp, data = mtcars)
 # the estimate for β₀, the intercept
 b0(fit)
 #> [1] 30.09886
-```
-
-``` r
 
 # the estimate for β₁, the slope
 b1(fit)
 #> [1] -0.06822828
-```
-
-``` r
 
 # all the estimates
 b(fit)
@@ -146,23 +140,14 @@ b(fit)
 #> 
 #> $b_hp
 #> [1] -0.06822828
-```
-
-``` r
 
 # the proportional reduction in error
 pre(fit)
 #> [1] 0.6024373
-```
-
-``` r
 
 # Fisher's F value
 f(fit)
 #> [1] 45.4598
-```
-
-``` r
 
 # the p-value for the F test
 p(fit)

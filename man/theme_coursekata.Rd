@@ -2,7 +2,7 @@
 % Please edit documentation in R/theme.R
 \name{theme_coursekata}
 \alias{theme_coursekata}
-\title{A simple theme built on top of \code{\link[=theme_bw]{theme_bw()}}}
+\title{A simple theme built on top of \code{\link[ggplot2:ggtheme]{ggplot2::theme_bw}}}
 \usage{
 theme_coursekata()
 }
