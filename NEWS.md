@@ -1,6 +1,9 @@
 # `coursekata` change log
 
-- Remove dependency on `pak`. `pak` was initially used to manage and parse dependencies, but itself depends on `curl`. `curl` is not available on all platforms (e.g. WASM), so we have removed the dependency on `pak` and opted for pure R where possible (or `remotes` which has a pure R fallback).
+## coursekata 0.18.0
+
+- Remove `pak` dependency to improve compatibility with platforms that do not have `curl` (e.g. WASM). This should also fix the CRAN check error about the bad `vapply` result as we now use `packageVersion` instead of the more complicated `pak::pkg_status`.
+- Add missing package anchors to link targets to fix CRAN check notes
 
 ## coursekata 0.17.0
 
