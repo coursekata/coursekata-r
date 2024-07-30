@@ -1,6 +1,7 @@
 ## Release summary
 
-- Remove `pak` dependency to improve compatibility with platforms that do not have `curl` (e.g. WASM)
+- Remove `pak` dependency to improve compatibility with platforms that do not have `curl` (e.g. WASM). This should also fix the CRAN check error about the bad `vapply` result as we now use `packageVersion` instead of the more complicated `pak::pkg_status`.
+- Add missing package anchors to link targets to fix CRAN check notes
 
 ## Test environments
 

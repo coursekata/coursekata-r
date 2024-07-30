@@ -2,8 +2,9 @@
 #'
 #' When teaching about regression it can be useful to visualize the data as a point plot with the
 #' outcome on the y-axis and the explanatory variable on the x-axis. For regression models, this is
-#' most easily achieved by calling [`gf_lm()`], with empty models [`gf_hline()`] using the mean,
-#' and a more complicated call to [`gf_segment()`] for group models. This function simplifies this
+#' most easily achieved by calling [`ggformula::gf_lm()`], with empty models
+#' [`ggformula::gf_hline()`] using the mean, and a more complicated call to
+#' [`ggformula::gf_segment()`] for group models. This function simplifies this
 #' by making a guess about what kind of model you are plotting (empty/null, regression, group) and
 #' then making the appropriate plot layer for it.
 #'
@@ -262,4 +263,3 @@ is_categorical <- function(x) !is.numeric(x)
 collapse <- function(x) glue::glue_collapse(x, sep = ", ")
 name_to_frm <- function(x) stats::formula(glue("~{x}"))
 if_not_null <- function(x, other) if (!is.null(x)) x else other
-

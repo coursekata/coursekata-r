@@ -384,7 +384,7 @@
 #' }
 "game_data"
 
-#' A modified form of the [`palmerpenguins::penguins`][palmerpenguins] data set.
+#' A modified form of the [`palmerpenguins::penguins`] data set.
 #'
 #' The modifications are to select only a subset of the variables, and convert some of the units.
 #'
