@@ -28,9 +28,9 @@ Imports:
     lsr (>= 0.5.2),
     Metrics,
     mosaic (>= 1.8.3),
-    pak,
     palmerpenguins,
     purrr (>= 0.3.4),
+    remotes,
     rlang (>= 1.0.2),
     supernova (>= 2.5.1),
     vctrs (>= 0.4.1),
@@ -54,4 +54,4 @@ Language: en-US
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2

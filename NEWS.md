@@ -1,5 +1,7 @@
 # `coursekata` change log
 
+- Remove dependency on `pak`. `pak` was initially used to manage and parse dependencies, but itself depends on `curl`. `curl` is not available on all platforms (e.g. WASM), so we have removed the dependency on `pak` and opted for pure R where possible (or `remotes` which has a pure R fallback).
+
 ## coursekata 0.17.0
 
 - Make CRAN compatible by removing `Remotes` field from DESCRIPTION
