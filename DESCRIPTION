@@ -50,6 +50,7 @@ Suggests:
     vdiffr (>= 1.0.2),
     withr (>= 2.5.0)
 Config/testthat/edition: 3
+Config/testthat/parallel: true
 Language: en-US
 Encoding: UTF-8
 LazyData: true
