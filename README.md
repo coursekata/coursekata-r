@@ -22,7 +22,7 @@ continuous improvement of online learning resources. The **coursekata**
 package is designed to make it easy to install and load the packages,
 functions, and data used in the book and supplementary materials.
 
-Learn more about CourseKata and its free services and materials at
+Learn more about CourseKata and its services and materials at
 [CourseKata.org](https://coursekata.org/).
 
 This package makes it easy to install and load all packages and
