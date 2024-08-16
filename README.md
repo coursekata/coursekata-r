@@ -22,7 +22,7 @@ continuous improvement of online learning resources. The **coursekata**
 package is designed to make it easy to install and load the packages,
 functions, and data used in the book and supplementary materials.
 
-Learn more about CourseKata and its free services and materials at
+Learn more about CourseKata and its services and materials at
 [CourseKata.org](https://coursekata.org/).
 
 This package makes it easy to install and load all packages and
@@ -128,16 +128,10 @@ fit <- lm(mpg ~ hp, data = mtcars)
 # the estimate for β₀, the intercept
 b0(fit)
 #> [1] 30.09886
-```
-
-``` r
 
 # the estimate for β₁, the slope
 b1(fit)
 #> [1] -0.06822828
-```
-
-``` r
 
 # all the estimates
 b(fit)
@@ -146,23 +140,14 @@ b(fit)
 #> 
 #> $b_hp
 #> [1] -0.06822828
-```
-
-``` r
 
 # the proportional reduction in error
 pre(fit)
 #> [1] 0.6024373
-```
-
-``` r
 
 # Fisher's F value
 f(fit)
 #> [1] 45.4598
-```
-
-``` r
 
 # the p-value for the F test
 p(fit)
