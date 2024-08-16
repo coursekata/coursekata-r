@@ -1,5 +1,12 @@
 # `coursekata` change log
 
+## coursekata 0.18.0
+
+- Remove dependency on `pak`. `pak` was initially used to manage and parse dependencies, but itself depends on `curl`. `curl` is not available on all platforms (e.g. WASM), so we have removed the dependency on `pak` and opted for pure R where possible (or `remotes` which has a pure R fallback).
+- Add `FoodQuality` to `TipExperiment` dataset.
+- Various CI improvements: update for compatibility with more `rhub` platforms, don't run `vdiffr` tests on CI, allow tests to run in parallel.
+- Fix CRAN note by adding missing package anchors to link targets
+
 ## coursekata 0.17.0
 
 - Make CRAN compatible by removing `Remotes` field from DESCRIPTION

@@ -7,9 +7,11 @@ test_that("all course packages are listed with version and whether attached", {
 
 
 test_that("detached packages are listed as not attached", {
-  detacher("fivethirtyeight")
-  withr::defer(attacher("fivethirtyeight"))
+  detachable <- c("fivethirtyeightdata", "Lock5withR")
+  detacher(detachable)
+  withr::defer(attacher(detachable))
 
   packages <- suppressMessages(coursekata_packages())
-  expect_false(packages[match("fivethirtyeight", packages$package), "attached"])
+  were_detached <- packages[match(detachable, packages$package), "attached"]
+  expect_identical(rep_along(were_detached, FALSE), were_detached)
 })

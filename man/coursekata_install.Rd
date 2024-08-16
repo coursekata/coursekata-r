@@ -10,7 +10,8 @@ coursekata_install(...)
 coursekata_update(...)
 }
 \arguments{
-\item{...}{Arguments passed on to \code{\link[pak:pkg_install]{pak::pkg_install}}.}
+\item{...}{Arguments passed on to \code{\link[remotes:install_cran]{remotes::install_cran}} or \code{\link[remotes:install_github]{remotes::install_github}}
+depending on whether the package appears to be from CRAN or GitHub.}
 }
 \value{
 The state of all the packages after any updates have been performed.

@@ -18,12 +18,11 @@ coursekata_pkgs <- rev(c(
 #' coursekata_packages()
 coursekata_packages <- function(check_remote_version = FALSE) {
   pkgs <- coursekata_pkgs
-  statuses <- pak::pkg_status(pkgs)
   info <- data.frame(
     package = pkgs,
     installed = pkg_is_installed(pkgs),
     attached = pkg_is_attached(pkgs),
-    version = pkg_version(pkgs, statuses),
+    version = pkg_version(pkgs),
     stringsAsFactors = FALSE
   )
 

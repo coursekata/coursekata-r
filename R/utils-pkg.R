@@ -1,3 +1,18 @@
+#' Install packages, fixing remote names if necessary.
+#'
+#' @param pkgs A character vector of package names.
+#' @param ... Arguments passed on to [`remotes::install_cran`] or [`remotes::install_github`]
+#' depending on whether the package appears to be from CRAN or GitHub.
+#'
+#' @noRd
+pkg_install <- function(pkgs, ...) {
+  pkgs <- pkg_fix_remote_names(pkgs)
+  is_remote <- grepl("/", pkgs)
+  # install from CRAN first because it's faster than building from source from GitHub
+  remotes::install_cran(pkgs[!is_remote], ...)
+  remotes::install_github(pkgs[is_remote], ...)
+}
+
 #' Check if packages are attached
 #'
 #' @param pkgs Character vector of the names of the packages to check.
@@ -25,35 +40,14 @@ pkg_is_installed <- function(pkgs) {
 #' Get the local package version numbers.
 #'
 #' @param pkgs A character vector of packages to look up.
-#' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
 #'
 #' @return A character vector of the package versions. If the package is already loaded, this is
 #'   pulled from the library the package was loaded from, else the default library location.
 #'
 #' @noRd
-pkg_version <- function(pkgs, statuses = NULL) {
-  possibly_pkg_status(pkgs, "version", statuses = statuses)
-}
-
-#' Attempt to get package information using `pak`, but fail with NA
-#'
-#' @param pkgs A character vector of packages to look up.
-#' @param status_key The column to get from the [`pak::pkg_status()`] output.
-#' @param statuses The output of [`pak::pkg_status()`] (computed if not supplied).
-#'
-#' @return A character vector with each package's status information.
-#'
-#' @noRd
-possibly_pkg_status <- function(pkgs, status_key, statuses = NULL) {
-  statuses <- if (is.null(statuses)) pak::pkg_status(pkgs) else statuses
-  get_key <- function(pkg) {
-    if (pkg %in% statuses$package) {
-      statuses[statuses$package == pkg, status_key]
-    } else {
-      NA_character_
-    }
-  }
-  vapply(pkgs, get_key, character(1))
+pkg_version <- function(pkgs) {
+  get_version <- purrr::possibly(utils::packageVersion, NA_character_)
+  vapply(pkgs, function(x) as.character(get_version(x)), character(1))
 }
 
 
@@ -110,8 +104,7 @@ pkg_check_installed <- function(pkgs) {
 
   withRestarts(
     is.null(rlang::check_installed(pkgs, action = function(pkgs, ...) {
-      pkgs <- pkg_fix_remote_names(pkgs)
-      pak::pkg_install(pkgs, ask = FALSE, ...)
+      pkg_install(pkgs, upgrade = "always", ...)
     })),
     abort = function(e) FALSE
   )

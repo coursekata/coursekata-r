@@ -323,7 +323,8 @@
 #'   \item{`TableID`}{A number assigned to each table.}
 #'   \item{`Tip`}{How much the tip was.}
 #'   \item{`Condition`}{Which experimental condition the table was randomly assigned to.}
-#'   \item{`Check`}{The amount of money the table paid for their meal.}
+#'   \item{`Check`}{(Simulated) The amount of money the table paid for their meal.}
+#'   \item{`FoodQuality`}{(Simulated) The perceived quality of the food.}
 #' }
 "TipExperiment"
 
@@ -384,7 +385,7 @@
 #' }
 "game_data"
 
-#' A modified form of the [`palmerpenguins::penguins`][palmerpenguins] data set.
+#' A modified form of the [`palmerpenguins::penguins`] data set.
 #'
 #' The modifications are to select only a subset of the variables, and convert some of the units.
 #'

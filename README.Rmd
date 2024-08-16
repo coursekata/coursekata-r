@@ -8,8 +8,7 @@ output: github_document
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
+  fig.path = "man/figures/README-"
 )
 options(coursekata.quiet = TRUE)
 ```
@@ -27,21 +26,15 @@ options(coursekata.quiet = TRUE)
 
 *CourseKata Statistics and Data Science*, is an innovative interactive online textbook for teaching introductory statistics and data science in colleges, universities, and high schools. Part of CourseKata’s *Better Book* Project, we are leveraging research and student data to guide continuous improvement of online learning resources. The **coursekata** package is designed to make it easy to install and load the packages, functions, and data used in the book and supplementary materials.
 
-Learn more about CourseKata and its free services and materials at [CourseKata.org](https://coursekata.org/).
+Learn more about CourseKata and its services and materials at [CourseKata.org](https://coursekata.org/).
 
 This package makes it easy to install and load all packages and functions used in CourseKata courses. It additionally provides a handful of helper functions and augments some generic functions to provide cohesion between the network of packages. This package was inspired by the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 
 
 ## Installation
 
-This package is *not* available on CRAN, it is only available on GitHub. You can install it using any package manager that supports GitHub installations, such as [`remotes`](https://cran.r-project.org/package=remotes) or [`pak`](https://cran.r-project.org/package=pak).
-
 ```{r eval = FALSE}
-# install.packages("remotes")
-remotes::install_github("coursekata/coursekata-r")
-
-# install.packages("pak")
-pak::pak("coursekata/coursekata-r")
+install.packages("coursekata")
 ```
 
 After installing the core packages, you might want to install the supplementary data packages used in the course. These are not required for the package to work, but they are used in the course materials. You can install them with the following command:
@@ -50,16 +43,33 @@ After installing the core packages, you might want to install the supplementary 
 coursekata::coursekata_install()
 ```
 
-If you don't install these packages, you will be prompted to install them when you load the package. If you want to disable that message, you can set `options(coursekata.quickstart = TRUE)`.
+If you don't install these packages, you will be prompted to install them each time you load the package. If you want to disable that prompt, you can set `options(coursekata.quickstart = TRUE)`.
 
+### Development version
+
+To get a bug fix or to use a feature from the development version, you can install the development version of `coursekata` from GitHub.
+
+```{r eval = FALSE}
+# install.packages("pak")
+pak::pak("coursekata/coursekata-r")
+```
 
 
 ## Loading Packages Used in CourseKata Courses
 
 `library(coursekata)` will load the following core packages in addition to the [functions and theme](#functions-and-theme) included in the `coursekata` package:
 
+```{r echo = FALSE}
+prev_width <- getOption("width")
+options(width = 72)
+```
+
 ```{r}
 library(coursekata)
+```
+
+```{r echo = FALSE}
+options(width = prev_width)
 ```
 
 * [supernova](https://cran.r-project.org/package=supernova), for

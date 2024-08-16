@@ -4,7 +4,7 @@ test_that("it determines whether a package is attached or not", {
 
   # make sure the package can be added
   if (!require(pkgs, character.only = TRUE, quietly = TRUE)) {
-    fail(paste("Package not available:", pkgs, "Make sure to install all SUGGESTS packages."))
+    skip(paste("Package not available:", pkgs, "Make sure to install all SUGGESTS packages."))
   }
 
   purrr::walk(pkgs, detacher)

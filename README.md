@@ -22,7 +22,7 @@ continuous improvement of online learning resources. The **coursekata**
 package is designed to make it easy to install and load the packages,
 functions, and data used in the book and supplementary materials.
 
-Learn more about CourseKata and its free services and materials at
+Learn more about CourseKata and its services and materials at
 [CourseKata.org](https://coursekata.org/).
 
 This package makes it easy to install and load all packages and
@@ -33,18 +33,8 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 
 ## Installation
 
-This package is *not* available on CRAN, it is only available on GitHub.
-You can install it using any package manager that supports GitHub
-installations, such as
-[`remotes`](https://cran.r-project.org/package=remotes) or
-[`pak`](https://cran.r-project.org/package=pak).
-
 ``` r
-# install.packages("remotes")
-remotes::install_github("coursekata/coursekata-r")
-
-# install.packages("pak")
-pak::pak("coursekata/coursekata-r")
+install.packages("coursekata")
 ```
 
 After installing the core packages, you might want to install the
@@ -57,8 +47,18 @@ coursekata::coursekata_install()
 ```
 
 If you don’t install these packages, you will be prompted to install
-them when you load the package. If you want to disable that message, you
-can set `options(coursekata.quickstart = TRUE)`.
+them each time you load the package. If you want to disable that prompt,
+you can set `options(coursekata.quickstart = TRUE)`.
+
+### Development version
+
+To get a bug fix or to use a feature from the development version, you
+can install the development version of `coursekata` from GitHub.
+
+``` r
+# install.packages("pak")
+pak::pak("coursekata/coursekata-r")
+```
 
 ## Loading Packages Used in CourseKata Courses
 
@@ -68,7 +68,7 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────────────── coursekata 0.16.1 ──
+#> ── CourseKata packages ──────────────────────────── coursekata 0.17.0 ──
 #> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
 #> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
 #> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
@@ -128,16 +128,10 @@ fit <- lm(mpg ~ hp, data = mtcars)
 # the estimate for β₀, the intercept
 b0(fit)
 #> [1] 30.09886
-```
-
-``` r
 
 # the estimate for β₁, the slope
 b1(fit)
 #> [1] -0.06822828
-```
-
-``` r
 
 # all the estimates
 b(fit)
@@ -146,23 +140,14 @@ b(fit)
 #> 
 #> $b_hp
 #> [1] -0.06822828
-```
-
-``` r
 
 # the proportional reduction in error
 pre(fit)
 #> [1] 0.6024373
-```
-
-``` r
 
 # Fisher's F value
 f(fit)
 #> [1] 45.4598
-```
-
-``` r
 
 # the p-value for the F test
 p(fit)
@@ -181,7 +166,7 @@ samp_dist_of_b1 <- do(1000) * b1(lm(mpg ~ hp, data = resample(mtcars)))
 gf_histogram(~ samp_dist_of_b1$b1)
 ```
 
-<img src="man/figures/README-samp_dist_of_b1-1.png" width="100%" />
+![](man/figures/README-samp_dist_of_b1-1.png)<!-- -->
 
 Other estimates and terms can be bootstrapped using the same technique,
 but you will need to calculate the values yourself. Here’s an example of
@@ -200,7 +185,7 @@ samp_dist_of_hp <- do(1000) * {
 gf_histogram(~ samp_dist_of_hp$result)
 ```
 
-<img src="man/figures/README-samp_dist_of_hp-1.png" width="100%" />
+![](man/figures/README-samp_dist_of_hp-1.png)<!-- -->
 
 ### Sectioning a Distribution
 
@@ -216,7 +201,7 @@ shade in those areas:
 gf_histogram(~Thumb, data = Fingers, fill = ~ middle(Thumb, .80))
 ```
 
-<img src="man/figures/README-shaded_middle-1.png" width="100%" />
+![](man/figures/README-shaded_middle-1.png)<!-- -->
 
 ### Toggling the Theme
 
