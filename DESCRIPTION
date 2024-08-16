@@ -1,7 +1,7 @@
 Package: coursekata
 Title: Packages and Functions for 'CourseKata' Courses
-Version: 0.17.0
-Date: 2024-05-24
+Version: 0.18.0
+Date: 2024-08-16
 Authors@R: c(
     person("Adam", "Blake", , "adam@coursekata.org", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
@@ -38,7 +38,7 @@ Imports:
 Suggests:
     fivethirtyeight (>= 0.6.2),
     lubridate (>= 1.8.0),
-    MASS (>= 7.3.61),
+    MASS,
     mockery (>= 0.4.3),
     mockr (>= 0.1),
     readr (>= 2.1.2),
