@@ -38,7 +38,7 @@ Imports:
 Suggests:
     fivethirtyeight (>= 0.6.2),
     lubridate (>= 1.8.0),
-    MASS (>= 7.3.61),
+    MASS,
     mockery (>= 0.4.3),
     mockr (>= 0.1),
     readr (>= 2.1.2),
