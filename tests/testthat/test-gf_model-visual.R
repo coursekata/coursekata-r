@@ -3,13 +3,13 @@
 test_that("it plots the empty model as a horizontal line when outcome is on Y, two axis plots", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-    expect_doppelganger("[gf_point] Empty model, outcome on Y")
+    expect_doppelganger("[gf_point] null mod., y on Y")
 })
 
 test_that("it plots the empty model as a vertical line when outcome is on Y, one axis plot", {
   # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] Empty model, outcome on Y")
+    glue("[{plot_name}] null mod., y on Y")
   }
 
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
@@ -40,13 +40,13 @@ test_that("it plots the empty model as a vertical line when outcome is on Y, one
 test_that("it plots the empty model as a horizontal line when outcome is on X, two axis plot", {
   gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
-    expect_doppelganger("[gf_point] Empty model, outcome on X")
+    expect_doppelganger("[gf_point] null mod., y on X")
 })
 
 test_that("it plots the empty model as a vertical line when outcome is on X, one axis plot", {
   # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] Empty model, outcome on X{suffix}")
+    glue("[{plot_name}] mull mod., y on X{suffix}")
   }
 
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
@@ -90,7 +90,7 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
   testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., outcome on Y{suffix}")
+    glue("[{plot_name}] cond. mod., y on Y{suffix}")
   }
 
   plot_args <- list(gformula = later_anxiety ~ condition, color = ~condition, data = er)
@@ -104,7 +104,7 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
 
 test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on X", {
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., outcome on X{suffix}")
+    glue("[{plot_name}] cond. mod., y on X{suffix}")
   }
 
   plot_args <- list(gformula = condition ~ later_anxiety, color = ~condition, data = er)
@@ -123,7 +123,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
   testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., outcome on Y, pred. on color")
+    glue("[{plot_name}] cond. mod., y on Y, pred. on color")
   }
 
   # plots where both axes are specified
@@ -149,7 +149,7 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
   testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., outcome on X, pred. on color")
+    glue("[{plot_name}] cond. mod., y on X, pred. on color")
   }
 
   # plots where both axes are specified
@@ -178,7 +178,7 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
   testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., outcome on Y, pred. on facet")
+    glue("[{plot_name}] cond. mod., y on Y, pred. on facet")
   }
 
   # plots where both axes are specified
@@ -215,7 +215,7 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
   testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
 
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., outcome on X, pred. on facet")
+    glue("[{plot_name}] cond. mod., y on X, pred. on facet")
   }
 
   # plots where both axes are specified
@@ -244,11 +244,11 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
 test_that("it plots 1 predictor (on axis, cont.) models as a fit line", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] anx. mod., outcome on Y")
+    expect_doppelganger("[gf_point] anx. mod., y on Y")
 
   gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] anx. mod., outcome on X")
+    expect_doppelganger("[gf_point] anx. mod., y on X")
 })
 
 
@@ -257,11 +257,11 @@ test_that("it plots 1 predictor (on axis, cont.) models as a fit line", {
 test_that("it splits continuous aesthetic predictors at -+1 SD and mean", {
   gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] anx. mod., pred. on color, outcome on Y")
+    expect_doppelganger("[gf_point] anx. mod., pred. on color, y on Y")
 
   gf_point(condition ~ later_anxiety, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] anx. mod., pred. on color, outcome on X")
+    expect_doppelganger("[gf_point] anx. mod., pred. on color, y on X")
 })
 
 
@@ -276,47 +276,47 @@ test_that("it plots main effects models (cat. + cat.)", {
 test_that("it plots main effects models (quant. + cat.)", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
-    expect_doppelganger("[gf_point] parallel lines in two colors")
+    expect_doppelganger("[gf_point] parallel lines in 2 colors")
 })
 
 test_that("it plots main effects models (cat. + quant.)", {
   gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ condition + base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] parallel hashes in three colors (at M, +-SD)")
+    expect_doppelganger("[gf_point] parallel hashes in 3 colors (M, +-SD)")
 })
 
 test_that("it plots main effect models (quant. + quant.)", {
   gf_point(later_anxiety ~ base_anxiety, color = ~base_depression, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety + base_depression, data = er)) %>%
-    expect_doppelganger("[gf_point] parallel lines in three colors (at M, +-SD)")
+    expect_doppelganger("[gf_point] parallel lines in 3 colors (M, +-SD)")
 })
 
 test_that("it plots interactive models (cat. * cat.)", {
   gf_point(later_anxiety ~ provider, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ provider * condition, data = er)) %>%
-    expect_doppelganger("[gf_point] hashes in two colors at varying distances")
+    expect_doppelganger("[gf_point] diverging hashes in 2 colors")
 })
 
 test_that("it plots interactive models (quant. * cat.)", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
-    expect_doppelganger("[gf_point] diverging lines in two colors")
+    expect_doppelganger("[gf_point] diverging lines in 2 colors")
 
   gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
-    expect_doppelganger("[gf_point] diverging lines in two colors, flipped")
+    expect_doppelganger("[gf_point] diverging lines in 2 colors, flipped")
 })
 
 test_that("it plots interactive models (cat. * quant.)", {
   gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ condition * base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] non-parallel hashes in three colors (at M, +-SD)")
+    expect_doppelganger("[gf_point] non-parallel hashes in 3 colors (M, +-SD)")
 })
 
 test_that("it plots interactive models (quant. * quant.)", {
   gf_point(later_anxiety ~ base_anxiety, color = ~base_depression, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * base_depression, data = er)) %>%
-    expect_doppelganger("[gf_point] crossing lines in two colors")
+    expect_doppelganger("[gf_point] crossing lines in 2 colors")
 })
 
 
@@ -337,17 +337,17 @@ test_that("it plots main effect models across facets (quant. + cat.)", {
 test_that("it plots interactive models across facets (cat. * cat.)", {
   gf_point(later_anxiety ~ provider | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ provider * condition, data = er)) %>%
-    expect_doppelganger("[gf_point] hashes with different patterns across facets")
+    expect_doppelganger("[gf_point] hash patterns across facets")
 })
 
 test_that("it plots interactive models across facets (quant. * cat.)", {
   gf_point(later_anxiety ~ base_anxiety | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
-    expect_doppelganger("[gf_point] diverging lines in different facets")
+    expect_doppelganger("[gf_point] diverging lines in facets")
 
   gf_point(base_anxiety ~ later_anxiety | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
-    expect_doppelganger("[gf_point] diverging lines in different facets, flipped")
+    expect_doppelganger("[gf_point] diverging lines in facets, flipped")
 })
 
 # faceting on a quantitative variable isn't advisable -- maybe just show a warning for this?
@@ -368,25 +368,25 @@ test_that("it respects static aesthetic choices", {
 test_that("it un-maps dynamic aesthetics from underlying layers that are not in the model", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, shape = ~provider, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] anx. mod., outcome on Y, with color & shape")
+    expect_doppelganger("[gf_point] anx. mod., y on Y, with color & shape")
 })
 
 test_that("it will translate color arguments if applicable (e.g. fill to color)", {
   gf_boxplot(later_anxiety ~ provider, fill = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er)) %>%
-    expect_doppelganger("[gf_point] cond. mod., outcome on Y, with color")
+    expect_doppelganger("[gf_point] cond. mod., y on Y, with color")
 })
 
 test_that("it can use aesthetics other than color... just checking", {
   gf_point(later_anxiety ~ base_anxiety, shape = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er)) %>%
-    expect_doppelganger("[gf_point] cond. mod., outcome on Y, pred. on shape")
+    expect_doppelganger("[gf_point] cond. mod., y on Y, pred. on shape")
 })
 
 test_that("it allows mapping new aesthetics", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er), linetype = ~condition) %>%
-    expect_doppelganger("[gf_point] cond. mod., outcome on Y, pred. on color, linetype")
+    expect_doppelganger("[gf_point] cond. mod., y on Y, pred. on color, linetype")
 })
 
 
@@ -396,7 +396,7 @@ test_that("it allows mapping new aesthetics", {
 test_that("you can pass it a formula instead of an `lm()` object", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(later_anxiety ~ condition) %>%
-    expect_doppelganger("should look the same as if you did the lm() version")
+    expect_doppelganger("match to lm() version")
 })
 
 
