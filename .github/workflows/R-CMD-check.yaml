@@ -59,10 +59,13 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Install MASS package (pak fails to install)
+        run: Rscript -e 'install.packages("MASS", repos = "https://cloud.r-project.org")'
+
       # https://github.com/r-lib/actions/tree/v2/setup-r-dependencies
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck, any::MASS
+          extra-packages: any::rcmdcheck
           needs: check
 
       # https://github.com/r-lib/actions/tree/v2/check-r-package
