@@ -323,8 +323,8 @@
 #'   \item{`TableID`}{A number assigned to each table.}
 #'   \item{`Tip`}{How much the tip was.}
 #'   \item{`Condition`}{Which experimental condition the table was randomly assigned to.}
-#'   \item{`Check`}{[Simulated] The amount of money the table paid for their meal.}
-#'   \item{`FoodQuality`}{[Simulated] The perceived quality of the food.}
+#'   \item{`Check`}{(Simulated) The amount of money the table paid for their meal.}
+#'   \item{`FoodQuality`}{(Simulated) The perceived quality of the food.}
 #' }
 "TipExperiment"
 

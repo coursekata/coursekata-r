@@ -10,8 +10,8 @@ A data frame with 44 observations on the following 3 variables.
 \item{\code{TableID}}{A number assigned to each table.}
 \item{\code{Tip}}{How much the tip was.}
 \item{\code{Condition}}{Which experimental condition the table was randomly assigned to.}
-\item{\code{Check}}{\link{Simulated} The amount of money the table paid for their meal.}
-\item{\code{FoodQuality}}{\link{Simulated} The perceived quality of the food.}
+\item{\code{Check}}{(Simulated) The amount of money the table paid for their meal.}
+\item{\code{FoodQuality}}{(Simulated) The perceived quality of the food.}
 }
 }
 \usage{
