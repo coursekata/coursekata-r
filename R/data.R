@@ -218,7 +218,7 @@
 #'
 #' @format A data frame with 157 observations on the following 16 variables:
 #' \describe{
-#'   \item{`Sex`}{Sex of participant.}
+#'   \item{`Gender`}{Gender of participant.}
 #'   \item{`RaceEthnic`}{Racial or ethnic background.}
 #'   \item{`FamilyMembers`}{Members of immediate family (excluding self).}
 #'   \item{`SSLast`}{Last digit of social security number (`NA` if no SSN).}
@@ -243,6 +243,7 @@
 #'     finger and palm.}
 #'   \item{`Height`}{Height in inches.}
 #'   \item{`Weight`}{Weight in pounds.}
+#'   \item{`Sex`}{Sex of participant.}
 #' }
 "Fingers"
 
@@ -258,7 +259,7 @@
 #'
 #' @format A data frame with 157 observations on the following 16 variables:
 #' \describe{
-#'   \item{`Sex`}{Sex of participant.}
+#'   \item{`Gender`}{Gender of participant.}
 #'   \item{`RaceEthnic`}{Racial or ethnic background.}
 #'   \item{`FamilyMembers`}{Members of immediate family (excluding self).}
 #'   \item{`SSLast`}{Last digit of social security number (`NA` if no SSN).}
@@ -283,6 +284,7 @@
 #'     finger and palm.}
 #'   \item{`Height`}{Height in inches.}
 #'   \item{`Weight`}{Weight in pounds.}
+#'   \item{`Sex`}{Sex of participant.}
 #' }
 "FingersMessy"
 
