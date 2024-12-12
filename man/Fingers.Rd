@@ -7,7 +7,7 @@
 \format{
 A data frame with 157 observations on the following 16 variables:
 \describe{
-\item{\code{Sex}}{Sex of participant.}
+\item{\code{Gender}}{Gender of participant.}
 \item{\code{RaceEthnic}}{Racial or ethnic background.}
 \item{\code{FamilyMembers}}{Members of immediate family (excluding self).}
 \item{\code{SSLast}}{Last digit of social security number (\code{NA} if no SSN).}
@@ -32,6 +32,7 @@ and palm.}
 finger and palm.}
 \item{\code{Height}}{Height in inches.}
 \item{\code{Weight}}{Weight in pounds.}
+\item{\code{Sex}}{Sex of participant.}
 }
 }
 \usage{

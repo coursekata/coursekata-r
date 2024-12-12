@@ -1,10 +1,6 @@
 ## Release summary
 
-- Fix CRAN notes by adding missing package anchors to link targets
-- Refactor zzz.R to fix .onAttach() error on CRAN
-- Remove dependency on `pak`. `pak` was initially used to manage and parse dependencies, but itself depends on `curl`. `curl` is not available on all platforms (e.g. WASM), so we have removed the dependency on `pak` and opted for pure R where possible (or `remotes` which has a pure R fallback).
-- Add `FoodQuality` to `TipExperiment` dataset.
-- Various CI improvements: update for compatibility with more `rhub` platforms, don't run `vdiffr` tests on CI, allow tests to run in parallel.
+- Add alternate name `Fingers$Gender` to `Fingers` dataset to prevent awkward naming in exercises.
 
 ## Test environments
 
