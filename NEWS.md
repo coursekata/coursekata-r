@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.18.1
+
+- Add alternate name `Fingers$Gender` to `Fingers` dataset to prevent awkward naming in exercises.
+
 ## coursekata 0.18.0
 
 - Remove dependency on `pak`. `pak` was initially used to manage and parse dependencies, but itself depends on `curl`. `curl` is not available on all platforms (e.g. WASM), so we have removed the dependency on `pak` and opted for pure R where possible (or `remotes` which has a pure R fallback).
