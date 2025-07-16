@@ -1,5 +1,9 @@
 # `coursekata` change log
 
+## coursekata 0.19.0
+
+- Add `gf_resid()` and `gf_squaresid()` functions for residual and squared residual plots that layer onto `ggformula::gf_point()` plots.
+
 ## coursekata 0.18.1
 
 - Add alternate name `Fingers$Gender` to `Fingers` dataset to prevent awkward naming in exercises.

@@ -119,6 +119,6 @@
 <rect x='663.53' y='291.76' width='17.00' height='17.00' style='stroke-width: 0.21; stroke: #6929C4; stroke-linecap: butt; stroke-linejoin: miter; fill: #009D9A; fill-opacity: 0.50;' />
 <text x='686.15' y='286.00' style='font-size: 8.80px; font-family: sans;' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
 <text x='686.15' y='303.28' style='font-size: 8.80px; font-family: sans;' textLength='16.15px' lengthAdjust='spacingAndGlyphs'>Dog</text>
-<text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='189.30px' lengthAdjust='spacingAndGlyphs'>[gf_histogram] mull mod., y on X</text>
+<text x='32.79' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='185.64px' lengthAdjust='spacingAndGlyphs'>[gf_histogram] null mod., y on X</text>
 </g>
 </svg>

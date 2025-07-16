@@ -6,15 +6,15 @@ library(usethis)
 # Kahn,M. (2003), "Data Sleuth," STATS, 37, 24.
 
 # Data site:
-# http://jse.amstat.org/datasets/fev.dat.txt
+# https://jse.amstat.org/datasets/fev.dat.txt
 
 # Information:
-# http://jse.amstat.org/datasets/fev.txt
+# https://jse.amstat.org/datasets/fev.txt
 
 raw_path <- "data-raw/fevdata.dat"
 if (!file.exists(raw_path)) {
   download.file(
-    "http://jse.amstat.org/datasets/fev.dat.txt",
+    "https://jse.amstat.org/datasets/fev.dat.txt",
     raw_path
   )
 }

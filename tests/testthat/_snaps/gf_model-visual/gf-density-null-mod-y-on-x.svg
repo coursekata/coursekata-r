@@ -77,6 +77,6 @@
 <rect x='664.10' y='322.75' width='15.86' height='15.86' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6929C4; fill-opacity: 0.50;' />
 <text x='686.15' y='316.43' style='font-size: 8.80px; font-family: sans;' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
 <text x='686.15' y='333.71' style='font-size: 8.80px; font-family: sans;' textLength='16.15px' lengthAdjust='spacingAndGlyphs'>Dog</text>
-<text x='45.03' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='173.17px' lengthAdjust='spacingAndGlyphs'>[gf_density] mull mod., y on X</text>
+<text x='45.03' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='169.51px' lengthAdjust='spacingAndGlyphs'>[gf_density] null mod., y on X</text>
 </g>
 </svg>
