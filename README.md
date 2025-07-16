@@ -23,7 +23,7 @@ package is designed to make it easy to install and load the packages,
 functions, and data used in the book and supplementary materials.
 
 Learn more about CourseKata and its services and materials at
-[CourseKata.org](https://coursekata.org/).
+[CourseKata.org](https://www.coursekata.org/).
 
 This package makes it easy to install and load all packages and
 functions used in CourseKata courses. It additionally provides a handful
@@ -68,11 +68,18 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────── coursekata 0.17.0 ──
+#> ── CourseKata packages ──────────────────────────── coursekata 0.18.1 ──
 #> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
 #> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
 #> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
 #> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
+#> 
+#> Attaching package: 'coursekata'
+#> 
+#> 
+#> The following object is masked from 'package:datasets':
+#> 
+#>     penguins
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for
