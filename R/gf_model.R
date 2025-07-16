@@ -190,7 +190,7 @@ gf_model <- function(object, model, ...) {
   grid[info$model$outcome] <- stats::predict(info$model$fit, newdata = grid)
   info$layer$args$data <- grid
 
-  return(do.call(info$layer$plotter, info$layer$args))
+  do.call(info$layer$plotter, info$layer$args)
 }
 
 fortify_layer <- function(object, ...) {
