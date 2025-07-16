@@ -14,7 +14,7 @@ library(usethis)
 raw_path <- "data-raw/fevdata.dat"
 if (!file.exists(raw_path)) {
   download.file(
-    "http://jse.amstat.org/datasets/fev.dat.txt",
+    "https://jse.amstat.org/datasets/fev.dat.txt",
     raw_path
   )
 }

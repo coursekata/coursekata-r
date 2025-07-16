@@ -197,7 +197,7 @@
 #' in observational studies, to subgroup analysis, quadratic regression and analysis of covariance.
 #'
 #' @references
-#' Kahn,M. (2003). Data Sleuth, STATS, 37, 24. <http://jse.amstat.org/datasets/fev.txt>
+#' Kahn,M. (2003). Data Sleuth, STATS, 37, 24. <https://jse.amstat.org/datasets/fev.txt>
 #' Rosner, B. (1999). Fundamentals of Biostatistics, Pacific Grove, CA: Duxbury
 #'
 #' @format A data frame with 654 observations on the following 5 variables:

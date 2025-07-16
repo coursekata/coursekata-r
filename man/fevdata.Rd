@@ -35,7 +35,7 @@ in observational studies, to subgroup analysis, quadratic regression and analysi
 }
 }
 \references{
-Kahn,M. (2003). Data Sleuth, STATS, 37, 24. \url{http://jse.amstat.org/datasets/fev.txt}
+Kahn,M. (2003). Data Sleuth, STATS, 37, 24. \url{https://jse.amstat.org/datasets/fev.txt}
 Rosner, B. (1999). Fundamentals of Biostatistics, Pacific Grove, CA: Duxbury
 }
 \keyword{datasets}
