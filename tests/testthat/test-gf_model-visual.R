@@ -1,12 +1,39 @@
+graphics_api_version_mismatch <- tryCatch(
+  {
+    vdiffr::write_svg(tempfile(fileext = ".svg"), function() NULL)
+    FALSE
+  },
+  error = function(e) {
+    grepl("Graphics API version mismatch", conditionMessage(e), fixed = TRUE)
+  },
+  finally = {
+    # close the device if it opened successfully
+    if (grDevices::dev.cur() > 1) grDevices::dev.off()
+  }
+)
+
+# Helper to skip if graphics API version mismatch
+skip_if_graphics_api_mismatch <- function() {
+  testthat::skip_if(
+    graphics_api_version_mismatch,
+    "Graphics API version mismatch. Skipping tests that require vdiffr."
+  )
+}
+
+
 # No predictor -------------------------------------------------------------------------------
 
 test_that("it plots the empty model as a horizontal line when outcome is on Y, two axis plots", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger("[gf_point] null mod., y on Y")
 })
 
 test_that("it plots the empty model as a vertical line when outcome is on Y, one axis plot", {
+  skip_if_graphics_api_mismatch()
+
   # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] null mod., y on Y")
@@ -30,7 +57,7 @@ test_that("it plots the empty model as a vertical line when outcome is on Y, one
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger(snap_name("gf_boxplot", " -- 2"))
 
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  testthat::skip_on_ci()
 
   gf_violin(later_anxiety ~ 1, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
@@ -38,12 +65,15 @@ test_that("it plots the empty model as a vertical line when outcome is on Y, one
 })
 
 test_that("it plots the empty model as a horizontal line when outcome is on X, two axis plot", {
+  skip_if_graphics_api_mismatch()
   gf_point(base_anxiety ~ later_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_doppelganger("[gf_point] null mod., y on X")
 })
 
 test_that("it plots the empty model as a vertical line when outcome is on X, one axis plot", {
+  skip_if_graphics_api_mismatch()
+
   # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] mull mod., y on X{suffix}")
@@ -64,7 +94,7 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
     expect_doppelganger(snap_name("gf_boxplot"))
 
 
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  testthat::skip_on_ci()
 
   gf_violin(1 ~ later_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
@@ -87,7 +117,8 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
 # Single predictor, on axis, categorical ------------------------------------------------------
 
 test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on Y", {
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  skip_if_graphics_api_mismatch()
+  testthat::skip_on_ci()
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., y on Y{suffix}")
@@ -103,6 +134,8 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
 })
 
 test_that("it plots 1 predictor (on axis, categorical) models as lines at means, outcome on X", {
+  skip_if_graphics_api_mismatch()
+
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., y on X{suffix}")
   }
@@ -120,7 +153,8 @@ test_that("it plots 1 predictor (on axis, categorical) models as lines at means,
 # Single predictor, on aesthetic, categorical -------------------------------------------------
 
 test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on Y", {
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  skip_if_graphics_api_mismatch()
+  testthat::skip_on_ci()
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., y on Y, pred. on color")
@@ -146,7 +180,8 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 })
 
 test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, outcome on X", {
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  skip_if_graphics_api_mismatch()
+  testthat::skip_on_ci()
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., y on X, pred. on color")
@@ -175,7 +210,8 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 # Single predictor, on facet, categorical -----------------------------------------------------
 
 test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on Y", {
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  skip_if_graphics_api_mismatch()
+  testthat::skip_on_ci()
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., y on Y, pred. on facet")
@@ -212,7 +248,8 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
 })
 
 test_that("it plots 1 predictor (on facet, compact cat.) models as lines at means, outcome on X", {
-  testthat::skip_if(Sys.getenv("CI") == "true", "Skipping these tests on GitHub Actions.")
+  skip_if_graphics_api_mismatch()
+  testthat::skip_on_ci()
 
   snap_name <- function(plot_name, suffix = "") {
     glue("[{plot_name}] cond. mod., y on X, pred. on facet")
@@ -242,6 +279,8 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
 # Single predictor, on axis, continuous -------------------------------------------------------
 
 test_that("it plots 1 predictor (on axis, cont.) models as a fit line", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
     expect_doppelganger("[gf_point] anx. mod., y on Y")
@@ -255,6 +294,8 @@ test_that("it plots 1 predictor (on axis, cont.) models as a fit line", {
 # Single predictor, on aesthetic, continuous --------------------------------------------------
 
 test_that("it splits continuous aesthetic predictors at -+1 SD and mean", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
     expect_doppelganger("[gf_point] anx. mod., pred. on color, y on Y")
@@ -268,36 +309,48 @@ test_that("it splits continuous aesthetic predictors at -+1 SD and mean", {
 # Two predictors, on axis and aesthetic -------------------------------------------------------
 
 test_that("it plots main effects models (cat. + cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ provider, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ provider + condition, data = er)) %>%
     expect_doppelganger("[gf_point] floating 'parallel' hashes in two colors")
 })
 
 test_that("it plots main effects models (quant. + cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
     expect_doppelganger("[gf_point] parallel lines in 2 colors")
 })
 
 test_that("it plots main effects models (cat. + quant.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ condition + base_anxiety, data = er)) %>%
     expect_doppelganger("[gf_point] parallel hashes in 3 colors (M, +-SD)")
 })
 
 test_that("it plots main effect models (quant. + quant.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~base_depression, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety + base_depression, data = er)) %>%
     expect_doppelganger("[gf_point] parallel lines in 3 colors (M, +-SD)")
 })
 
 test_that("it plots interactive models (cat. * cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ provider, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ provider * condition, data = er)) %>%
     expect_doppelganger("[gf_point] diverging hashes in 2 colors")
 })
 
 test_that("it plots interactive models (quant. * cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
     expect_doppelganger("[gf_point] diverging lines in 2 colors")
@@ -308,12 +361,16 @@ test_that("it plots interactive models (quant. * cat.)", {
 })
 
 test_that("it plots interactive models (cat. * quant.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ condition, color = ~base_anxiety, data = er) %>%
     gf_model(lm(later_anxiety ~ condition * base_anxiety, data = er)) %>%
     expect_doppelganger("[gf_point] non-parallel hashes in 3 colors (M, +-SD)")
 })
 
 test_that("it plots interactive models (quant. * quant.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~base_depression, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * base_depression, data = er)) %>%
     expect_doppelganger("[gf_point] crossing lines in 2 colors")
@@ -323,24 +380,32 @@ test_that("it plots interactive models (quant. * quant.)", {
 # Two predictors, on axis and facet -----------------------------------------------------------
 
 test_that("it plots main effect models across facets (cat. + cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ provider | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ provider + condition, data = er)) %>%
     expect_doppelganger("[gf_point] hashes at an offset across facets")
 })
 
 test_that("it plots main effect models across facets (quant. + cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety + condition, data = er)) %>%
     expect_doppelganger("[gf_point] parallel lines in different facets")
 })
 
 test_that("it plots interactive models across facets (cat. * cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ provider | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ provider * condition, data = er)) %>%
     expect_doppelganger("[gf_point] hash patterns across facets")
 })
 
 test_that("it plots interactive models across facets (quant. * cat.)", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety | condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety * condition, data = er)) %>%
     expect_doppelganger("[gf_point] diverging lines in facets")
@@ -360,30 +425,40 @@ test_that("it plots interactive models across facets (quant. * cat.)", {
 # Mappings ------------------------------------------------------------------------------------
 
 test_that("it respects static aesthetic choices", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er), color = "blue") %>%
     expect_doppelganger("[gf_point] model line is blue")
 })
 
 test_that("it un-maps dynamic aesthetics from underlying layers that are not in the model", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, shape = ~provider, data = er) %>%
     gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
     expect_doppelganger("[gf_point] anx. mod., y on Y, with color & shape")
 })
 
 test_that("it will translate color arguments if applicable (e.g. fill to color)", {
+  skip_if_graphics_api_mismatch()
+
   gf_boxplot(later_anxiety ~ provider, fill = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er)) %>%
     expect_doppelganger("[gf_point] cond. mod., y on Y, with color")
 })
 
 test_that("it can use aesthetics other than color... just checking", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, shape = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er)) %>%
     expect_doppelganger("[gf_point] cond. mod., y on Y, pred. on shape")
 })
 
 test_that("it allows mapping new aesthetics", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er), linetype = ~condition) %>%
     expect_doppelganger("[gf_point] cond. mod., y on Y, pred. on color, linetype")
@@ -394,6 +469,8 @@ test_that("it allows mapping new aesthetics", {
 # Alternate specification ---------------------------------------------------------------------
 
 test_that("you can pass it a formula instead of an `lm()` object", {
+  skip_if_graphics_api_mismatch()
+
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
     gf_model(later_anxiety ~ condition) %>%
     expect_doppelganger("match to lm() version")
@@ -403,6 +480,8 @@ test_that("you can pass it a formula instead of an `lm()` object", {
 # Other tests ---------------------------------------------------------------------------------
 
 test_that("it treats boolean and character predictors like factors", {
+  skip_if_graphics_api_mismatch()
+
   new_er <- er %>%
     mutate(base_anxiety_high = base_anxiety > 5)
 
