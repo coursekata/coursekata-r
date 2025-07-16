@@ -76,7 +76,7 @@ test_that("it plots the empty model as a vertical line when outcome is on X, one
 
   # I know that the plot has two axes, but I only specify one, that's why "one" axis plot
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] mull mod., y on X{suffix}")
+    glue("[{plot_name}] null mod., y on X{suffix}")
   }
 
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
