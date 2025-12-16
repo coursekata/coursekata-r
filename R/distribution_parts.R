@@ -22,6 +22,7 @@
 #' lower(1:10, .2)
 #' middle(1:10, .5)
 #' tails(1:10, .5)
+#' outer(1:10, .5)
 #'
 #' sampling_distribution <- do(1000) * mean(rnorm(100, 5, 10))
 #' sampling_distribution %>%
@@ -39,6 +40,19 @@ middle <- function(x, prop = .95, greedy = TRUE) {
 #' @export
 tails <- function(x, prop = .95, greedy = TRUE) {
   !middle(x, prop, greedy)
+}
+
+
+#' @rdname distribution_parts
+#' @export
+#' @details
+#' `outer()` is similar to `tails()` but with a more intuitive interface for hypothesis testing:
+#' you specify the total proportion in both tails (like alpha), rather than the middle proportion.
+#' For example, `outer(x, .05)` shades the outer 5% (2.5% in each tail), which is equivalent to
+#' `tails(x, .95)`.
+outer <- function(x, prop = .05, greedy = TRUE) {
+  # prop is the total tail proportion, so middle proportion is 1 - prop
+  tails(x, 1 - prop, greedy)
 }
 
 

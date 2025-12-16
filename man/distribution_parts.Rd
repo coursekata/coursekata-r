@@ -3,6 +3,7 @@
 \name{middle}
 \alias{middle}
 \alias{tails}
+\alias{outer}
 \alias{lower}
 \alias{upper}
 \title{Find a percentage of a distribution}
@@ -10,6 +11,8 @@
 middle(x, prop = 0.95, greedy = TRUE)
 
 tails(x, prop = 0.95, greedy = TRUE)
+
+outer(x, prop = 0.05, greedy = TRUE)
 
 lower(x, prop = 0.025, greedy = TRUE)
 
@@ -34,6 +37,11 @@ specified region will suck up the extra space. For example, the requesting the u
 }
 \details{
 Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE}.
+
+\code{outer()} is similar to \code{tails()} but with a more intuitive interface for hypothesis testing:
+you specify the total proportion in both tails (like alpha), rather than the middle proportion.
+For example, \code{outer(x, .05)} shades the outer 5\% (2.5\% in each tail), which is equivalent to
+\code{tails(x, .95)}.
 }
 \examples{
 
@@ -41,6 +49,7 @@ upper(1:10, .1)
 lower(1:10, .2)
 middle(1:10, .5)
 tails(1:10, .5)
+outer(1:10, .5)
 
 sampling_distribution <- do(1000) * mean(rnorm(100, 5, 10))
 sampling_distribution \%>\%
