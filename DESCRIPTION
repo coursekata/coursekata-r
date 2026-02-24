@@ -23,7 +23,7 @@ Imports:
     cli (>= 3.2.0),
     dslabs (>= 0.7.4),
     ggformula (>= 0.10.1),
-    ggplot2 (>= 3.5.0),
+    ggplot2 (>= 4.0.0),
     glue (>= 1.6.2),
     lsr (>= 0.5.2),
     Metrics,
