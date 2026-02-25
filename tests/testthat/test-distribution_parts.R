@@ -46,3 +46,39 @@ test_that("it ignores NA values", {
   expect_identical(middle(c(2, 1, 3, 4, NA_real_), .5), c(TRUE, FALSE, TRUE, FALSE, rlang::na_lgl))
   expect_identical(tails(c(2, 1, 3, 4, NA_real_), .5), c(FALSE, TRUE, FALSE, TRUE, rlang::na_lgl))
 })
+
+
+# outer() tests -----------------------------------------------------------
+
+test_that("outer(x, prop) is equivalent to tails(x, 1 - prop)", {
+  x <- 1:1000
+  expect_identical(
+    suppressMessages(outer(x, .05)),
+    tails(x, .95)
+  )
+  expect_identical(
+    suppressMessages(outer(x, .10)),
+    tails(x, .90)
+  )
+})
+
+test_that("outer errors on prop <= 0 or prop >= 1", {
+  expect_error(outer(1:10, 0))
+  expect_error(outer(1:10, 1))
+  expect_error(outer(1:10, -0.1))
+  expect_error(outer(1:10, 1.5))
+})
+
+test_that("outer handles NA values the same as tails", {
+  x <- c(2, 1, 3, 4, NA_real_)
+  expect_identical(
+    suppressMessages(outer(x, .5)),
+    tails(x, .5)
+  )
+})
+
+test_that("outer returns logical vector of correct length", {
+  x <- 1:100
+  result <- suppressMessages(outer(x, .05))
+  expect_vector(result, logical(), 100)
+})

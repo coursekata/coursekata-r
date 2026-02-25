@@ -50,6 +50,8 @@ gf_resid <- function(plot, model, linewidth = 0.2, ...) {
 
 #' Add Squared Residual Visualization to a Plot
 #'
+#' `r lifecycle::badge("experimental")`
+#'
 #' This function adds squared residual representations to a ggformula plot, illustrating
 #' squared error as a polygon. The function dynamically adjusts the aspect ratio to ensure
 #' proper scaling of squares.
@@ -67,8 +69,10 @@ gf_resid <- function(plot, model, linewidth = 0.2, ...) {
 #' Height_model <- lm(Thumb ~ Height, data = Fingers)
 #' gf_point(Thumb ~ Height, data = Fingers) %>%
 #'   gf_model(Height_model) %>%
-#'   gf_squaresid(Height_model, color = "blue", alpha = 0.5)
-gf_squaresid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
+#'   gf_square_resid(Height_model, color = "blue", alpha = 0.5)
+gf_square_resid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
+  lifecycle::signal_stage("experimental", "gf_square_resid()")
+
   # Handles random jitter
   rand_int <- sample(1:100, 1)
   set.seed(rand_int)
@@ -119,4 +123,14 @@ gf_squaresid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
       alpha = alpha,
       ...
     )
+}
+
+#' @rdname gf_square_resid
+#' @description
+#' `gf_squaresid()` was renamed to [gf_square_resid()] for naming consistency
+#' and is now deprecated.
+#' @export
+gf_squaresid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
+  lifecycle::deprecate_warn("0.20.0", "gf_squaresid()", "gf_square_resid()")
+  gf_square_resid(plot, model, aspect = aspect, alpha = alpha, ...)
 }

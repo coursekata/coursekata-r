@@ -41,6 +41,26 @@ tails <- function(x, prop = .95, greedy = TRUE) {
   !middle(x, prop, greedy)
 }
 
+#' @description
+#' `r lifecycle::badge("experimental")`
+#'
+#' `outer()` marks values in both outer tails of a distribution. It is the
+#' complement of [middle()]: `outer(x, prop)` is equivalent to
+#' `tails(x, 1 - prop)`.
+#'
+#' @param x The distribution of values to check.
+#' @param prop The total proportion in both tails combined, must be in (0, 1).
+#'
+#' @rdname distribution_parts
+#' @export
+outer <- function(x, prop) {
+  lifecycle::signal_stage("experimental", "outer()")
+  if (!is.numeric(prop) || length(prop) != 1 || prop <= 0 || prop >= 1) {
+    abort("`prop` must be a single number between 0 and 1 (exclusive).")
+  }
+  tails(x, 1 - prop)
+}
+
 
 #' @rdname distribution_parts
 #' @export

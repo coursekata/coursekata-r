@@ -25,6 +25,7 @@ Imports:
     ggformula (>= 0.10.1),
     ggplot2 (>= 4.0.0),
     glue (>= 1.6.2),
+    lifecycle (>= 1.0.3),
     lsr (>= 0.5.2),
     Metrics,
     mosaic (>= 1.8.3),
@@ -37,12 +38,14 @@ Imports:
     viridisLite
 Suggests:
     fivethirtyeight (>= 0.6.2),
+    knitr (>= 1.40),
     lubridate (>= 1.8.0),
     MASS,
     mockery (>= 0.4.3),
     mockr (>= 0.1),
     readr (>= 2.1.2),
     readxl (>= 1.4.0),
+    rmarkdown (>= 2.17),
     usethis (>= 2.1.6),
     simstudy (>= 0.5.0),
     testthat (>= 3.1.2),
@@ -50,6 +53,7 @@ Suggests:
     tidyr (>= 1.2.0),
     vdiffr (>= 1.0.2),
     withr (>= 2.5.0)
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Language: en-US
