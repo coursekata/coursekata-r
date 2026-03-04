@@ -2,15 +2,18 @@
 
 ## Release summary
 
-- Add `gf_resid()` and `gf_squaresid()` functions for residual and squared residual plots that layer onto `ggformula::gf_point()` plots.
+- Add experimental visualization functions (`gf_resid_fun()`, `gf_square_resid_fun()`, `gf_sd_ruler()`, `gf_squareplot()`, `show_cutoffs()`, `outer()`).
+- Rename `gf_squaresid()` to `gf_square_resid()` with deprecation warning.
+- Add `coursekata.check_missing` option to control the missing-package install prompt.
+- Improve performance of estimate extraction functions.
 
 ## Test environments
 
-- Local install on macOS Sequoia 15.5 (ARM); R 4.5.1
+- Local install on macOS Tahoe 26.3 (ARM); R 4.5.1
 - GitHub Actions
-  - macOS: 14.7.6; R: R 4.5.1
-  - Microsoft Windows Server 2022: 10.0.20348; R: 4.5.1, 4.4.3
-  - Ubuntu: 22.04.2; R: devel, 4.5.1, 4.4.3
+  - macOS: latest; R: 4.5.1
+  - Microsoft Windows Server 2022: latest; R: 4.5.1, 4.4.3
+  - Ubuntu: 22.04; R: devel, 4.5.1, 4.4.3
 - rhub::rhub_check(platforms = rhub::rhub_platforms()$name[c(1, 2, 3, 4, 8, 9, 11, 16, 17, 18)])
   - R-devel on linux, macos, macos-arm64, windows, clang17, clang18, gcc13, ubuntu-clang, ubuntu-gcc12, ubuntu-next, ubuntu-release
 
