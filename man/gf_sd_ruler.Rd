@@ -30,7 +30,7 @@ of x range), \code{"mean"}, or \code{"median"}.}
 
 \item{color}{Segment color. Default \code{"red"}.}
 
-\item{size}{Segment linewidth. Default \code{0.8}.}
+\item{size}{Segment \code{linewidth}. Default \code{0.8}.}
 
 \item{...}{Additional arguments passed to \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}}.}
 }

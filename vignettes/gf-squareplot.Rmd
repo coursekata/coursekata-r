@@ -1,8 +1,8 @@
 ---
-title: "Countable Histograms with gf_squareplot()"
+title: "Countable Histograms with `gf_squareplot()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Countable Histograms with gf_squareplot()}
+  %\VignetteIndexEntry{Countable Histograms with `gf_squareplot()`}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -53,7 +53,7 @@ gf_squareplot(~Thumb, data = Fingers, bars = "outline")
 
 ## Customizing Appearance
 
-You can customize fill color, binwidth, and axis limits:
+You can customize fill color, `binwidth`, and axis limits:
 
 ```{r custom}
 gf_squareplot(~Thumb, data = Fingers,
@@ -65,7 +65,7 @@ gf_squareplot(~Thumb, data = Fingers,
 ## Integer Data
 
 For integer-valued data with a small range, `gf_squareplot()` automatically
-selects a binwidth of 1, so each integer gets its own column:
+selects a `binwidth` of 1, so each integer gets its own column:
 ```{r integer}
 int_data <- data.frame(rolls = sample(1:6, 30, replace = TRUE))
 gf_squareplot(~rolls, data = int_data)

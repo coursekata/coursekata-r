@@ -14,7 +14,7 @@
 #' @param where Where on the x-axis to place the ruler: `"middle"` (midpoint
 #'   of x range), `"mean"`, or `"median"`.
 #' @param color Segment color. Default `"red"`.
-#' @param size Segment linewidth. Default `0.8`.
+#' @param size Segment `linewidth`. Default `0.8`.
 #' @param ... Additional arguments passed to [ggplot2::geom_segment()].
 #'
 #' @return A ggplot object with the SD ruler segment added.
