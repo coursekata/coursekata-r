@@ -14,8 +14,8 @@
   - macOS: latest; R: 4.5.1
   - Microsoft Windows Server 2022: latest; R: 4.5.1, 4.4.3
   - Ubuntu: 22.04; R: devel, 4.5.1, 4.4.3
-- rhub::rhub_check(platforms = rhub::rhub_platforms()$name[c(1, 2, 3, 4, 8, 9, 11, 16, 17, 18)])
-  - R-devel on linux, macos, macos-arm64, windows, clang17, clang18, gcc13, ubuntu-clang, ubuntu-gcc12, ubuntu-next, ubuntu-release
+- rhub::rhub_check(platforms = rhub::rhub_platforms()$name[c(1, 2, 4, 8, 9, 11, 16, 17, 18)])
+  - R-devel on linux, m1-san, macos-arm64, clang-asan, clang-ubsan, clang17, gcc-asan, gcc13, gcc14
 
 ## R CMD check results
 
