@@ -1,0 +1,58 @@
+[workspace]
+name = "coursekata-demo"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-64"]
+
+[dependencies]
+python = "*"
+rattler-build = ">=0.40"
+jupyterlite-xeus = "*"
+python-libarchive-c = "*"
+
+[tasks.sync-recipe]
+cmd = "python scripts/sync-recipe.py"
+
+[tasks.hash-source]
+cmd = "python scripts/hash-source.py"
+
+[tasks.resolve-r-version]
+cmd = "python scripts/resolve-r-version.py"
+inputs = ["app/pixi.lock"]
+outputs = [".r-version.yaml"]
+
+[tasks.build-package]
+cmd = "rattler-build build --recipe recipe.yaml --variant-config .r-version.yaml --output-dir .channel"
+depends-on = ["sync-recipe", "hash-source", "resolve-r-version"]
+inputs = ["recipe.yaml", ".source-hash", ".r-version.yaml"]
+outputs = [".channel/noarch/*.conda"]
+
+[tasks.install-wasm]
+cwd = "app"
+cmd = "env -u PIXI_PROJECT_MANIFEST pixi update && env -u PIXI_PROJECT_MANIFEST pixi install"
+depends-on = ["build-package"]
+
+[tasks.patch-channel-meta]
+cwd = "app"
+cmd = "python ../scripts/patch-channel-meta.py"
+depends-on = ["install-wasm"]
+
+[tasks.build]
+cwd = "app"
+cmd = [
+    "jupyter",
+    "lite",
+    "build",
+    "--XeusAddon.prefix=.pixi/envs/default",
+    "--XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev",
+    "--XeusAddon.default_channels=https://conda.anaconda.org/conda-forge",
+]
+depends-on = ["patch-channel-meta"]
+inputs = ["app/pixi.lock", "app/files/"]
+outputs = ["app/_output"]
+
+[tasks.start]
+cmd = "python -m http.server -d app/_output"
+depends-on = ["build"]
+
+[tasks.clean]
+cmd = "rm -rf .channel .r-version.yaml .source-hash recipe.yaml app/_output app/pixi.lock app/.jupyterlite.doit.db"

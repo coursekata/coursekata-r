@@ -33,3 +33,6 @@
 # Speckit
 ^\.specify
 ^specs$
+
+# JupyterLite demo
+^jupyterlite$

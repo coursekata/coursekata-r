@@ -19,7 +19,11 @@ CRAN-SUBMISSION
 /Meta/
 /inst/doc/
 
-# JupyterLite
-jupyterlite/_output/
-jupyterlite/.jupyterlite.doit.db
-jupyterlite/.pixi/
+# JupyterLite build artifacts
+.pixi/
+jupyterlite/.source-hash
+jupyterlite/.r-version.yaml
+jupyterlite/.channel/
+jupyterlite/app/_output/
+jupyterlite/app/.jupyterlite.doit.db
+jupyterlite/app/pixi.lock
