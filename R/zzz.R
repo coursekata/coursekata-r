@@ -1,4 +1,22 @@
+.onLoad <- function(libname, pkgname) {
+  # Suppress "Registered S3 method overwritten by ..." notes from sub-packages
+  # loaded later (e.g. by coursekata_attach). This must be set before those
+  # namespaces are loaded; .onLoad is the earliest available hook.
+  s3_note_env_var <- "_R_S3_METHOD_REGISTRATION_NOTE_OVERWRITES_"
+  .s3_note_state[["old"]] <- Sys.getenv(s3_note_env_var, unset = NA)
+  Sys.setenv(`_R_S3_METHOD_REGISTRATION_NOTE_OVERWRITES_` = "false")
+}
+
 .onAttach <- function(...) {
+  on.exit({
+    old <- .s3_note_state[["old"]]
+    if (is.na(old)) {
+      Sys.unsetenv("_R_S3_METHOD_REGISTRATION_NOTE_OVERWRITES_")
+    } else {
+      Sys.setenv(`_R_S3_METHOD_REGISTRATION_NOTE_OVERWRITES_` = old)
+    }
+  })
+
   attached <- coursekata_attach(
     do_not_ask = !interactive() || quickstart() || !check_missing(),
     quietly = TRUE
@@ -20,6 +38,8 @@
   pkg_env <- as.environment("package:coursekata")
   assign(".conflicts.OK", TRUE, envir = pkg_env)
 }
+
+.s3_note_state <- new.env(parent = emptyenv())
 
 quickstart <- function() {
   getOption("coursekata.quickstart", FALSE) ||

@@ -1,3 +1,14 @@
+# .onAttach() assigns .conflicts.OK into the package environment. After the
+# initial library() call the namespace is sealed and bindings are locked, so
+# subsequent .onAttach() calls (from tests) would fail. This helper unlocks
+# the binding so the assign can succeed.
+unlock_conflicts_ok <- function() {
+  pkg_env <- as.environment("package:coursekata")
+  if (exists(".conflicts.OK", envir = pkg_env) && bindingIsLocked(".conflicts.OK", pkg_env)) {
+    unlockBinding(".conflicts.OK", pkg_env)
+  }
+}
+
 # --- US1: Auto-Detection in JupyterLite ---
 
 test_that("is_emscripten() returns TRUE when R.version$os is 'emscripten'", {
@@ -99,6 +110,7 @@ test_that("check_missing=FALSE with quickstart=FALSE skips prompt", {
 # --- Startup Message Behavior ---
 
 test_that("startup messages are shown by default when coursekata.quiet is unset", {
+  unlock_conflicts_ok()
   local_mocked_bindings(
     coursekata_attach = function(...) c(pkg = TRUE),
     coursekata_load_theme = function() NULL,
@@ -112,6 +124,7 @@ test_that("startup messages are shown by default when coursekata.quiet is unset"
 })
 
 test_that("startup messages are suppressed when coursekata.quiet is TRUE", {
+  unlock_conflicts_ok()
   local_mocked_bindings(
     coursekata_attach = function(...) c(pkg = TRUE),
     coursekata_load_theme = function() NULL,
@@ -125,6 +138,7 @@ test_that("startup messages are suppressed when coursekata.quiet is TRUE", {
 })
 
 test_that("startup messages are suppressed in quickstart mode", {
+  unlock_conflicts_ok()
   local_mocked_bindings(
     coursekata_attach = function(...) c(pkg = TRUE),
     coursekata_load_theme = function() NULL,
@@ -138,6 +152,7 @@ test_that("startup messages are suppressed in quickstart mode", {
 })
 
 test_that("conflict messages are included in startup output", {
+  unlock_conflicts_ok()
   local_mocked_bindings(
     coursekata_attach = function(...) c(pkg = TRUE),
     coursekata_load_theme = function() NULL,
@@ -151,6 +166,7 @@ test_that("conflict messages are included in startup output", {
 })
 
 test_that(".conflicts.OK is set in the package environment after attach", {
+  unlock_conflicts_ok()
   local_mocked_bindings(
     coursekata_attach = function(...) c(pkg = TRUE),
     coursekata_load_theme = function() NULL,
@@ -159,8 +175,7 @@ test_that(".conflicts.OK is set in the package environment after attach", {
     quickstart = function() FALSE
   )
   pkg_env <- as.environment("package:coursekata")
-  had_it <- exists(".conflicts.OK", envir = pkg_env)
-  if (had_it) rm(".conflicts.OK", envir = pkg_env)
+  assign(".conflicts.OK", FALSE, envir = pkg_env)
   withr::defer(assign(".conflicts.OK", TRUE, envir = pkg_env))
 
   withr::with_options(list(coursekata.quiet = TRUE), {
