@@ -9,8 +9,8 @@ REPO_ROOT = JUPYTERLITE_DIR.parent
 DESCRIPTION_PATH = REPO_ROOT / "DESCRIPTION"
 RECIPE_PATH = JUPYTERLITE_DIR / "recipe.yaml"
 
-# R packages to exclude from the wasm recipe (useless without network access)
-EXCLUDE_PACKAGES = {"remotes"}
+# R packages to exclude from the wasm recipe
+EXCLUDE_PACKAGES = set()
 
 
 def parse_description():

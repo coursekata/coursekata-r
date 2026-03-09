@@ -24,6 +24,7 @@ CRAN-SUBMISSION
 jupyterlite/.source-hash
 jupyterlite/.r-version.yaml
 jupyterlite/.channel/
+jupyterlite/recipe.yaml
 jupyterlite/app/_output/
 jupyterlite/app/.jupyterlite.doit.db
 jupyterlite/app/pixi.lock
