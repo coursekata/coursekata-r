@@ -94,3 +94,77 @@ test_that("check_missing=FALSE with quickstart=FALSE skips prompt", {
     # !check_missing() is TRUE, so do_not_ask becomes TRUE
   })
 })
+
+
+# --- Startup Message Behavior ---
+
+test_that("startup messages are shown by default when coursekata.quiet is unset", {
+  local_mocked_bindings(
+    coursekata_attach = function(...) c(pkg = TRUE),
+    coursekata_load_theme = function() NULL,
+    coursekata_attach_message = function(pkgs) "attach info",
+    coursekata_conflict_message = function() NULL,
+    quickstart = function() FALSE
+  )
+  withr::with_options(list(coursekata.quiet = NULL), {
+    expect_message(coursekata:::.onAttach(), "attach info")
+  })
+})
+
+test_that("startup messages are suppressed when coursekata.quiet is TRUE", {
+  local_mocked_bindings(
+    coursekata_attach = function(...) c(pkg = TRUE),
+    coursekata_load_theme = function() NULL,
+    coursekata_attach_message = function(pkgs) "should not see",
+    coursekata_conflict_message = function() NULL,
+    quickstart = function() FALSE
+  )
+  withr::with_options(list(coursekata.quiet = TRUE), {
+    expect_message(coursekata:::.onAttach(), NA)
+  })
+})
+
+test_that("startup messages are suppressed in quickstart mode", {
+  local_mocked_bindings(
+    coursekata_attach = function(...) c(pkg = TRUE),
+    coursekata_load_theme = function() NULL,
+    coursekata_attach_message = function(pkgs) "should not see",
+    coursekata_conflict_message = function() NULL,
+    quickstart = function() TRUE
+  )
+  withr::with_options(list(coursekata.quiet = FALSE), {
+    expect_message(coursekata:::.onAttach(), NA)
+  })
+})
+
+test_that("conflict messages are included in startup output", {
+  local_mocked_bindings(
+    coursekata_attach = function(...) c(pkg = TRUE),
+    coursekata_load_theme = function() NULL,
+    coursekata_attach_message = function(pkgs) "attach info",
+    coursekata_conflict_message = function() "conflict info",
+    quickstart = function() FALSE
+  )
+  withr::with_options(list(coursekata.quiet = FALSE), {
+    expect_message(coursekata:::.onAttach(), "conflict info")
+  })
+})
+
+test_that(".conflicts.OK is set in the package environment after attach", {
+  local_mocked_bindings(
+    coursekata_attach = function(...) c(pkg = TRUE),
+    coursekata_load_theme = function() NULL,
+    coursekata_attach_message = function(pkgs) NULL,
+    coursekata_conflict_message = function() NULL,
+    quickstart = function() FALSE
+  )
+  pkg_env <- as.environment("package:coursekata")
+  had_it <- exists(".conflicts.OK", envir = pkg_env)
+  if (had_it) rm(".conflicts.OK", envir = pkg_env)
+  withr::defer(assign(".conflicts.OK", TRUE, envir = pkg_env))
+
+  withr::with_options(list(coursekata.quiet = TRUE), {
+    coursekata:::.onAttach()
+  })
+  expect_true(get(".conflicts.OK", envir = pkg_env))
+})
