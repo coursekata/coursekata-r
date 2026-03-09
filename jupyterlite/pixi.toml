@@ -8,6 +8,8 @@ python = "*"
 rattler-build = ">=0.40"
 jupyterlite-xeus = "*"
 python-libarchive-c = "*"
+jupyterlab_server = "*"
+jupyter_server = "*"
 
 [tasks.sync-recipe]
 cmd = "python scripts/sync-recipe.py"
@@ -38,16 +40,15 @@ depends-on = ["install-wasm"]
 
 [tasks.build]
 cwd = "app"
-cmd = [
-    "jupyter",
-    "lite",
-    "build",
-    "--XeusAddon.prefix=.pixi/envs/default",
-    "--XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev",
-    "--XeusAddon.default_channels=https://conda.anaconda.org/conda-forge",
-]
+cmd = """
+rm -rf _output .jupyterlite.doit.db && \
+jupyter lite build \
+    --XeusAddon.prefix=.pixi/envs/default \
+    --XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev \
+    --XeusAddon.default_channels=https://conda.anaconda.org/conda-forge
+"""
 depends-on = ["patch-channel-meta"]
-inputs = ["app/pixi.lock", "app/files/"]
+inputs = ["app/pixi.lock", "app/files/", ".source-hash"]
 outputs = ["app/_output"]
 
 [tasks.start]
