@@ -19,37 +19,32 @@ cmd = "python scripts/hash-source.py"
 
 [tasks.resolve-r-version]
 cmd = "python scripts/resolve-r-version.py"
-inputs = ["app/pixi.lock"]
-outputs = [".r-version.yaml"]
 
 [tasks.build-package]
-cmd = "rattler-build build --recipe recipe.yaml --variant-config .r-version.yaml --output-dir .channel"
+cmd = """
+rm -rf .channel && \
+rattler-build build \
+    --recipe recipe.yaml \
+    --variant-config .r-version.yaml \
+    --output-dir .channel
+"""
 depends-on = ["sync-recipe", "hash-source", "resolve-r-version"]
-inputs = ["recipe.yaml", ".source-hash", ".r-version.yaml"]
-outputs = [".channel/noarch/*.conda"]
-
-[tasks.install-wasm]
-cwd = "app"
-cmd = "env -u PIXI_PROJECT_MANIFEST pixi update && env -u PIXI_PROJECT_MANIFEST pixi install"
-depends-on = ["build-package"]
-
-[tasks.patch-channel-meta]
-cwd = "app"
-cmd = "python ../scripts/patch-channel-meta.py"
-depends-on = ["install-wasm"]
+inputs = ["recipe[.]yaml", "[.]source-hash", "[.]r-version[.]yaml"]
+outputs = [".channel/*"]
 
 [tasks.build]
 cwd = "app"
 cmd = """
+env -u PIXI_PROJECT_MANIFEST pixi update && \
+env -u PIXI_PROJECT_MANIFEST pixi install && \
+python ../scripts/patch-channel-meta.py && \
 rm -rf _output .jupyterlite.doit.db && \
 jupyter lite build \
     --XeusAddon.prefix=.pixi/envs/default \
     --XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev \
     --XeusAddon.default_channels=https://conda.anaconda.org/conda-forge
 """
-depends-on = ["patch-channel-meta"]
-inputs = ["app/pixi.lock", "app/files/", ".source-hash"]
-outputs = ["app/_output"]
+depends-on = ["build-package"]
 
 [tasks.start]
 cmd = "python -m http.server -d app/_output"
