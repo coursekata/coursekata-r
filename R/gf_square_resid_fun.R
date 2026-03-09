@@ -32,7 +32,7 @@ gf_square_resid_fun <- function(plot, fun, aspect = 4 / 6, alpha = 0.1, ...) {
   set.seed(rand_int)
 
   # Access the x and y coordinates used in the plot
-  plot_data <- ggplot_build(plot)$data[[1]]
+  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
   x_loc <- plot_data$x
   y_loc <- plot_data$y
 
@@ -42,7 +42,7 @@ gf_square_resid_fun <- function(plot, fun, aspect = 4 / 6, alpha = 0.1, ...) {
   residual <- y_loc - y_hat
 
   # Access the range of x and y used in the panel
-  plot_layout <- ggplot_build(plot)$layout
+  plot_layout <- ggplot2::ggplot_build(plot)$layout
   panel_params <- plot_layout$panel_params[[1]]
   x_range <- panel_params$x.range
   y_range <- panel_params$y.range

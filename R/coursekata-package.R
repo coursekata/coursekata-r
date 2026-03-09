@@ -27,15 +27,17 @@
 ## usethis namespace: start
 #' @import rlang
 #' @importFrom glue glue
-#' @importFrom lifecycle deprecated
 ## usethis namespace: end
 NULL
 
-# Suppress R CMD check note
-#' @importFrom dslabs take_poll
-#' @importFrom lsr cohensD
-#' @importFrom mosaic qdist
-#' @importFrom supernova supernova
-#' @importFrom Metrics sse
-#' @importFrom palmerpenguins path_to_file
-NULL
+# These packages are in Imports to ensure installation but are not imported
+# into the NAMESPACE. Loading their namespaces at import time would generate
+# S3 method overwrite notes before any hook can suppress them. Instead they
+# are attached for the user by coursekata_attach(). The :: references here
+# satisfy R CMD check's "Imports not imported from" note.
+ignore_unused_imports <- function() {
+  dslabs::take_poll
+  lsr::cohensD
+  mosaic::qdist
+  palmerpenguins::path_to_file
+}

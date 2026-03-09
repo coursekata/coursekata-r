@@ -31,7 +31,7 @@ gf_resid_fun <- function(plot, fun, linewidth = 0.2, ...) {
   set.seed(rand_int)
 
   # Access the x and y coordinates used in the plot
-  plot_data <- ggplot_build(plot)$data[[1]]
+  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
   x_loc <- plot_data$x
   y_loc <- plot_data$y
 

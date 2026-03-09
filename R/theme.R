@@ -105,14 +105,9 @@ coursekata_palette <- function(indices = integer(0)) {
 #' @seealso scale_discrete_coursekata
 #' @export
 coursekata_palette_provider <- function() {
-  unwrap <- function(x) {
-    x %>%
-      unname() %>%
-      unlist() %>%
-      force()
-  }
+  unwrap <- function(x) unlist(unname(x))
 
-  palette <- coursekata_palette() %>% unwrap()
+  palette <- unwrap(coursekata_palette())
   max_values <- length(palette)
 
   provider <- function(n) {
@@ -316,7 +311,7 @@ coursekata_unload_theme <- function() {
     `alpha` = NA
   ))
 
-  ggplot2::theme_set(theme_grey())
+  ggplot2::theme_set(ggplot2::theme_grey())
 
   options(
     repr.plot.width = NULL,

@@ -125,8 +125,7 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
 #' @noRd
 convert_predictor <- function(predictor) {
   if (is.character(predictor) && length(predictor) == 0) return(character())
-  purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))) %>%
-    purrr::flatten_chr()
+  purrr::flatten_chr(purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))))
 }
 
 #' Convert a formula and data to an [`lm`] object.
@@ -189,7 +188,7 @@ check_empty_model <- function(fit) {
 #'
 #' @noRd
 extract_stat <- function(fit, type, stat, predictor = character(0)) {
-  sup_out <- supernova(fit, type)
+  sup_out <- supernova::supernova(fit, type)
   vals <- sup_out$tbl[[stat]]
   nms <- paste(tolower(stat), sup_out$tbl$term, sep = "_")
   nms[[1]] <- tolower(stat)

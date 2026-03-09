@@ -28,15 +28,15 @@ gf_resid <- function(plot, model, linewidth = 0.2, ...) {
   model_data$residual <- stats::resid(model)
 
   # Access the x and y coordinates used in the plot
-  plot_data <- ggplot_build(plot)$data[[1]]
+  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
   x_loc <- plot_data$x
   y_loc <- plot_data$y
 
   # Ensures same jitter as the x and y coord from plot
   set.seed(rand_int)
   plot +
-    geom_segment(
-      aes(
+    ggplot2::geom_segment(
+      ggplot2::aes(
         x = x_loc,
         y = model_data$prediction,
         xend = x_loc,
@@ -83,12 +83,12 @@ gf_square_resid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
   model_data$residual <- stats::resid(model)
 
   # Access the x and y coordinates used in the plot
-  plot_data <- ggplot_build(plot)$data[[1]]
+  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
   model_data$x_loc <- plot_data$x
   model_data$y_loc <- plot_data$y
 
   # Access the range of x and y used in the panel
-  plot_layout <- ggplot_build(plot)$layout
+  plot_layout <- ggplot2::ggplot_build(plot)$layout
   panel_params <- plot_layout$panel_params[[1]]
   x_range <- panel_params$x.range
   y_range <- panel_params$y.range
@@ -116,9 +116,9 @@ gf_square_resid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
   # Ensures same jitter as the x and y coord from plot
   set.seed(rand_int)
   plot +
-    geom_polygon(
+    ggplot2::geom_polygon(
       data = squares_data,
-      aes(x = .data$x, y = .data$y, group = .data$id),
+      ggplot2::aes(x = .data$x, y = .data$y, group = .data$id),
       inherit.aes = FALSE,
       alpha = alpha,
       ...
