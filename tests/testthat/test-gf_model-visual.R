@@ -175,8 +175,15 @@ test_that("it plots 1 predictor (on aesthetic, cat.) models as lines at means, o
 
   # plots where one axis is calculated
   plot_args <- list(gformula = ~later_anxiety, color = ~condition, data = er)
-  plot_types <- c("gf_histogram", "gf_dhistogram", "gf_rug", "gf_rugx")
-  purrr::walk(plot_types, function(plot) {
+  bin_plots <- c("gf_histogram", "gf_dhistogram")
+  purrr::walk(bin_plots, function(plot) {
+    do.call(plot, append(plot_args, list(bins = 30))) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
+
+  other_plots <- c("gf_rug", "gf_rugx")
+  purrr::walk(other_plots, function(plot) {
     do.call(plot, plot_args) %>%
       gf_model(lm(later_anxiety ~ condition, data = er)) %>%
       expect_doppelganger(snap_name(plot))
@@ -191,7 +198,7 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
   testthat::skip_on_ci()
 
   snap_name <- function(plot_name, suffix = "") {
-    glue("[{plot_name}] cond. mod., y on Y, pred. on facet")
+    glue("[{plot_name}] cond. mod., y on Y, pred. on facet{suffix}")
   }
 
   # plots where both axes are specified
@@ -203,14 +210,14 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
       expect_doppelganger(snap_name(plot))
   })
 
-  # alternative specification
+  # alternative specification using gf_facet_wrap instead of | in formula
   plot_args <- list(gformula = later_anxiety ~ provider, data = er)
   plot_types <- c("gf_point", "gf_boxplot", "gf_violin")
   purrr::walk(plot_types, function(plot) {
     do.call(plot, plot_args) %>%
       gf_facet_wrap(~condition) %>%
       gf_model(lm(later_anxiety ~ condition, data = er)) %>%
-      expect_doppelganger(snap_name(plot))
+      expect_doppelganger(snap_name(plot, " alt"))
   })
 
   # plots where one axis is calculated
@@ -243,9 +250,15 @@ test_that("it plots 1 predictor (on facet, compact cat.) models as lines at mean
 
   # plots where one axis is calculated
   plot_args <- list(gformula = ~ later_anxiety | condition, data = er)
-  plot_types <- c("gf_histogram", "gf_dhistogram", "gf_rug", "gf_rugx")
+  bin_plots <- c("gf_histogram", "gf_dhistogram")
+  purrr::walk(bin_plots, function(plot) {
+    do.call(plot, append(plot_args, list(bins = 30))) %>%
+      gf_model(lm(later_anxiety ~ condition, data = er)) %>%
+      expect_doppelganger(snap_name(plot))
+  })
 
-  purrr::walk(plot_types, function(plot) {
+  other_plots <- c("gf_rug", "gf_rugx")
+  purrr::walk(other_plots, function(plot) {
     do.call(plot, plot_args) %>%
       gf_model(lm(later_anxiety ~ condition, data = er)) %>%
       expect_doppelganger(snap_name(plot))

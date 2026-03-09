@@ -1,7 +1,7 @@
 Package: coursekata
 Title: Packages and Functions for 'CourseKata' Courses
-Version: 0.19.0
-Date: 2025-07-16
+Version: 0.19.2
+Date: 2026-03-09
 Authors@R: c(
     person("Adam", "Blake", , "adam@coursekata.org", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0001-7881-8652")),
@@ -23,8 +23,9 @@ Imports:
     cli (>= 3.2.0),
     dslabs (>= 0.7.4),
     ggformula (>= 0.10.1),
-    ggplot2 (>= 4.0.0),
+    ggplot2 (>= 3.5.2),
     glue (>= 1.6.2),
+    lifecycle (>= 1.0.3),
     lsr (>= 0.5.2),
     Metrics,
     mosaic (>= 1.8.3),
@@ -37,12 +38,14 @@ Imports:
     viridisLite
 Suggests:
     fivethirtyeight (>= 0.6.2),
+    knitr (>= 1.40),
     lubridate (>= 1.8.0),
     MASS,
     mockery (>= 0.4.3),
     mockr (>= 0.1),
     readr (>= 2.1.2),
     readxl (>= 1.4.0),
+    rmarkdown (>= 2.17),
     usethis (>= 2.1.6),
     simstudy (>= 0.5.0),
     testthat (>= 3.1.2),
@@ -50,6 +53,7 @@ Suggests:
     tidyr (>= 1.2.0),
     vdiffr (>= 1.0.2),
     withr (>= 2.5.0)
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Language: en-US

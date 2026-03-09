@@ -95,12 +95,32 @@ test_that("term filtering works with formulae", {
   expect_equal(p(mult_model, predictor = frms), p(mult_model, all = TRUE)[named("p")])
 })
 
-test_that("using data with missing values doesn't result in mutliple refitting messages", {
+test_that("degenerate models return NA_real_ when fstatistic is NULL", {
+  df1 <- data.frame(y = 1, x = 1)
+  fit <- lm(y ~ x, data = df1)
+  expect_identical(f(fit), NA_real_)
+  expect_identical(p(fit), NA_real_)
+})
+
+test_that("fast path results match supernova path for multiple model types", {
+  models <- list(
+    lm(mpg ~ hp, data = mtcars),
+    lm(mpg ~ hp * cyl, data = mtcars),
+    lm(mpg ~ wt + qsec + am, data = mtcars),
+    lm(Sepal.Length ~ Sepal.Width, data = iris)
+  )
+  for (fit in models) {
+    sup <- supernova(fit, type = 3)
+    expect_equal(f(fit), sup$tbl$F[[1]], tolerance = .Machine$double.eps^0.5)
+    expect_equal(pre(fit), sup$tbl$PRE[[1]], tolerance = .Machine$double.eps^0.5)
+    expect_equal(p(fit), sup$tbl$p[[1]], tolerance = .Machine$double.eps^0.5)
+  }
+})
+
+test_that("using data with missing values doesn't result in extra messages", {
   data_missing <- mtcars
   data_missing[1, "hp"] <- NA
-  expect_message(
-    f(mpg ~ hp, data = data_missing),
-    "(?!Refitting.*Refitting)Refitting",
-    perl = TRUE
-  )
+  expect_no_message(f(mpg ~ hp, data = data_missing))
+  expect_no_message(pre(mpg ~ hp, data = data_missing))
+  expect_no_message(p(mpg ~ hp, data = data_missing))
 })

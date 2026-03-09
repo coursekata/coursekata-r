@@ -1,7 +1,29 @@
+# IDE and editors
 .Rproj.user
+
+# OS files
+.DS_Store
+
+# R tooling
 .Rhistory
 .RData
-.DS_Store
+Rplots.pdf
+
+# Documentation
 NOTES.md
 README.html
 CRAN-SUBMISSION
+
+# Build artifacts
+/doc/
+/Meta/
+/inst/doc/
+
+# JupyterLite build artifacts
+.pixi/
+jupyterlite/.source-hash
+jupyterlite/.r-version.yaml
+jupyterlite/.channel/
+jupyterlite/app/_output/
+jupyterlite/app/.jupyterlite.doit.db
+jupyterlite/app/pixi.lock

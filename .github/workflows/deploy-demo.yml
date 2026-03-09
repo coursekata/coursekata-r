@@ -1,0 +1,58 @@
+name: Deploy JupyterLite Demo
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: prefix-dev/setup-pixi@v0.9.4
+        with:
+          pixi-version: latest
+          cache: true
+          manifest-path: jupyterlite/pixi.toml
+
+      - name: Cache local channel
+        uses: actions/cache@v4
+        with:
+          path: jupyterlite/.channel
+          key: r-coursekata-${{ hashFiles('R/**', 'data/**', 'DESCRIPTION', 'NAMESPACE') }}
+
+      - name: Build JupyterLite site
+        run: cd jupyterlite && pixi run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: jupyterlite/app/_output
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,14 +1,38 @@
-^coursekata\.Rproj$
+# IDE and editors
 ^\.Rproj\.user$
-^LICENSE\.md$
-^README\.(?:Rmd|html)$
+^\.vscode$
+^coursekata\.Rproj$
+
+# R tooling
+^\.lintr$
+
+# CI/CD
 ^\.github$
 ^codecov\.yml$
-^data-raw$
-^\.vscode$
-^bin$
-^.lintr$
+
+# Documentation
+^LICENSE\.md$
+^README\.(?:Rmd|html)$
 ^CHANGELOG\.md$
 ^NOTES\.md$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
+
+# Build artifacts
+^doc$
+^Meta$
+^bin$
+
+# Raw data
+^data-raw$
+
+# Claude Code
+^CLAUDE\.md$
+^\.claude
+
+# Speckit
+^\.specify
+^specs$
+
+# JupyterLite demo
+^jupyterlite$

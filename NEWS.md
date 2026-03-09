@@ -1,5 +1,18 @@
 # `coursekata` change log
 
+## coursekata 0.19.2
+
+- Add experimental visualization functions: `gf_resid_fun()`, `gf_square_resid_fun()`, `gf_sd_ruler()`, `gf_squareplot()`, `show_cutoffs()`, and `outer()`.
+- Rename `gf_squaresid()` to `gf_square_resid()` with deprecation warning for the old name.
+- Add `coursekata.check_missing` option to control the missing-package install prompt, with automatic suppression on Emscripten/WASM environments.
+- Add tidyverse-style conflict reporting on startup, showing which coursekata exports mask objects from other packages.
+- Relax ggplot2 version constraint to `>= 3.5.2` to support Emscripten/WASM environments.
+- Improve performance of estimate extraction functions by bypassing `supernova` when using default arguments.
+
+## coursekata 0.19.1
+
+- Upgrade to ggplot2 4.0.0 compatibility.
+
 ## coursekata 0.19.0
 
 - Add `gf_resid()` and `gf_squaresid()` functions for residual and squared residual plots that layer onto `ggformula::gf_point()` plots.

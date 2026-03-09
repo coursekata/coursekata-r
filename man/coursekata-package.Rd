@@ -4,12 +4,35 @@
 \name{coursekata-package}
 \alias{coursekata}
 \alias{coursekata-package}
-\title{coursekata: Packages and Functions for 'CourseKata' Courses}
+\title{coursekata: CourseKata Statistics and Data Science}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
 Easily install and load all packages and functions used in 'CourseKata' courses. Aid teaching with helper functions and augment generic functions to provide cohesion between the network of packages. Learn more about 'CourseKata' at \url{https://www.coursekata.org}.
 }
+\section{Package Options}{
+
+The following options control startup behavior when \code{library(coursekata)} is called:
+
+\describe{
+\item{\code{coursekata.quickstart}}{If \code{TRUE}, skips dependency checks and
+suppresses all startup messages. Default: \code{FALSE}.}
+\item{\code{coursekata.quiet}}{If \code{TRUE}, suppresses startup messages but still
+checks for missing packages. Default: \code{FALSE}.}
+\item{\code{coursekata.check_missing}}{Controls the missing-package installation
+prompt. Accepts a tri-state value:
+\itemize{
+\item \code{NULL} (default, unset): Auto-detect. Skips the prompt when R is
+running under Emscripten (e.g., JupyterLite/WASM); prompts otherwise.
+\item \code{TRUE}: Always prompt for missing packages, even in Emscripten.
+\item \code{FALSE}: Never prompt for missing packages.
+}
+Non-logical values are treated as \code{NULL} (auto-detect). Note that
+\code{coursekata.quickstart = TRUE} takes precedence and suppresses the prompt
+regardless of this option.}
+}
+}
+
 \seealso{
 Useful links:
 \itemize{

@@ -1,0 +1,126 @@
+---
+title: "Countable Histograms with `gf_squareplot()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Countable Histograms with `gf_squareplot()`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4,
+  dpi = 96
+)
+```
+
+```{r setup, message = FALSE}
+library(coursekata)
+```
+
+## Overview
+
+`gf_squareplot()` creates histograms where individual data points are visible as
+stacked unit rectangles. Instead of abstract bars, each observation becomes a
+countable square, making sample size and distribution shape tangible.
+
+This is particularly useful for teaching statistical concepts like sampling
+distributions and hypothesis testing, where students benefit from seeing that
+"n = 47" means 47 actual squares.
+
+## Basic Usage
+
+Pass a formula and data frame, just like other `gf_*` functions:
+
+```{r basic}
+gf_squareplot(~Thumb, data = Fingers)
+```
+
+## Display Modes
+
+The `bars` parameter controls how the histogram is displayed:
+
+- `"none"` (default): Individual squares only
+- `"outline"`: Squares with bar outlines around each bin
+- `"solid"`: Traditional filled bars
+
+```{r bars-outline}
+gf_squareplot(~Thumb, data = Fingers, bars = "outline")
+```
+
+## Customizing Appearance
+
+You can customize fill color, `binwidth`, and axis limits:
+
+```{r custom}
+gf_squareplot(~Thumb, data = Fingers,
+              fill = "coral",
+              binwidth = 5,
+              xrange = c(30, 90))
+```
+
+## Integer Data
+
+For integer-valued data with a small range, `gf_squareplot()` automatically
+selects a `binwidth` of 1, so each integer gets its own column:
+```{r integer}
+int_data <- data.frame(rolls = sample(1:6, 30, replace = TRUE))
+gf_squareplot(~rolls, data = int_data)
+```
+
+## Large Samples
+
+When any bin has more than 75 observations, the function automatically switches
+to solid bars to keep the display readable. You can opt into subdivision instead
+with `auto_subdivide = TRUE`, which splits wide bins into sub-columns so
+rectangles remain countable:
+
+```{r large-sample}
+large_data <- data.frame(x = rnorm(500, mean = 50, sd = 10))
+gf_squareplot(~x, data = large_data)
+```
+
+## Teaching Features
+
+### Mean Line
+
+Show a dashed line at the sample mean:
+
+```{r mean-line}
+gf_squareplot(~Thumb, data = Fingers, show_mean = TRUE)
+```
+
+### DGP Overlay
+
+The `show_dgp = TRUE` option adds a teaching overlay for hypothesis testing
+contexts. It shows:
+
+- A top axis labeled "Population Parameter (DGP)" with the population model
+  equation
+- A bottom axis labeled "Parameter Estimate" with the sample estimate equation
+- A red triangle and label marking the null hypothesis position (b1 = 0)
+
+```{r dgp, fig.height = 5}
+set.seed(42)
+samp_dist <- do(100) * b1(Thumb ~ Height, data = sample(Fingers, 30))
+gf_squareplot(~b1, data = samp_dist,
+              show_dgp = TRUE,
+              show_mean = TRUE,
+              xrange = c(-0.5, 1.5),
+              xbreaks = seq(-0.5, 1.5, by = 0.25))
+```
+
+## Factor Input
+
+When the input is a factor with numeric levels, all levels are displayed on the
+x-axis even if some have zero counts:
+
+```{r factor}
+ratings <- factor(sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
+                  levels = 1:5)
+df <- data.frame(rating = ratings)
+gf_squareplot(~rating, data = df)
+```

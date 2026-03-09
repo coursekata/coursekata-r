@@ -3,6 +3,7 @@
 \name{middle}
 \alias{middle}
 \alias{tails}
+\alias{outer}
 \alias{lower}
 \alias{upper}
 \title{Find a percentage of a distribution}
@@ -11,6 +12,8 @@ middle(x, prop = 0.95, greedy = TRUE)
 
 tails(x, prop = 0.95, greedy = TRUE)
 
+outer(x, prop)
+
 lower(x, prop = 0.025, greedy = TRUE)
 
 upper(x, prop = 0.025, greedy = TRUE)
@@ -18,7 +21,7 @@ upper(x, prop = 0.025, greedy = TRUE)
 \arguments{
 \item{x}{The distribution of values to check.}
 
-\item{prop}{The proportion of values to find.}
+\item{prop}{The total proportion in both tails combined, must be in (0, 1).}
 
 \item{greedy}{Whether the function should be greedy, as per the description above.}
 }
@@ -31,6 +34,12 @@ distribution. Useful when you want to do something like shade in the middle 95\%
 is a greedy operation, meaning that if the cutoff point is between two whole numbers the
 specified region will suck up the extra space. For example, the requesting the upper 30\% of the
 \verb{[1 2 3 4]} will return \verb{[FALSE FALSE TRUE TRUE]} because the 30\% was greedy.
+
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+\code{outer()} marks values in both outer tails of a distribution. It is the
+complement of \code{\link[=middle]{middle()}}: \code{outer(x, prop)} is equivalent to
+\code{tails(x, 1 - prop)}.
 }
 \details{
 Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE}.

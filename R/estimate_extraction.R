@@ -30,7 +30,7 @@
 #'
 #' @return The value of the estimate as a single number.
 #'
-#' @importFrom stats lm
+#' @importFrom stats lm pf
 #' @name estimate_extraction
 
 #' @rdname estimate_extraction
@@ -76,7 +76,12 @@ f <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   predictor <- convert_predictor(predictor)
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
-  suppressMessages(check_empty_model(fit))
+  check_empty_model(fit)
+  if (!all && is_empty(predictor)) {
+    fstat <- summary(fit)$fstatistic
+    if (is.null(fstat)) return(NA_real_)
+    return(unname(fstat[1]))
+  }
   stats <- extract_stat(fit, type, "F", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -88,6 +93,9 @@ pre <- function(object, data = NULL, all = FALSE, predictor = character(), type 
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
   check_empty_model(fit)
+  if (!all && is_empty(predictor)) {
+    return(summary(fit)$r.squared)
+  }
   stats <- extract_stat(fit, type, "PRE", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -99,6 +107,11 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
   check_extract_args(all, predictor, type)
   fit <- convert_lm(object, {{ data }})
   check_empty_model(fit)
+  if (!all && is_empty(predictor)) {
+    fstat <- summary(fit)$fstatistic
+    if (is.null(fstat)) return(NA_real_)
+    return(unname(pf(fstat[1], fstat[2], fstat[3], lower.tail = FALSE)))
+  }
   stats <- extract_stat(fit, type, "p", predictor)
   if (all || !is_empty(predictor)) stats else stats[[1]]
 }
@@ -111,8 +124,8 @@ p <- function(object, data = NULL, all = FALSE, predictor = character(), type = 
 #'
 #' @noRd
 convert_predictor <- function(predictor) {
-  purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))) %>%
-    purrr::flatten_chr()
+  if (is.character(predictor) && length(predictor) == 0) return(character())
+  purrr::flatten_chr(purrr::map_if(c(predictor), is_formula, ~ deparse(f_rhs(.x))))
 }
 
 #' Convert a formula and data to an [`lm`] object.
@@ -159,8 +172,7 @@ check_extract_args <- function(all, predictor, type = 3) {
 #'
 #' @noRd
 check_empty_model <- function(fit) {
-  models <- supernova::generate_models(fit)
-  if (length(models) == 0) {
+  if (length(attr(fit$terms, "term.labels")) == 0) {
     abort("Can't extract this estimate from an empty model (it doesn't exist).")
   }
 }
@@ -176,7 +188,7 @@ check_empty_model <- function(fit) {
 #'
 #' @noRd
 extract_stat <- function(fit, type, stat, predictor = character(0)) {
-  sup_out <- supernova(fit, type)
+  sup_out <- supernova::supernova(fit, type)
   vals <- sup_out$tbl[[stat]]
   nms <- paste(tolower(stat), sup_out$tbl$term, sep = "_")
   nms[[1]] <- tolower(stat)
