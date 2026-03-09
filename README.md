@@ -10,6 +10,7 @@ status](https://www.r-pkg.org/badges/version/coursekata)](https://CRAN.R-project
 [![R build
 status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.svg)](https://github.com/coursekata/coursekata-r/actions)
 [![codecov](https://codecov.io/gh/coursekata/coursekata-r/branch/main/graph/badge.svg?token=HEenoYyHcn)](https://app.codecov.io/gh/coursekata/coursekata-r)
+[![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://coursekata.github.io/coursekata-r/)
 <!-- badges: end -->
 
 ## Overview
@@ -68,18 +69,6 @@ to the [functions and theme](#functions-and-theme) included in the
 
 ``` r
 library(coursekata)
-#> ── CourseKata packages ──────────────────────────── coursekata 0.18.1 ──
-#> ✔ dslabs              0.8.0       ✔ Metrics             0.1.4
-#> ✔ Lock5withR          1.2.2       ✔ lsr                 0.5.2
-#> ✔ fivethirtyeightdata 0.1.0       ✔ mosaic              1.9.1
-#> ✔ fivethirtyeight     0.6.2       ✔ supernova           3.0.0
-#> 
-#> Attaching package: 'coursekata'
-#> 
-#> 
-#> The following object is masked from 'package:datasets':
-#> 
-#>     penguins
 ```
 
 - [supernova](https://cran.r-project.org/package=supernova), for
@@ -171,6 +160,7 @@ samp_dist_of_b1 <- do(1000) * b1(lm(mpg ~ hp, data = resample(mtcars)))
 
 # plot the bootstrapped estimates
 gf_histogram(~ samp_dist_of_b1$b1)
+#> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
 
 ![](man/figures/README-samp_dist_of_b1-1.png)<!-- -->
@@ -190,6 +180,7 @@ samp_dist_of_hp <- do(1000) * {
 
 # plot the bootstrapped estimates
 gf_histogram(~ samp_dist_of_hp$result)
+#> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
 
 ![](man/figures/README-samp_dist_of_hp-1.png)<!-- -->
@@ -206,6 +197,7 @@ shade in those areas:
 ``` r
 # shade in the middle 80% of the Thumb distribution
 gf_histogram(~Thumb, data = Fingers, fill = ~ middle(Thumb, .80))
+#> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
 
 ![](man/figures/README-shaded_middle-1.png)<!-- -->
