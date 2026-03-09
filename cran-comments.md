@@ -5,6 +5,8 @@
 - Add experimental visualization functions (`gf_resid_fun()`, `gf_square_resid_fun()`, `gf_sd_ruler()`, `gf_squareplot()`, `show_cutoffs()`, `outer()`).
 - Rename `gf_squaresid()` to `gf_square_resid()` with deprecation warning.
 - Add `coursekata.check_missing` option to control the missing-package install prompt.
+- Add tidyverse-style conflict reporting on startup.
+- Relax ggplot2 version constraint to `>= 3.5.2` for WASM compatibility.
 - Improve performance of estimate extraction functions.
 
 ## Test environments
