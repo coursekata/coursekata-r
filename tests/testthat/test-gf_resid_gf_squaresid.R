@@ -93,3 +93,22 @@ test_that("gf_resid does not reset the user's RNG stream", {
 
   expect_false(any(vapply(reachable, identical, logical(1), .Random.seed)))
 })
+
+test_that("gf_resid seeds a copy of the jitter position, not the shared object", {
+  model <- lm(Thumb ~ Sex, data = Fingers)
+  base <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .1)
+
+  # hold a reference to the layer's position object before freezing. geom_jitter()
+  # and position = "jitter" share ggplot2's namespace-level PositionJitter, so
+  # writing a seed onto this object in place would leak it into unrelated plots.
+  original_pos <- base$layers[[1]]$position
+  expect_false(is.finite(original_pos$seed))
+
+  frozen <- gf_resid(base, model)
+
+  # the frozen plot carries a seed, but on a *new* object -- the one we captured
+  # is left untouched, proving the seed was copied on rather than mutated in
+  expect_true(is.finite(frozen$layers[[1]]$position$seed))
+  expect_false(identical(frozen$layers[[1]]$position, original_pos))
+  expect_false(is.finite(original_pos$seed))
+})
