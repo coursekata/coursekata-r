@@ -16,17 +16,21 @@ gf_sd_ruler(
 )
 }
 \arguments{
-\item{p}{A ggplot object (typically from \code{gf_point()} or \code{gf_jitter()}).}
+\item{p}{A ggplot object (typically from \code{gf_point()}, \code{gf_jitter()}, or
+\code{gf_histogram()}).}
 
 \item{y}{The y-variable (bare name or string). Defaults to the plot's
 mapped y aesthetic if omitted.}
 
 \item{data}{Dataset. Defaults to \code{p$data}.}
 
-\item{x}{The x-variable for placement. Defaults to the plot's mapped x.}
+\item{x}{The x-variable (bare name or string). On scatter and jitter
+plots this controls the ruler's placement; on histograms it is the
+outcome variable. Defaults to the plot's mapped x.}
 
-\item{where}{Where on the x-axis to place the ruler: \code{"middle"} (midpoint
-of x range), \code{"mean"}, or \code{"median"}.}
+\item{where}{For vertical rulers, where on the x-axis to place the ruler:
+\code{"middle"} (midpoint of x range), \code{"mean"}, or \code{"median"}. Ignored for
+histograms, where the ruler always starts at the mean.}
 
 \item{color}{Segment color. Default \code{"red"}.}
 
@@ -41,12 +45,67 @@ A ggplot object with the SD ruler segment added.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Adds a vertical segment showing one standard deviation of a variable,
-placed at a specified x position. Works for both numeric x (scatter) and
-categorical x (jitter) plots.
+Adds a segment showing one standard deviation of a variable, anchored at
+the mean. The orientation depends on where the outcome variable lives:
+on a scatter or jitter plot (outcome on the y-axis) the ruler is a
+vertical segment placed at a chosen x position; on a histogram (outcome
+on the x-axis, no y aesthetic) it is a horizontal segment running from
+the mean to mean + SD along the baseline. The orientation is detected
+automatically from the plot's axis mappings.
 }
 \examples{
-gf_jitter(Thumb ~ Height, data = Fingers) \%>\%
+# simulate response times for students who practiced without feedback
+set.seed(154)
+no_feedback_data <- data.frame(
+  student_id = 1:100,
+  median_time = round(rnorm(100, 13, 6), 1)
+)
+
+# the ruler runs from the mean (the empty model) up by one standard
+# deviation -- it looks like a residual because SD is a typical residual
+no_feedback_empty <- lm(median_time ~ NULL, data = no_feedback_data)
+gf_point(median_time ~ student_id, data = no_feedback_data) \%>\%
+  gf_lims(y = c(0, 30)) \%>\%
+  gf_model(no_feedback_empty) \%>\%
+  gf_sd_ruler(color = "red", size = 2)
+
+# a group with less spread has the same mean but a much shorter ruler
+# (fixing the y-axis with gf_lims makes the two plots comparable)
+set.seed(141)
+feedback_data <- data.frame(
+  student_id = 1:100,
+  median_time = round(rnorm(100, 13, 3), 1)
+)
+feedback_empty <- lm(median_time ~ NULL, data = feedback_data)
+gf_point(median_time ~ student_id, data = feedback_data) \%>\%
+  gf_lims(y = c(0, 30)) \%>\%
+  gf_model(feedback_empty) \%>\%
+  gf_sd_ruler(color = "red", size = 2)
+
+# works with categorical x too; `where` controls the ruler's placement
+gf_jitter(Thumb ~ Sex, data = Fingers, width = .1, alpha = .4) \%>\%
   gf_model(lm(Thumb ~ NULL, data = Fingers)) \%>\%
-  gf_sd_ruler()
+  gf_sd_ruler(where = "mean")
+
+# with quantitative x, where = "mean" centers the ruler in the data cloud
+gf_point(Thumb ~ Height, data = Fingers, alpha = .4) \%>\%
+  gf_model(lm(Thumb ~ NULL, data = Fingers)) \%>\%
+  gf_sd_ruler(where = "mean")
+
+# on a histogram the ruler is horizontal: it runs from the mean (the empty
+# model) one standard deviation to the right, along the baseline
+gf_histogram(~Thumb, data = Fingers) \%>\%
+  gf_model(lm(Thumb ~ NULL, data = Fingers)) \%>\%
+  gf_sd_ruler(color = "red", size = 2)
+
+# the same spread comparison works histogram-style: same mean, and the
+# no-feedback group's ruler is twice as long
+gf_histogram(~median_time, data = feedback_data, binwidth = 1) \%>\%
+  gf_lims(x = c(0, 30)) \%>\%
+  gf_model(feedback_empty) \%>\%
+  gf_sd_ruler(color = "red", size = 2)
+gf_histogram(~median_time, data = no_feedback_data, binwidth = 1) \%>\%
+  gf_lims(x = c(0, 30)) \%>\%
+  gf_model(no_feedback_empty) \%>\%
+  gf_sd_ruler(color = "red", size = 2)
 }

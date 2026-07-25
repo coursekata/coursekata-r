@@ -26,9 +26,7 @@
 gf_resid_fun <- function(plot, fun, linewidth = 0.2, ...) {
   lifecycle::signal_stage("experimental", "gf_resid_fun()")
 
-  # Handles random jitter
-  rand_int <- sample(1:100, 1)
-  set.seed(rand_int)
+  plot <- freeze_jitter(plot)
 
   # Access the x and y coordinates used in the plot
   plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
@@ -36,7 +34,6 @@ gf_resid_fun <- function(plot, fun, linewidth = 0.2, ...) {
   y_loc <- plot_data$y
 
   # Compute predicted values at those x positions
-  set.seed(rand_int)
   y_hat <- fun(x_loc)
 
   # Add vertical residual lines
