@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: github-pages
@@ -20,8 +18,9 @@ jobs:
   build:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: prefix-dev/setup-pixi@v0.9.4
         with:
@@ -29,19 +28,15 @@ jobs:
           cache: true
           manifest-path: jupyterlite/pixi.toml
 
-      - name: Cache local channel
-        uses: actions/cache@v4
-        with:
-          path: jupyterlite/.channel
-          key: r-coursekata-${{ hashFiles('R/**', 'data/**', 'DESCRIPTION', 'NAMESPACE') }}
-
       - name: Build JupyterLite site
         run: cd jupyterlite && pixi run build
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: jupyterlite/app/_output
+          # v4 began dropping dotfiles from the artifact
+          include-hidden-files: true
 
   deploy:
     needs: build
@@ -55,7 +50,8 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
