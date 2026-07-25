@@ -24,8 +24,32 @@ This function adds vertical lines representing residuals from a linear model to 
 The residuals are drawn from the observed data points to the predicted values from the model.
 }
 \examples{
-Height_model <- lm(Thumb ~ Height, data = Fingers)
-gf_point(Thumb ~ Height, data = Fingers) \%>\%
-  gf_model(Height_model) \%>\%
-  gf_resid(Height_model, color = "red", alpha = 0.5)
+# residuals can be drawn on a full data set, but with hundreds of points
+# the plot gets hard to read
+flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins)
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins) \%>\%
+  gf_model(flipper_model) \%>\%
+  gf_resid(flipper_model)
+
+# a small sample makes the residuals much easier to see
+set.seed(1)
+penguins_20 <- sample(penguins, 20)
+
+# residuals from the empty model (in blue)
+empty_model <- lm(body_mass_kg ~ NULL, data = penguins_20)
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) \%>\%
+  gf_model(empty_model) \%>\%
+  gf_resid(empty_model, color = "blue")
+
+# residuals from a two-group model on a jitter plot (in firebrick)
+gentoo_model <- lm(body_mass_kg ~ gentoo, data = penguins_20)
+gf_jitter(body_mass_kg ~ gentoo, data = penguins_20, width = .1) \%>\%
+  gf_model(gentoo_model) \%>\%
+  gf_resid(gentoo_model, color = "firebrick")
+
+# residuals from a regression model (in firebrick)
+sample_flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins_20)
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) \%>\%
+  gf_model(sample_flipper_model) \%>\%
+  gf_resid(sample_flipper_model, color = "firebrick")
 }

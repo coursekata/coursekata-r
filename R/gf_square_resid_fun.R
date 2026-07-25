@@ -27,9 +27,7 @@
 gf_square_resid_fun <- function(plot, fun, aspect = 4 / 6, alpha = 0.1, ...) {
   lifecycle::signal_stage("experimental", "gf_square_resid_fun()")
 
-  # Handles random jitter
-  rand_int <- sample(1:100, 1)
-  set.seed(rand_int)
+  plot <- freeze_jitter(plot)
 
   # Access the x and y coordinates used in the plot
   plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
@@ -37,7 +35,6 @@ gf_square_resid_fun <- function(plot, fun, aspect = 4 / 6, alpha = 0.1, ...) {
   y_loc <- plot_data$y
 
   # Compute predicted values and residuals
-  set.seed(rand_int)
   y_hat <- fun(x_loc)
   residual <- y_loc - y_hat
 
@@ -62,7 +59,6 @@ gf_square_resid_fun <- function(plot, fun, aspect = 4 / 6, alpha = 0.1, ...) {
   }))
 
   # Add polygons
-  set.seed(rand_int)
   plot +
     ggplot2::geom_polygon(
       data = squares_data,
