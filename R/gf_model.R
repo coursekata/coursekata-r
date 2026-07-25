@@ -19,6 +19,43 @@
 #' @return a gg object (a plot layer) that can be added to a plot.
 #'
 #' @export
+#' @examples
+#' # the empty model predicts the same value (the mean) for every observation
+#' empty_model <- lm(body_mass_kg ~ NULL, data = penguins)
+#' gf_histogram(~body_mass_kg, data = penguins) %>%
+#'   gf_model(empty_model)
+#'
+#' # a two-group model (categorical explanatory variable) on a jitter plot
+#' gentoo_model <- lm(body_mass_kg ~ gentoo, data = penguins)
+#' gf_jitter(body_mass_kg ~ gentoo, data = penguins, width = .1) %>%
+#'   gf_model(gentoo_model)
+#'
+#' # a three-group model works the same way
+#' species_model <- lm(body_mass_kg ~ species, data = penguins)
+#' gf_jitter(body_mass_kg ~ species, data = penguins, width = .1) %>%
+#'   gf_model(species_model)
+#'
+#' # group models can also be layered onto faceted histograms
+#' gf_histogram(~body_mass_kg, data = penguins) %>%
+#'   gf_facet_grid(species ~ .) %>%
+#'   gf_model(species_model)
+#'
+#' # a regression model (quantitative explanatory variable) on a scatter plot
+#' flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins)
+#' gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
+#'   gf_model(flipper_model)
+#'
+#' # layer the empty model and the regression model in different colors to
+#' # compare the two models on the same plot
+#' gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
+#'   gf_model(empty_model, color = "dodgerblue") %>%
+#'   gf_model(flipper_model, color = "firebrick")
+#'
+#' # with a categorical and a quantitative predictor, the model is drawn
+#' # as one line for each group
+#' ancova_model <- lm(body_mass_kg ~ species + flipper_length_m, data = penguins)
+#' gf_point(body_mass_kg ~ flipper_length_m, color = ~species, data = penguins) %>%
+#'   gf_model(ancova_model)
 gf_model <- function(object, model, ...) {
   args <- list2(...)
 

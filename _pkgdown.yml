@@ -1,0 +1,85 @@
+url: https://coursekata.github.io/coursekata-r/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [reference, articles, news]
+    right: [try, search, github]
+  components:
+    try:
+      text: Try in your browser
+      href: lite/lab/index.html?path=getting-started.ipynb
+      aria-label: Try coursekata in your browser, without installing R
+
+reference:
+- title: Visualizing distributions and variation
+  desc: >
+    Make counts, spread, and portions of a distribution visible: countable
+    histograms, distribution part functions for shading (with cutoff
+    markers), and a standard deviation ruler.
+  contents:
+  - gf_sd_ruler
+  - gf_squareplot
+  - middle
+  - show_cutoffs
+
+- title: Visualizing models
+  desc: >
+    Layer models, residuals, and squared residuals onto `ggformula` plots.
+  contents:
+  - gf_model
+  - gf_resid
+  - gf_resid_fun
+  - gf_square_resid
+  - gf_square_resid_fun
+
+- title: Evaluating models
+  desc: >
+    Pull estimates out of fitted models (useful for bootstrapping), and
+    quantify fit — including on separate train and test sets.
+  contents:
+  - estimate_extraction
+  - fit_stats
+  - split_data
+
+- title: Plot theme and palettes
+  desc: >
+    The colorblind-friendly `ggplot2` theme that is applied when the
+    package is loaded, and tools for customizing or toggling it.
+  contents:
+  - coursekata_load_theme
+  - coursekata_palette
+  - coursekata_palette_provider
+  - coursekata_unload_theme
+  - scale_discrete_coursekata
+  - theme_coursekata
+
+- title: Package management
+  desc: >
+    Install, update, and load the packages used in CourseKata courses.
+  contents:
+  - coursekata-package
+  - coursekata_attach
+  - coursekata_install
+  - coursekata_packages
+  - coursekata_repos
+
+- title: Data
+  desc: Data sets used in CourseKata courses and supplementary materials.
+  contents:
+  - Ames
+  - class_data
+  - er
+  - fevdata
+  - Fingers
+  - FingersMessy
+  - game_data
+  - penguins
+  - Smallville
+  - Survey
+  - Tables
+  - tip_exp
+  - TipExperiment
+  - World

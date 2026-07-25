@@ -1,0 +1,22 @@
+<svg viewBox="0 0 230.94 230.94" xmlns="http://www.w3.org/2000/svg">
+<svg x="15.47" y="0" width="200" height="230.94" viewBox="0 0 200 230.94">
+  <!-- Favicon mark: the hex with the A/B papers only. The wordmark and the
+       letters are dropped because neither survives 16px; the papers are scaled
+       to the largest rectangle that fits inside the inner hex. -->
+  <polygon points="100,0 200,57.74 200,173.21 100,230.94 0,173.21 0,57.74" fill="#32deed"/>
+  <polygon points="100,6.9 194,61.2 194,169.75 100,224.04 6,169.75 6,61.2" fill="#1d0156"/>
+  <svg x="34.186" y="51.346" width="131.628" height="128.249"
+       viewBox="0 53.15 513.36 500.18"
+       preserveAspectRatio="xMidYMid meet">
+<g>
+    <polygon fill="#ff5b7d" points="266.69 193.33 446.69 193.33 483.36 237.33 513.36 273.33 513.36 553.33 266.69 553.33 266.69 193.33"/>
+    <polygon fill="#fd001f" points="446.69 193.33 513.36 273.33 446.69 273.33 446.69 193.33"/>
+  </g>
+  <g>
+    <polygon fill="#32deed" points="246.67 53.15 66.67 53.15 30 97.15 0 133.15 0 413.15 246.67 413.15 246.67 53.15"/>
+    <polygon fill="#00b5c4" points="66.67 53.15 0 133.15 66.67 133.15 66.67 53.15"/>
+  </g>
+  <rect fill="#fff" x="246.69" width="20" height="600"/>
+  </svg>
+</svg>
+</svg>

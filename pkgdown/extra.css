@@ -1,0 +1,6 @@
+/* Restyle lifecycle badges with CourseKata brand colors
+   (default pkgdown orange clashes with the palette) */
+.lifecycle-experimental {
+  background-color: #f5546d;
+  color: #fff;
+}

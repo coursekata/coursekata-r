@@ -16,6 +16,9 @@
 #' - **`ssm`**: The SS Model (SS Regression) for the full model.
 #' - **`ssr`**: Alias for SSM.
 #'
+#' `fVal()` and `PRE()` are older names for [f()] and [pre()]. They are kept
+#' for backward compatibility and behave identically to the newer functions.
+#'
 #' @param object A [`lm`] object, or [`formula`].
 #' @param data If `object` is a formula, the data to fit the formula to as a [`data.frame`].
 #' @param all If `TRUE`, return a named list of all related terms (e.g. all *F*-values).The name
@@ -206,10 +209,12 @@ extract_stat <- function(fit, type, stat, predictor = character(0)) {
 # nolint start
 
 #' @rdname estimate_extraction
+#' @usage NULL
 #' @export
 fVal <- f
 
 #' @rdname estimate_extraction
+#' @usage NULL
 #' @export
 PRE <- pre
 

@@ -2,17 +2,17 @@
 % Please edit documentation in R/distribution_parts.R
 \name{middle}
 \alias{middle}
-\alias{tails}
 \alias{outer}
+\alias{tails}
 \alias{lower}
 \alias{upper}
 \title{Find a percentage of a distribution}
 \usage{
 middle(x, prop = 0.95, greedy = TRUE)
 
-tails(x, prop = 0.95, greedy = TRUE)
-
 outer(x, prop)
+
+tails(x, prop = 0.95, greedy = TRUE)
 
 lower(x, prop = 0.025, greedy = TRUE)
 
@@ -45,14 +45,36 @@ complement of \code{\link[=middle]{middle()}}: \code{outer(x, prop)} is equivale
 Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE}.
 }
 \examples{
-
+# each function returns a logical vector marking the values in its region
 upper(1:10, .1)
 lower(1:10, .2)
 middle(1:10, .5)
 tails(1:10, .5)
 
-sampling_distribution <- do(1000) * mean(rnorm(100, 5, 10))
-sampling_distribution \%>\%
-  gf_histogram(~mean, data = sampling_distribution, fill = ~ middle(mean, .68)) \%>\%
-  gf_refine(scale_fill_manual(values = c("blue", "coral")))
+# they are most often used as the fill aesthetic of a histogram of a
+# sampling distribution -- here, b1s estimated from shuffled (null) data
+set.seed(42)
+sdob1 <- do(1000) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+
+# color the middle 95\%: the b1 values we would expect to see often
+# if the empty model were true
+gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95))
+
+# tails() marks the same cutoffs with the opposite coloring: the values
+# outside the middle 95\% are the 5\% most extreme
+gf_histogram(~b1, data = sdob1, fill = ~ tails(b1, .95))
+
+# outer() marks the same region as tails() but takes the tail proportion
+# directly: the outer 5\%
+gf_histogram(~b1, data = sdob1, fill = ~ outer(b1, .05))
+
+# upper() and lower() are for directional hypotheses: all 5\% goes in one tail
+gf_histogram(~b1, data = sdob1, fill = ~ upper(b1, .05))
+gf_histogram(~b1, data = sdob1, fill = ~ lower(b1, .05))
+
+# the same pattern with resample() instead of shuffle() marks off a
+# bootstrapped 95\% confidence interval
+set.seed(42)
+sdob1_boot <- do(1000) * b1(Tip ~ Condition, data = resample(TipExperiment))
+gf_histogram(~b1, data = sdob1_boot, fill = ~ middle(b1, .95), bins = 100)
 }
