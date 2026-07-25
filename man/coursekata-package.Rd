@@ -36,6 +36,7 @@ regardless of this option.}
 \seealso{
 Useful links:
 \itemize{
+  \item \url{https://coursekata.github.io/coursekata-r/}
   \item \url{https://github.com/coursekata/coursekata-r}
   \item Report bugs at \url{https://github.com/coursekata/coursekata-r/issues}
 }

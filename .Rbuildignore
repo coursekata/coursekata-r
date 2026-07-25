@@ -11,6 +11,9 @@
 ^codecov\.yml$
 
 # Documentation
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
 ^LICENSE\.md$
 ^README\.(?:Rmd|html)$
 ^CHANGELOG\.md$

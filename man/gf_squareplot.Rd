@@ -66,10 +66,89 @@ A ggplot object with S3 class \code{c("gf_squareplot", "gg", "ggplot")}.
 }
 \details{
 Creates histograms where individual data points are visible as stacked unit
-rectangles, making counts easy to visualize. Designed for teaching
-statistical concepts, particularly sampling distributions.
+rectangles, making counts easy to visualize. Instead of abstract bars, each
+observation becomes a countable square, making sample size and distribution
+shape tangible. Designed for teaching statistical concepts like sampling
+distributions and hypothesis testing, where students benefit from seeing
+that "n = 47" means 47 actual squares.
+
+Sensible defaults are chosen based on the data:
+\itemize{
+\item For integer-valued data with a small range, the \code{binwidth} defaults to 1
+so that each integer gets its own column.
+\item When the input is a factor with numeric levels, all levels are displayed
+on the x-axis even if some have zero counts.
+\item When any bin has more than 75 observations, the display automatically
+switches to solid bars to remain readable. Opt into subdivision instead
+with \code{auto_subdivide = TRUE}, which splits wide bins into sub-columns so
+that rectangles remain countable.
+}
+
+When teaching about hypothesis testing, the \code{show_dgp = TRUE} overlay
+frames a sampling distribution with its data generating process. It shows a
+top axis labeled "Population Parameter (DGP)" with the population model
+equation, a bottom axis labeled "Parameter Estimate" with the sample
+estimate equation, and a red triangle marking the null hypothesis position
+(\eqn{\beta_1 = 0}).
 }
 \examples{
+# each observation is a countable square
 gf_squareplot(~Thumb, data = Fingers)
+
+# `bars` controls the display: "none" (default), "outline", or "solid"
 gf_squareplot(~Thumb, data = Fingers, bars = "outline")
+
+# customize fill color, binwidth, and axis limits
+gf_squareplot(~Thumb,
+  data = Fingers,
+  fill = "coral",
+  binwidth = 5,
+  xrange = c(30, 90)
+)
+
+# integer data with a small range gets one column per integer
+int_data <- data.frame(rolls = sample(1:6, 30, replace = TRUE))
+gf_squareplot(~rolls, data = int_data)
+
+# bins with more than 75 observations switch to solid bars automatically
+set.seed(24)
+large_data <- data.frame(x = rnorm(2000, mean = 50, sd = 10))
+gf_squareplot(~x, data = large_data)
+
+# show a dashed line at the sample mean
+gf_squareplot(~Thumb, data = Fingers, show_mean = TRUE)
+
+# frame a sampling distribution with its data generating process: with only
+# 10 shuffles, the mean of the distribution (dashed red line) can land far
+# from the null hypothesis marker on the top axis
+set.seed(42)
+sdob1 <- do(10) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+gf_squareplot(~b1,
+  data = sdob1,
+  show_dgp = TRUE,
+  show_mean = TRUE,
+  xrange = c(-30, 30),
+  mincount = 10,
+  binwidth = 2
+)
+
+# with 100 shuffles the mean moves close to the null; `mincount` keeps the
+# y-axis fixed so the two plots are directly comparable
+set.seed(42)
+sdob1 <- do(100) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+gf_squareplot(~b1,
+  data = sdob1,
+  show_dgp = TRUE,
+  show_mean = TRUE,
+  xrange = c(-30, 30),
+  mincount = 10,
+  binwidth = 2
+)
+
+# factors with numeric levels show all levels, even empty ones
+ratings <- data.frame(rating = factor(
+  sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
+  levels = 1:5
+))
+gf_squareplot(~rating, data = ratings)
 }

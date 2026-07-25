@@ -23,10 +23,6 @@ f(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 pre(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 
 p(object, data = NULL, all = FALSE, predictor = character(), type = 3)
-
-fVal(object, data = NULL, all = FALSE, predictor = character(), type = 3)
-
-PRE(object, data = NULL, all = FALSE, predictor = character(), type = 3)
 }
 \arguments{
 \item{object}{A \code{\link{lm}} object, or \code{\link{formula}}.}
@@ -68,6 +64,9 @@ empty model.}
 \item \strong{\code{ssm}}: The SS Model (SS Regression) for the full model.
 \item \strong{\code{ssr}}: Alias for SSM.
 }
+
+\code{fVal()} and \code{PRE()} are older names for \code{\link[=f]{f()}} and \code{\link[=pre]{pre()}}. They are kept
+for backward compatibility and behave identically to the newer functions.
 }
 \examples{
 supernova(lm(mpg ~ disp, data = mtcars))

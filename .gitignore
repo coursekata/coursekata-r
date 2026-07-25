@@ -19,6 +19,9 @@ CRAN-SUBMISSION
 /Meta/
 /inst/doc/
 
+# pkgdown site (built in CI)
+/docs/
+
 # JupyterLite build artifacts
 .pixi/
 jupyterlite/.source-hash
