@@ -26,8 +26,10 @@ A ggplot object with squared residuals added.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-\code{gf_squaresid()} was renamed to \code{\link[=gf_square_resid]{gf_square_resid()}} for naming consistency
-and is now deprecated.
+\code{gf_squaresid()} is a fully supported alias of \code{gf_square_resid()}. The
+name honors \href{https://github.com/TH4SL4M}{Tyler Haslam}, the Utah high
+school teacher whose efforts shaped the residual and squared-residual
+visualizations and who requested this function by that name.
 }
 \details{
 This function adds squared residual representations to a ggformula plot, illustrating

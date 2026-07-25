@@ -127,10 +127,11 @@ gf_square_resid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
 
 #' @rdname gf_square_resid
 #' @description
-#' `gf_squaresid()` was renamed to [gf_square_resid()] for naming consistency
-#' and is now deprecated.
+#' `gf_squaresid()` is a fully supported alias of `gf_square_resid()`. The
+#' name honors [Tyler Haslam](https://github.com/TH4SL4M), the Utah high
+#' school teacher whose efforts shaped the residual and squared-residual
+#' visualizations and who requested this function by that name.
 #' @export
 gf_squaresid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
-  lifecycle::deprecate_warn("0.20.0", "gf_squaresid()", "gf_square_resid()")
   gf_square_resid(plot, model, aspect = aspect, alpha = alpha, ...)
 }
