@@ -14,7 +14,7 @@ Description: Easily install and load all packages and functions used in
     'CourseKata' courses. Aid teaching with helper functions and augment
     generic functions to provide cohesion between the network of packages.
     Learn more about 'CourseKata' at <https://www.coursekata.org>.
-License: AGPL (>= 3)
+License: GPL (>= 3)
 URL: https://coursekata.github.io/coursekata-r/,
     https://github.com/coursekata/coursekata-r
 BugReports: https://github.com/coursekata/coursekata-r/issues
