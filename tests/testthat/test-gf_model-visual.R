@@ -423,11 +423,29 @@ test_that("it respects static aesthetic choices", {
 })
 
 test_that("it un-maps dynamic aesthetics from underlying layers that are not in the model", {
-  testthat::skip_on_ci()
+  plot <- gf_point(
+    later_anxiety ~ base_anxiety,
+    color = ~condition, shape = ~provider, data = er
+  ) %>%
+    gf_model(lm(later_anxiety ~ base_anxiety, data = er))
 
-  gf_point(later_anxiety ~ base_anxiety, color = ~condition, shape = ~provider, data = er) %>%
-    gf_model(lm(later_anxiety ~ base_anxiety, data = er)) %>%
-    expect_doppelganger("[gf_point] anx. mod., y on Y, with color & shape")
+  built <- ggplot2::ggplot_build(plot)
+  points <- built$data[[1]]
+  model <- built$data[[length(built$data)]]
+
+  # the base layer keeps what the user mapped
+  expect_length(unique(points$colour), 2)
+  expect_length(unique(points$shape), 3)
+
+  # neither variable is in the model, so the model layer takes the geom's
+  # default instead of inheriting the mapping
+  expect_equal(unique(model$colour), ggplot2::GeomLine$default_aes$colour)
+
+  # the grid is still built across the plot's aesthetics, so the line is drawn
+  # once per provider -- overlapping copies of one line, not a line per group
+  traces <- split(model[order(model$x), c("x", "y")], model$group[order(model$x)])
+  expect_length(traces, 3)
+  for (trace in traces[-1]) expect_equal(trace$y, traces[[1]]$y)
 })
 
 test_that("it will translate color arguments if applicable (e.g. fill to color)", {
