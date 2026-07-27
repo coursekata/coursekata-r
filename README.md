@@ -99,7 +99,6 @@ In addition to useful functions, a great deal of data sets are used by
 instructors who teach the course. This package installs these:
 
 - [fivethirtyeight](https://cran.r-project.org/package=fivethirtyeight)
-- [fivethirtyeightdata](https://fivethirtyeightdata.github.io/fivethirtyeightdata/index.html)
 - [Lock5withR](https://cran.r-project.org/package=Lock5withR)
 - [dslabs](https://cran.r-project.org/package=dslabs)
 
