@@ -55,3 +55,13 @@ freeze_jitter <- function(plot) {
   }
   plot
 }
+
+#' Join items into a comma-separated string for error messages
+#'
+#' @noRd
+collapse <- function(x) glue::glue_collapse(x, sep = ", ")
+
+#' Turn a variable name into a one-sided formula
+#'
+#' @noRd
+name_to_frm <- function(x) stats::formula(glue("~{x}"))

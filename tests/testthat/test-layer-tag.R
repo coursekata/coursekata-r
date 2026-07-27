@@ -17,6 +17,15 @@ test_that("a tagged layer can be found by name after further composition", {
   expect_equal(length(p$layers), 3L)
 })
 
+test_that("layer_index finds the first layer carrying the tag, not the last", {
+  # the documented two-model comparison leaves two layers tagged "model"
+  p <- gf_point(Thumb ~ Height, data = Fingers) %>%
+    gf_model(lm(Thumb ~ NULL, data = Fingers), color = "dodgerblue") %>%
+    gf_model(lm(Thumb ~ Height, data = Fingers), color = "firebrick")
+
+  expect_equal(length(p$layers), 3L)
+  expect_equal(layer_index(p, "model"), 2L)
+})
 
 test_that("layer_index is NA when no layer carries the tag", {
   p <- gf_point(Thumb ~ Height, data = Fingers)

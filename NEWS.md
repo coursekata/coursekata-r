@@ -11,6 +11,7 @@
 - Fix variable names in `gf_sd_ruler()`'s `y` and `x` arguments. Bare (unquoted) names previously errored despite being documented, and a variable holding a column name stopped resolving when that was fixed; all three spellings now work.
 - Rebuild the hex sticker from the official brand artwork so it renders identically everywhere. The previous one set its letters as live text in a licensed font it could not embed, which fell back to a different typeface on most machines and to missing-glyph boxes in the favicons.
 - `gf_squaresid()` is no longer deprecated: it remains a fully supported alias of `gf_square_resid()`. With our appreciation to Tyler Haslam (@TH4SL4M), the Utah high school teacher whose efforts shaped the residual and squared-residual visualizations -- including working out how `gf_resid()` and `gf_square_resid()` handle jitter plots, and the insight to emphasize the area of the squares rather than their outline -- and who requested the function by this name.
+- `gf_model()` now errors when an aesthetic is mapped to a variable that is not one of the model's predictors, instead of silently dropping the mapping. A mapping the model could not honor used to just vanish from the plot without a word, which is a hard thing to debug in a notebook.
 - Expand reference examples for the model visualization and distribution functions with textbook-style, pedagogy-focused examples.
 
 # coursekata 0.19.2
