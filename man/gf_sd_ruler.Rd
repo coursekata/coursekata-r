@@ -54,58 +54,31 @@ the mean to mean + SD along the baseline. The orientation is detected
 automatically from the plot's axis mappings.
 }
 \examples{
-# simulate response times for students who practiced without feedback
-set.seed(154)
-no_feedback_data <- data.frame(
-  student_id = 1:100,
-  median_time = round(rnorm(100, 13, 6), 1)
-)
-
 # the ruler runs from the mean (the empty model) up by one standard
 # deviation -- it looks like a residual because SD is a typical residual
-no_feedback_empty <- lm(median_time ~ NULL, data = no_feedback_data)
-gf_point(median_time ~ student_id, data = no_feedback_data) \%>\%
-  gf_lims(y = c(0, 30)) \%>\%
-  gf_model(no_feedback_empty) \%>\%
-  gf_sd_ruler(color = "red", size = 2)
-
-# a group with less spread has the same mean but a much shorter ruler
-# (fixing the y-axis with gf_lims makes the two plots comparable)
-set.seed(141)
-feedback_data <- data.frame(
-  student_id = 1:100,
-  median_time = round(rnorm(100, 13, 3), 1)
-)
-feedback_empty <- lm(median_time ~ NULL, data = feedback_data)
-gf_point(median_time ~ student_id, data = feedback_data) \%>\%
-  gf_lims(y = c(0, 30)) \%>\%
-  gf_model(feedback_empty) \%>\%
-  gf_sd_ruler(color = "red", size = 2)
-
-# works with categorical x too; `where` controls the ruler's placement
-gf_jitter(Thumb ~ Sex, data = Fingers, width = .1, alpha = .4) \%>\%
-  gf_model(lm(Thumb ~ NULL, data = Fingers)) \%>\%
-  gf_sd_ruler(where = "mean")
-
-# with quantitative x, where = "mean" centers the ruler in the data cloud
 gf_point(Thumb ~ Height, data = Fingers, alpha = .4) \%>\%
   gf_model(lm(Thumb ~ NULL, data = Fingers)) \%>\%
+  gf_sd_ruler()
+
+# `where` controls placement along the x-axis
+gf_point(Thumb ~ Height, data = Fingers, alpha = .4) \%>\%
   gf_sd_ruler(where = "mean")
 
-# on a histogram the ruler is horizontal: it runs from the mean (the empty
-# model) one standard deviation to the right, along the baseline
+# categorical x works the same way
+gf_jitter(Thumb ~ Sex, data = Fingers, width = .1, alpha = .4) \%>\%
+  gf_sd_ruler(where = "median")
+
+# on a histogram the outcome is on the x-axis, so the ruler is horizontal
+# and runs along the baseline from the mean to one SD above it
 gf_histogram(~Thumb, data = Fingers) \%>\%
-  gf_model(lm(Thumb ~ NULL, data = Fingers)) \%>\%
   gf_sd_ruler(color = "red", size = 2)
 
-# the same spread comparison works histogram-style: same mean, and the
-# no-feedback group's ruler is twice as long
-gf_histogram(~median_time, data = feedback_data, binwidth = 1) \%>\%
-  gf_lims(x = c(0, 30)) \%>\%
-  gf_model(feedback_empty) \%>\%
-  gf_sd_ruler(color = "red", size = 2)
-gf_histogram(~median_time, data = no_feedback_data, binwidth = 1) \%>\%
-  gf_lims(x = c(0, 30)) \%>\%
-  gf_model(no_feedback_empty) \%>\%
-  gf_sd_ruler(color = "red", size = 2)
+# name the variable explicitly when the plot does not make it obvious
+gf_point(Thumb ~ Height, data = Fingers, alpha = .4) \%>\%
+  gf_sd_ruler(y = Thumb)
+}
+\seealso{
+The model visualization guide shows the ruler alongside residuals and
+compares groups with different spread:
+\url{https://coursekata.github.io/coursekata-r/articles/model-visualization.html}
 }
