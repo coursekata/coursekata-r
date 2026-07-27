@@ -88,7 +88,8 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
                         color = "red", size = 0.8, ...) {
   lifecycle::signal_stage("experimental", "gf_sd_ruler()")
   where <- match.arg(where)
-  if (is.null(data)) data <- p$data
+  spec <- plot_spec(p)
+  if (is.null(data)) data <- spec$data
 
   # capture bare variable names before any evaluation forces them
   y_arg <- arg_name(substitute(y), function() y, data)
@@ -96,12 +97,12 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
 
   # histogram mode: no y aesthetic and no explicit y, so the outcome is on
   # the x-axis and the ruler is a horizontal segment along the baseline
-  if (is.null(y_arg) && is.null(p$mapping$y)) {
+  if (is.null(y_arg) && is.null(spec$mapping$y)) {
     if (is.null(x_arg)) {
-      if (is.null(p$mapping$x)) {
+      if (is.null(spec$mapping$x)) {
         abort("Can't infer the outcome variable; please pass y or x explicitly.")
       }
-      x_name <- mapped_name(p$mapping$x, "x")
+      x_name <- mapped_name(spec$mapping$x, "x")
     } else {
       x_name <- x_arg
     }
@@ -111,7 +112,7 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
     s <- stats::sd(x_vals, na.rm = TRUE)
 
     seg <- data.frame(x = m, xend = m + s, y = 0, yend = 0)
-    return(p +
+    return(p + tag_layer(
       ggplot2::geom_segment(
         data = seg,
         mapping = ggplot2::aes(
@@ -122,11 +123,13 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
         color = color,
         linewidth = size,
         ...
-      ))
+      ),
+      "sd_ruler"
+    ))
   }
 
   # scatter/jitter mode: outcome on the y-axis, vertical ruler at a chosen x
-  y_name <- if (is.null(y_arg)) mapped_name(p$mapping$y, "y") else y_arg
+  y_name <- if (is.null(y_arg)) mapped_name(spec$mapping$y, "y") else y_arg
 
   y_vals <- outcome_values(data, y_name)
   m <- mean(y_vals, na.rm = TRUE)
@@ -134,8 +137,8 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
 
   # infer x for placement; unlike the outcome this may be categorical
   if (is.null(x_arg)) {
-    if (!is.null(p$mapping$x)) {
-      x_name <- mapped_name(p$mapping$x, "x")
+    if (!is.null(spec$mapping$x)) {
+      x_name <- mapped_name(spec$mapping$x, "x")
       x_vals_raw <- column(data, x_name)
     } else {
       x_vals_raw <- seq_along(y_vals)
@@ -164,16 +167,19 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
   seg <- data.frame(x = x0, xend = x0, y = m, yend = m + s)
 
   p +
-    ggplot2::geom_segment(
-      data = seg,
-      mapping = ggplot2::aes(
-        x = .data$x, xend = .data$xend,
-        y = .data$y, yend = .data$yend
+    tag_layer(
+      ggplot2::geom_segment(
+        data = seg,
+        mapping = ggplot2::aes(
+          x = .data$x, xend = .data$xend,
+          y = .data$y, yend = .data$yend
+        ),
+        inherit.aes = FALSE,
+        color = color,
+        linewidth = size,
+        ...
       ),
-      inherit.aes = FALSE,
-      color = color,
-      linewidth = size,
-      ...
+      "sd_ruler"
     )
 }
 
@@ -183,7 +189,7 @@ gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
 #' name in scope can't shadow a real column.
 #'
 #' @noRd
-arg_name <- function(expr, value, data) {
+arg_name <- function(expr, value, data, call = caller_env()) {
   if (is.null(expr)) {
     return(NULL)
   }
@@ -206,13 +212,16 @@ arg_name <- function(expr, value, data) {
 #' `as_name()` would fail on it without mentioning this function.
 #'
 #' @noRd
-mapped_name <- function(mapping, aes_name) {
+mapped_name <- function(mapping, aes_name, call = caller_env()) {
   if (!is_symbol(quo_get_expr(mapping))) {
-    abort(c(
-      glue("Can't read the {aes_name} variable from the plot's mapping"),
-      glue("the plot maps {aes_name} to `{as_label(mapping)}`, not a variable"),
-      glue("pass {aes_name} explicitly to say which variable to measure")
-    ))
+    abort(
+      c(
+        glue("Can't read the {aes_name} variable from the plot's mapping"),
+        glue("the plot maps {aes_name} to `{as_label(mapping)}`, not a variable"),
+        glue("pass {aes_name} explicitly to say which variable to measure")
+      ),
+      call = call
+    )
   }
   as_name(mapping)
 }
@@ -220,12 +229,15 @@ mapped_name <- function(mapping, aes_name) {
 #' Pull a column out of the data, by name
 #'
 #' @noRd
-column <- function(data, name) {
+column <- function(data, name, call = caller_env()) {
   if (!name %in% names(data)) {
-    abort(c(
-      glue("Can't find `{name}` in the data"),
-      glue("available variables: {collapse(names(data))}")
-    ))
+    abort(
+      c(
+        glue("Can't find `{name}` in the data"),
+        glue("available variables: {collapse(names(data))}")
+      ),
+      call = call
+    )
   }
   data[[name]]
 }
@@ -233,14 +245,17 @@ column <- function(data, name) {
 #' Pull the quantitative column the ruler measures
 #'
 #' @noRd
-outcome_values <- function(data, name) {
-  values <- column(data, name)
+outcome_values <- function(data, name, call = caller_env()) {
+  values <- column(data, name, call = call)
   if (!is.numeric(values)) {
-    abort(c(
-      glue("`{name}` is not a quantitative variable"),
-      glue("detected type: {class(values)[[1]]}"),
-      "a standard deviation ruler needs a quantitative outcome"
-    ))
+    abort(
+      c(
+        glue("`{name}` is not a quantitative variable"),
+        glue("detected type: {class(values)[[1]]}"),
+        "a standard deviation ruler needs a quantitative outcome"
+      ),
+      call = call
+    )
   }
   values
 }
