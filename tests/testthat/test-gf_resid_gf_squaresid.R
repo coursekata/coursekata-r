@@ -33,6 +33,17 @@ test_that("gf_resid adds a segment layer", {
   expect_true("GeomSegment" %in% layer_types)
 })
 
+test_that("a model fit on fewer rows than the plot draws says so", {
+  # lm() drops Fingers' 29 rows with a missing SSLast; the plot still draws all 157
+  model <- lm(SSLast ~ Height, data = Fingers)
+  p <- gf_point(SSLast ~ Height, data = Fingers)
+
+  expect_error(gf_resid(p, model), "cover the same observations")
+  expect_error(gf_resid(p, model), "draws 157 points")
+  expect_error(gf_resid(p, model), "gives 128 fitted values")
+  expect_error(suppressMessages(gf_square_resid(p, model)), "cover the same observations")
+})
+
 test_that("jittered positions are stable across repeated builds", {
   model <- lm(Thumb ~ Sex, data = Fingers)
   plot <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .1) %>%
@@ -51,11 +62,23 @@ test_that("gf_resid segments are anchored to the jittered points", {
 
   built <- ggplot2::ggplot_build(plot)
   points <- built$data[[1]]
-  segments <- built$data[[length(built$data)]]
+  segments <- built$data[[layer_index(plot, "resid")]]
 
   expect_equal(segments$x, points$x)
   expect_equal(segments$xend, points$x)
   expect_equal(segments$yend, points$y)
+})
+
+test_that("gf_resid segments inherit the plot's mapped aesthetics", {
+  model <- lm(Thumb ~ Height, data = Fingers)
+
+  colored <- gf_resid(gf_point(Thumb ~ Height, color = ~Sex, data = Fingers), model)
+  color_segments <- ggplot2::ggplot_build(colored)$data[[layer_index(colored, "resid")]]
+  expect_gt(length(unique(color_segments$colour)), 1)
+
+  faded <- gf_resid(gf_point(Thumb ~ Height, alpha = ~Height, data = Fingers), model)
+  alpha_segments <- ggplot2::ggplot_build(faded)$data[[layer_index(faded, "resid")]]
+  expect_gt(length(unique(alpha_segments$alpha)), 1)
 })
 
 test_that("gf_square_resid squares are anchored to the jittered points", {
@@ -65,7 +88,8 @@ test_that("gf_square_resid squares are anchored to the jittered points", {
 
   built <- ggplot2::ggplot_build(plot)
   points <- built$data[[1]]
-  squares <- split(built$data[[length(built$data)]], built$data[[length(built$data)]]$group)
+  drawn <- built$data[[layer_index(plot, "square_resid")]]
+  squares <- split(drawn, drawn$group)
   vertex <- function(i) vapply(squares, function(square) square$x[[i]], numeric(1))
 
   # vertices 1 and 4 are the residual side, so both sit at the point's x
@@ -76,6 +100,35 @@ test_that("gf_square_resid squares are anchored to the jittered points", {
     points$y,
     ignore_attr = TRUE
   )
+})
+
+test_that("gf_square_resid draws squares on a jittered plot, measured off the panel", {
+  # the regression this guards lived here, not in the plan: the drawing once took
+  # its vertical side from the displayed (jittered) y and its horizontal side from
+  # stats::resid(model), which differ by exactly the jitter
+  model <- lm(Thumb ~ Sex, data = Fingers)
+  plot <- suppressMessages(
+    gf_jitter(Thumb ~ Sex, data = Fingers, width = .1) %>% gf_square_resid(model)
+  )
+
+  built <- ggplot2::ggplot_build(plot)
+  panel <- built$layout$panel_params[[1]]
+  points <- built$data[[1]]
+  drawn <- built$data[[layer_index(plot, "square_resid")]]
+  squares <- split(drawn, drawn$group)
+
+  side <- function(axis, range) {
+    vapply(squares, function(square) diff(range(square[[axis]])) / diff(range), numeric(1))
+  }
+  widths <- side("x", panel$x.range)
+  heights <- side("y", panel$y.range)
+
+  expect_equal(
+    heights,
+    abs(points$y - stats::predict(model)) / diff(panel$y.range),
+    ignore_attr = TRUE
+  )
+  expect_equal(widths, heights * (4 / 6))
 })
 
 test_that("gf_resid does not reset the user's RNG stream", {

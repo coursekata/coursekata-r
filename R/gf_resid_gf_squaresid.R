@@ -42,31 +42,10 @@
 #'   gf_model(sample_flipper_model) %>%
 #'   gf_resid(sample_flipper_model, color = "firebrick")
 gf_resid <- function(plot, model, linewidth = 0.2, ...) {
-  # Pin the jitter so every build of this plot draws the same dot positions
   plot <- freeze_jitter(plot)
-
-  # Get model predictions and residuals and assign them to the model data
-  model_data <- model$model
-  model_data$prediction <- stats::predict(model)
-  model_data$residual <- stats::resid(model)
-
-  # Access the x and y coordinates used in the plot
-  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
-  x_loc <- plot_data$x
-  y_loc <- plot_data$y
-
-  plot +
-    ggplot2::geom_segment(
-      ggplot2::aes(
-        x = x_loc,
-        y = model_data$prediction,
-        xend = x_loc,
-        yend = y_loc
-      ),
-      inherit.aes = TRUE,
-      linewidth = linewidth,
-      ...
-    )
+  geometry <- plot_geometry(plot)
+  plan <- resid_plan(geometry, stats::predict(model))
+  render_resid_plan(plot, plan, linewidth, ...)
 }
 
 #' Add Squared Residual Visualization to a Plot
@@ -118,53 +97,10 @@ gf_resid <- function(plot, model, linewidth = 0.2, ...) {
 gf_square_resid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
   lifecycle::signal_stage("experimental", "gf_square_resid()")
 
-  # Pin the jitter so every build of this plot draws the same dot positions
   plot <- freeze_jitter(plot)
-
-  # Get model predictions and residuals and assign them to the model data
-  model_data <- model$model
-  model_data$prediction <- stats::predict(model)
-  model_data$residual <- stats::resid(model)
-
-  # Access the x and y coordinates used in the plot
-  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
-  model_data$x_loc <- plot_data$x
-  model_data$y_loc <- plot_data$y
-
-  # Access the range of x and y used in the panel
-  plot_layout <- ggplot2::ggplot_build(plot)$layout
-  panel_params <- plot_layout$panel_params[[1]]
-  x_range <- panel_params$x.range
-  y_range <- panel_params$y.range
-
-  # Compute ratio for proper aspect scaling
-  range_ratio <- (x_range[2] - x_range[1]) / (y_range[2] - y_range[1])
-  model_data$dir <- ifelse(model_data$x_loc > mean(x_range), -1, 1)
-  side_length <- abs(model_data$residual) * aspect * range_ratio
-  model_data$adj_side <- model_data$x_loc + model_data$dir * side_length
-
-  # Create a dataframe for plotting polygons
-  squares_data <- do.call(rbind, lapply(seq_len(nrow(model_data)), function(i) {
-    resid_side <- model_data$x_loc[i]
-    top <- model_data$prediction[i]
-    bottom <- model_data$y_loc[i]
-    opp_side <- model_data$adj_side[i]
-
-    data.frame(
-      x = c(resid_side, opp_side, opp_side, resid_side),
-      y = c(bottom, bottom, top, top),
-      id = i # Unique identifier for each square
-    )
-  }))
-
-  plot +
-    ggplot2::geom_polygon(
-      data = squares_data,
-      ggplot2::aes(x = .data$x, y = .data$y, group = .data$id),
-      inherit.aes = FALSE,
-      alpha = alpha,
-      ...
-    )
+  geometry <- plot_geometry(plot)
+  plan <- square_resid_plan(geometry, stats::predict(model), aspect)
+  render_square_resid_plan(plot, plan, alpha, ...)
 }
 
 #' @rdname gf_square_resid
@@ -175,5 +111,8 @@ gf_square_resid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
 #' visualizations and who requested this function by that name.
 #' @export
 gf_squaresid <- function(plot, model, aspect = 4 / 6, alpha = 0.1, ...) {
-  gf_square_resid(plot, model, aspect = aspect, alpha = alpha, ...)
+  args <- list(plot = plot, model = model, ...)
+  if (!missing(aspect)) args$aspect <- aspect
+  if (!missing(alpha)) args$alpha <- alpha
+  do.call(gf_square_resid, args)
 }

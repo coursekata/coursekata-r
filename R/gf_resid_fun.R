@@ -27,21 +27,7 @@ gf_resid_fun <- function(plot, fun, linewidth = 0.2, ...) {
   lifecycle::signal_stage("experimental", "gf_resid_fun()")
 
   plot <- freeze_jitter(plot)
-
-  # Access the x and y coordinates used in the plot
-  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
-  x_loc <- plot_data$x
-  y_loc <- plot_data$y
-
-  # Compute predicted values at those x positions
-  y_hat <- fun(x_loc)
-
-  # Add vertical residual lines
-  plot +
-    ggplot2::geom_segment(
-      ggplot2::aes(x = x_loc, y = y_hat, xend = x_loc, yend = y_loc),
-      inherit.aes = TRUE,
-      linewidth = linewidth,
-      ...
-    )
+  geometry <- plot_geometry(plot)
+  plan <- resid_plan(geometry, fun(geometry$x))
+  render_resid_plan(plot, plan, linewidth, ...)
 }

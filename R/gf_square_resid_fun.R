@@ -28,43 +28,7 @@ gf_square_resid_fun <- function(plot, fun, aspect = 4 / 6, alpha = 0.1, ...) {
   lifecycle::signal_stage("experimental", "gf_square_resid_fun()")
 
   plot <- freeze_jitter(plot)
-
-  # Access the x and y coordinates used in the plot
-  plot_data <- ggplot2::ggplot_build(plot)$data[[1]]
-  x_loc <- plot_data$x
-  y_loc <- plot_data$y
-
-  # Compute predicted values and residuals
-  y_hat <- fun(x_loc)
-  residual <- y_loc - y_hat
-
-  # Access the range of x and y used in the panel
-  plot_layout <- ggplot2::ggplot_build(plot)$layout
-  panel_params <- plot_layout$panel_params[[1]]
-  x_range <- panel_params$x.range
-  y_range <- panel_params$y.range
-
-  # Compute ratio for proper aspect scaling
-  range_ratio <- (x_range[2] - x_range[1]) / (y_range[2] - y_range[1])
-  dir <- ifelse(x_loc > mean(x_range), -1, 1)
-  adj_side <- x_loc + dir * abs(residual * aspect * range_ratio)
-
-  # Build polygons for each residual square
-  squares_data <- do.call(rbind, lapply(seq_along(x_loc), function(i) {
-    data.frame(
-      x = c(x_loc[i], adj_side[i], adj_side[i], x_loc[i]),
-      y = c(y_loc[i], y_loc[i], y_hat[i], y_hat[i]),
-      id = i
-    )
-  }))
-
-  # Add polygons
-  plot +
-    ggplot2::geom_polygon(
-      data = squares_data,
-      ggplot2::aes(x = .data$x, y = .data$y, group = .data$id),
-      inherit.aes = FALSE,
-      alpha = alpha,
-      ...
-    )
+  geometry <- plot_geometry(plot)
+  plan <- square_resid_plan(geometry, fun(geometry$x), aspect)
+  render_square_resid_plan(plot, plan, alpha, ...)
 }
