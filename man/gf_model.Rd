@@ -30,6 +30,14 @@ then making the appropriate plot layer for it.
 \details{
 This function only works with models that have a continuous outcome measure.
 }
+\section{Supported plots}{
+
+\code{gf_model()} is built for and tested against plots made with
+\code{\link[ggformula:gf_point]{ggformula::gf_point()}}, \code{\link[ggformula:gf_jitter]{ggformula::gf_jitter()}}, \code{\link[ggformula:gf_boxplot]{ggformula::gf_boxplot()}},
+\code{\link[ggformula:gf_violin]{ggformula::gf_violin()}} and \code{\link[ggformula:gf_histogram]{ggformula::gf_histogram()}}. Other plots may
+work if they map their variables the same way, but they are not tested.
+}
+
 \examples{
 # the empty model predicts the same value (the mean) for every observation
 empty_model <- lm(body_mass_kg ~ NULL, data = penguins)
