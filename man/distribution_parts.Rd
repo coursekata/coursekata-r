@@ -61,19 +61,19 @@ shuffled <- data.frame(b1 = replicate(200, {
 
 # color the middle 95\%: the b1 values we would expect to see often
 # if the empty model were true
-gf_histogram(~b1, data = shuffled, fill = ~ middle(b1, .95))
+gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ middle(b1, .95))
 
 # tails() marks the same cutoffs with the opposite coloring: the values
 # outside the middle 95\% are the 5\% most extreme
-gf_histogram(~b1, data = shuffled, fill = ~ tails(b1, .95))
+gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ tails(b1, .95))
 
 # outer() marks the same region as tails() but takes the tail proportion
 # directly: the outer 5\%
-gf_histogram(~b1, data = shuffled, fill = ~ outer(b1, .05))
+gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ outer(b1, .05))
 
 # upper() and lower() are for directional hypotheses: all 5\% goes in one tail
-gf_histogram(~b1, data = shuffled, fill = ~ upper(b1, .05))
-gf_histogram(~b1, data = shuffled, fill = ~ lower(b1, .05))
+gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ upper(b1, .05))
+gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ lower(b1, .05))
 }
 \seealso{
 The sampling distributions guide walks through building these distributions

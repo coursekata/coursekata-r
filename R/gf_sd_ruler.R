@@ -50,7 +50,7 @@
 #'
 #' # on a histogram the outcome is on the x-axis, so the ruler is horizontal
 #' # and runs along the baseline from the mean to one SD above it
-#' gf_histogram(~Thumb, data = Fingers) %>%
+#' gf_histogram(~Thumb, data = Fingers, binwidth = 5) %>%
 #'   gf_sd_ruler(color = "red", size = 2)
 #'
 #' # name the variable explicitly when the plot does not make it obvious

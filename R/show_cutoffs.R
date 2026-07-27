@@ -17,7 +17,7 @@
 #'
 #' @export
 #' @examples
-#' gf_histogram(~Thumb, data = Fingers, fill = ~middle(Thumb, .95)) %>%
+#' gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) %>%
 #'   show_cutoffs(labels = TRUE)
 show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
   lifecycle::signal_stage("experimental", "show_cutoffs()")
