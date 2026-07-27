@@ -1,5 +1,5 @@
-test_that("the fivethirtyeightdata repo is included", {
-  expect_true("https://fivethirtyeightdata.github.io/drat/" %in% coursekata_repos())
+test_that("no drat repository is added", {
+  expect_false(any(grepl("drat", coursekata_repos(), fixed = TRUE)))
 })
 
 

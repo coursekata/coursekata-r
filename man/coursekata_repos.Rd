@@ -13,8 +13,7 @@ coursekata_repos(repos = getOption("repos"))
 A set of repositories that can be used to install or update the CourseKata packages.
 }
 \description{
-Ensures a default CRAN is set if one is not already set, and adds the repository for
-fivethirtyeightdata.
+Ensures a default CRAN is set if one is not already set.
 }
 \examples{
 coursekata_repos()

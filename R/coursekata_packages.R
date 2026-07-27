@@ -1,7 +1,7 @@
 # reversed so that most important packages are loaded last (and mask earlier ones)
 coursekata_pkgs <- rev(c(
   "supernova", "mosaic", "lsr", "Metrics",
-  "fivethirtyeight", "fivethirtyeightdata", "Lock5withR", "dslabs"
+  "fivethirtyeight", "Lock5withR", "dslabs"
 ))
 
 

@@ -1,7 +1,6 @@
 #' Get repositories for the packages.
 #'
-#' Ensures a default CRAN is set if one is not already set, and adds the repository for
-#' fivethirtyeightdata.
+#' Ensures a default CRAN is set if one is not already set.
 #'
 #' @param repos Optionally set a repository character vector to augment.
 #'
@@ -12,5 +11,5 @@
 #' coursekata_repos()
 coursekata_repos <- function(repos = getOption("repos")) {
   if (is.na(repos["CRAN"])) repos["CRAN"] <- "https://cloud.r-project.org"
-  c(repos, fivethirtyeight = "https://fivethirtyeightdata.github.io/drat/")
+  repos
 }

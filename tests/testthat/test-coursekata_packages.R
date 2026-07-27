@@ -7,7 +7,7 @@ test_that("all course packages are listed with version and whether attached", {
 
 
 test_that("detached packages are listed as not attached", {
-  detachable <- c("fivethirtyeightdata", "Lock5withR")
+  detachable <- c("Lock5withR")
   detacher(detachable)
   withr::defer(attacher(detachable))
 
