@@ -1,5 +1,6 @@
 # coursekata (development version)
 
+- Add experimental `gf_lm_cat()` to overlay a categorical model's group means as horizontal segments -- the categorical counterpart to a regression line.
 - Add experimental `gf_b()` (and its alias `gf_coef()`) to annotate a model's coefficients on a plot: `b0` and each `b_k` as arrows for a categorical predictor, or a rise-over-run slope triangle with a `b0` intercept dot for a continuous one. Fits `y ~ x` from the plot if no model is supplied.
 - Add experimental `gf_reduce()` and `gf_square_reduce()` (with the alias `gf_squareduce()`) for visualizing SS Model -- the reduction in error a predictor explains -- drawn as lines or as squares that complete the sum-of-squares decomposition alongside `gf_square_resid()`.
 - New documentation site at <https://coursekata.github.io/coursekata-r/>, with a curated function reference and the JupyterLite demo moved to <https://coursekata.github.io/coursekata-r/lite/>, which now opens on the getting-started notebook.

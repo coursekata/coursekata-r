@@ -38,6 +38,7 @@ reference:
   - gf_reduce
   - gf_square_reduce
   - gf_b
+  - gf_lm_cat
 
 - title: Evaluating models
   desc: >
