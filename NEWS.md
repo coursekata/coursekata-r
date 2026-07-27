@@ -1,5 +1,6 @@
 # coursekata (development version)
 
+- Relicensed from AGPL-3 to GPL-3-or-later. The Affero clause obliges anyone who runs modified code as a network service to publish their changes, which is aimed at hosted applications rather than at a package people install and teach with. GPL keeps the copyleft that matters here -- modifications stay open -- without attaching a condition that has no bearing on how `coursekata` is actually used.
 - New documentation site at <https://coursekata.github.io/coursekata-r/>, with a curated function reference and the JupyterLite demo moved to <https://coursekata.github.io/coursekata-r/lite/>, which now opens on the getting-started notebook.
 - Fix `gf_resid()`, `gf_square_resid()`, `gf_resid_fun()`, and `gf_square_resid_fun()` overlays misaligning with jittered points: jitter positions are now pinned to the plot itself, so they are stable across repeated builds and chained calls, and the user's random seed is no longer reset.
 - Fix jitter pinning leaking out of the plot being drawn. A layer written as `geom_jitter()` or `position = "jitter"` shares one position object with every other such layer in the session, so pinning it in place fixed the jitter for unrelated plots too.
