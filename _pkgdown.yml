@@ -27,11 +27,17 @@ reference:
 
 - title: Visualizing models
   desc: >
-    Layer models, residuals, and squared residuals onto `ggformula` plots.
+    Layer models, residuals, squared residuals, and the reduction in error a
+    predictor explains onto `ggformula` plots.
   contents:
+  - gf_b
+  - gf_lm
+  - gf_lm_cat
   - gf_model
+  - gf_reduce
   - gf_resid
   - gf_resid_fun
+  - gf_square_reduce
   - gf_square_resid
   - gf_square_resid_fun
 

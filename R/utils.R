@@ -38,6 +38,9 @@ to_cols <- function(strings, n_cols = 2, space_between = "       ") {
 #' Copy rather than seed in place: `geom_jitter()` and `position = "jitter"`
 #' share ggplot2's namespace-level `PositionJitter` object.
 #'
+#' Companion to `freeze_xy_values()`, which pins the mapped *values* (e.g. a
+#' `shuffle()`ed outcome) rather than the jitter *position* this pins.
+#'
 #' @param plot A ggplot object.
 #'
 #' @return The plot, with any unseeded jitter layers pinned to a fixed seed.
@@ -54,4 +57,72 @@ freeze_jitter <- function(plot) {
     }
   }
   plot
+}
+
+#' Evaluate a plot's x and y mappings once and lock them into hidden columns
+#'
+#' ggformula formulas like `shuffle(y) ~ x` are re-evaluated at render time by
+#' ggplot2, so the jittered dots and any downstream layer (a regression line,
+#' group-mean segments, coefficient arrows) can each see a *different* shuffle
+#' of `y`. This evaluates `y` and `x` exactly once and stores the results in
+#' hidden `.gf_y` / `.gf_x` columns, then points the raw-data layers' mappings
+#' at those columns so every layer draws from the same values.
+#'
+#' Only `StatIdentity` layers that still hold the original data frame are
+#' rewritten (`geom_point()`, `geom_jitter()`); layers with a computed stat
+#' (`StatSmooth`, model layers) receive already-transformed data and never carry
+#' `.gf_y`, so they are left alone. Axis labels are restored from the original
+#' mapping expressions so titles read `shuffle(y)` rather than `.gf_y`. No-op if
+#' the plot is already frozen.
+#'
+#' New quosures are built with [rlang::base_env()] rather than `quo()` because
+#' the calling function's environment is gone by render time; `eval_tidy()`
+#' resolves `.gf_y` / `.gf_x` from the data mask anyway.
+#'
+#' Companion to `freeze_jitter()`, which pins the jitter *position* rather than
+#' these mapped *values*.
+#'
+#' @param p A ggplot object.
+#'
+#' @return The plot, with `x`/`y` evaluated once and locked into `.gf_x`/`.gf_y`.
+#'
+#' @noRd
+freeze_xy_values <- function(p) {
+  if (".gf_y" %in% names(p$data)) {
+    return(p)
+  }
+
+  orig_data <- p$data
+
+  label_from <- function(quo) tryCatch(as_label(quo), error = function(e) NULL)
+  orig_y_label <- label_from(p$mapping$y) %||%
+    if (length(p$layers)) label_from(p$layers[[1]]$mapping$y)
+  orig_x_label <- label_from(p$mapping$x) %||%
+    if (length(p$layers)) label_from(p$layers[[1]]$mapping$x)
+
+  y_vals <- eval_tidy(p$mapping$y, data = orig_data)
+  x_vals <- eval_tidy(p$mapping$x, data = orig_data)
+
+  frozen_y <- new_quosure(quote(.gf_y), base_env())
+  frozen_x <- new_quosure(quote(.gf_x), base_env())
+
+  p$data[[".gf_y"]] <- y_vals
+  p$data[[".gf_x"]] <- x_vals
+
+  for (i in seq_along(p$layers)) {
+    ld <- p$layers[[i]]$data
+    is_identity_stat <- inherits(p$layers[[i]]$stat, "StatIdentity")
+    if (is_identity_stat && is.data.frame(ld) && identical(ld, orig_data)) {
+      p$layers[[i]]$data[[".gf_y"]] <- y_vals
+      p$layers[[i]]$data[[".gf_x"]] <- x_vals
+      lm <- p$layers[[i]]$mapping
+      if (!is.null(lm[["y"]])) p$layers[[i]]$mapping[["y"]] <- frozen_y
+      if (!is.null(lm[["x"]])) p$layers[[i]]$mapping[["x"]] <- frozen_x
+    }
+  }
+
+  if (!is.null(orig_y_label)) p$labels$y <- orig_y_label
+  if (!is.null(orig_x_label)) p$labels$x <- orig_x_label
+
+  p
 }
