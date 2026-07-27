@@ -13,6 +13,14 @@ navbar:
       href: lite/lab/index.html?path=getting-started.ipynb
       aria-label: Try coursekata in your browser, without installing R
 
+articles:
+- title: Guides
+  desc: >
+    Longer walkthroughs of the workflows the functions are built for.
+  contents:
+  - '`articles/sampling-distributions`'
+  - '`articles/model-visualization`'
+
 reference:
 - title: Visualizing distributions and variation
   desc: >

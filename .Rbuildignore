@@ -42,3 +42,6 @@ Rplots\.pdf$
 
 # JupyterLite demo
 ^jupyterlite$
+
+# pkgdown articles (site only, never shipped)
+^vignettes/articles$

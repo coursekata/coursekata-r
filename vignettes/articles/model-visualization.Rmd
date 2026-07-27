@@ -1,0 +1,140 @@
+---
+title: "Visualizing models"
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4)
+library(coursekata)
+```
+
+A model is a claim about what value to predict. `gf_model()` draws that claim on
+top of the data it was fit to, so the claim and the evidence are in the same
+picture.
+
+## The empty model
+
+The empty model predicts the same value — the mean — for every observation. On a
+histogram it is a single vertical line.
+
+```{r}
+empty_model <- lm(body_mass_kg ~ NULL, data = penguins)
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) %>%
+  gf_model(empty_model)
+```
+
+## Group models
+
+With a categorical explanatory variable the model predicts one value per group,
+and `gf_model()` draws a mark at each group mean.
+
+```{r}
+species_model <- lm(body_mass_kg ~ species, data = penguins)
+gf_jitter(body_mass_kg ~ species, data = penguins, width = .1) %>%
+  gf_model(species_model)
+```
+
+The same model layers onto faceted histograms, which makes the comparison
+between groups a comparison between panels.
+
+```{r fig.height = 6}
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) %>%
+  gf_facet_grid(species ~ .) %>%
+  gf_model(species_model)
+```
+
+## Regression models
+
+With a quantitative explanatory variable the prediction is a line.
+
+```{r}
+flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins)
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
+  gf_model(flipper_model)
+```
+
+Layering two models in different colors puts the comparison on one plot: the
+empty model ignores flipper length, the regression model uses it.
+
+```{r}
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
+  gf_model(empty_model, color = "dodgerblue") %>%
+  gf_model(flipper_model, color = "firebrick")
+```
+
+## Residuals
+
+A residual is the distance from what the model predicted to what actually
+happened. `gf_resid()` draws them as segments. With hundreds of points this is
+unreadable, so take a small sample first.
+
+```{r}
+set.seed(1)
+penguins_20 <- sample(penguins, 20)
+sample_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins_20)
+
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
+  gf_model(sample_model) %>%
+  gf_resid(sample_model, color = "firebrick")
+```
+
+`gf_square_resid()` draws each residual as a square instead of a segment, which
+makes *squared* error visible as area — the quantity least squares is actually
+minimizing.
+
+```{r}
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
+  gf_model(sample_model) %>%
+  gf_square_resid(sample_model, color = "firebrick")
+```
+
+Comparing the empty model's squares to the regression model's is the clearest
+picture of what the predictor bought you.
+
+```{r}
+empty_20 <- lm(body_mass_kg ~ NULL, data = penguins_20)
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
+  gf_model(empty_20) %>%
+  gf_square_resid(empty_20, color = "dodgerblue")
+```
+
+## The standard deviation as a typical residual
+
+`gf_sd_ruler()` draws one standard deviation, anchored at the mean. Under the
+empty model the residuals *are* deviations from the mean, so the ruler is a
+picture of a typical one.
+
+```{r}
+gf_point(Thumb ~ Height, data = Fingers, alpha = .4) %>%
+  gf_model(lm(Thumb ~ NULL, data = Fingers)) %>%
+  gf_sd_ruler(where = "mean")
+```
+
+On a histogram the outcome is on the x-axis, so the ruler turns horizontal and
+runs along the baseline from the mean to one SD above it.
+
+```{r}
+gf_histogram(~Thumb, data = Fingers, binwidth = 5) %>%
+  gf_model(lm(Thumb ~ NULL, data = Fingers)) %>%
+  gf_sd_ruler(color = "red", size = 2)
+```
+
+Two groups with the same mean and different spread get rulers of different
+lengths, which is the comparison the ruler exists to make. Fixing the axis with
+`gf_lims()` keeps the two plots on the same scale.
+
+```{r}
+set.seed(154)
+no_feedback <- data.frame(median_time = round(rnorm(100, 13, 6), 1))
+set.seed(141)
+feedback <- data.frame(median_time = round(rnorm(100, 13, 3), 1))
+
+gf_histogram(~median_time, data = no_feedback, binwidth = 1) %>%
+  gf_lims(x = c(0, 31)) %>%
+  gf_model(lm(median_time ~ NULL, data = no_feedback)) %>%
+  gf_sd_ruler(color = "red", size = 2)
+
+gf_histogram(~median_time, data = feedback, binwidth = 1) %>%
+  gf_lims(x = c(0, 31)) %>%
+  gf_model(lm(median_time ~ NULL, data = feedback)) %>%
+  gf_sd_ruler(color = "red", size = 2)
+```
