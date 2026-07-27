@@ -37,6 +37,7 @@ reference:
   - gf_square_resid_fun
   - gf_reduce
   - gf_square_reduce
+  - gf_b
 
 - title: Evaluating models
   desc: >

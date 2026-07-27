@@ -1,5 +1,6 @@
 # coursekata (development version)
 
+- Add experimental `gf_b()` (and its alias `gf_coef()`) to annotate a model's coefficients on a plot: `b0` and each `b_k` as arrows for a categorical predictor, or a rise-over-run slope triangle with a `b0` intercept dot for a continuous one. Fits `y ~ x` from the plot if no model is supplied.
 - Add experimental `gf_reduce()` and `gf_square_reduce()` (with the alias `gf_squareduce()`) for visualizing SS Model -- the reduction in error a predictor explains -- drawn as lines or as squares that complete the sum-of-squares decomposition alongside `gf_square_resid()`.
 - New documentation site at <https://coursekata.github.io/coursekata-r/>, with a curated function reference and the JupyterLite demo moved to <https://coursekata.github.io/coursekata-r/lite/>, which now opens on the getting-started notebook.
 - Fix `gf_resid()`, `gf_square_resid()`, `gf_resid_fun()`, and `gf_square_resid_fun()` overlays misaligning with jittered points: jitter positions are now pinned to the plot itself, so they are stable across repeated builds and chained calls, and the user's random seed is no longer reset.
