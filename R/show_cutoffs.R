@@ -22,16 +22,13 @@
 show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
   lifecycle::signal_stage("experimental", "show_cutoffs()")
 
+  spec <- plot_spec(plot)
+
   # Extract the fill aesthetic expression
   fill_expr <- NULL
-  if (!is.null(plot$mapping$fill)) {
-    fill_expr <- quo_get_expr(plot$mapping$fill)
-  }
-  if (is.null(fill_expr) && length(plot$layers) > 0) {
-    layer <- plot$layers[[1]]
-    if (!is.null(layer$mapping$fill)) {
-      fill_expr <- quo_get_expr(layer$mapping$fill)
-    }
+  fill <- spec$resolve_aes("fill")
+  if (!is.null(fill)) {
+    fill_expr <- quo_get_expr(fill$quo)
   }
   if (is.null(fill_expr)) {
     abort(paste(
@@ -64,24 +61,11 @@ show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
 
   # Extract x variable data from plot
   x_data <- NULL
-  if (!is.null(plot$mapping$x)) {
-    x_var <- as_name(plot$mapping$x)
-    if (!is.null(plot$data) && x_var %in% names(plot$data)) {
-      x_data <- plot$data[[x_var]]
-    }
-  }
-  if (is.null(x_data) && length(plot$layers) > 0) {
-    layer <- plot$layers[[1]]
-    if (!is.null(layer$mapping$x)) {
-      x_var <- as_name(layer$mapping$x)
-      layer_data <- if (!is.null(layer$data) && is.data.frame(layer$data)) {
-        layer$data
-      } else {
-        plot$data
-      }
-      if (!is.null(layer_data) && x_var %in% names(layer_data)) {
-        x_data <- layer_data[[x_var]]
-      }
+  x <- spec$resolve_aes("x")
+  if (!is.null(x)) {
+    x_var <- as_name(x$quo)
+    if (x_var %in% names(x$data)) {
+      x_data <- x$data[[x_var]]
     }
   }
   if (is.null(x_data)) {
@@ -120,8 +104,7 @@ show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
   }
 
   # Build plot to get axis ranges
-  plot_built <- ggplot2::ggplot_build(plot)
-  y_range <- plot_built$layout$panel_params[[1]]$y.range
+  y_range <- plot_geometry(plot)$y_range
   if (is.null(y_range)) y_range <- c(0, 30)
 
   arrow_y <- -y_range[2] * 0.06

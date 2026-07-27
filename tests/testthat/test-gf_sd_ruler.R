@@ -8,12 +8,18 @@ test_that("gf_sd_ruler adds a segment layer to a plot", {
   expect_true("GeomSegment" %in% layer_types)
 })
 
-test_that("gf_sd_ruler where parameter options work", {
+test_that("gf_sd_ruler puts the ruler where the `where` argument says", {
   p <- gf_jitter(Thumb ~ Height, data = Fingers)
 
-  expect_s3_class(suppressMessages(gf_sd_ruler(p, where = "middle")), "ggplot")
-  expect_s3_class(suppressMessages(gf_sd_ruler(p, where = "mean")), "ggplot")
-  expect_s3_class(suppressMessages(gf_sd_ruler(p, where = "median")), "ggplot")
+  at <- function(where) {
+    ruler <- suppressMessages(gf_sd_ruler(p, where = where))
+    ggplot2::ggplot_build(ruler)$data[[layer_index(ruler, "sd_ruler")]]$x
+  }
+
+  expect_equal(at("middle"), (min(Fingers$Height) + max(Fingers$Height)) / 2)
+  expect_equal(at("mean"), mean(Fingers$Height))
+  expect_equal(at("median"), stats::median(Fingers$Height))
+  expect_length(unique(c(at("middle"), at("mean"), at("median"))), 3L)
 })
 
 test_that("gf_sd_ruler works with explicit y and data parameters", {
@@ -80,4 +86,21 @@ test_that("gf_sd_ruler snapshot", {
 
   suppressMessages(gf_sd_ruler(p, color = "red")) %>%
     expect_doppelganger("gf_sd_ruler-basic")
+})
+
+test_that("gf_sd_ruler tags the layer it adds", {
+  p <- gf_jitter(Thumb ~ Height, data = Fingers)
+  result <- suppressMessages(gf_sd_ruler(p))
+
+  expect_equal(layer_index(result, "sd_ruler"), 2L)
+})
+
+test_that("the ruler is found by tag, not by position, when layers follow it", {
+  p <- gf_jitter(Thumb ~ Height, data = Fingers)
+  result <- suppressMessages(gf_sd_ruler(p)) + ggplot2::geom_rug()
+
+  built <- ggplot2::ggplot_build(result)
+  segment <- built$data[[layer_index(result, "sd_ruler")]]
+  expect_equal(segment$y, mean(Fingers$Thumb))
+  expect_equal(segment$yend, mean(Fingers$Thumb) + sd(Fingers$Thumb))
 })
