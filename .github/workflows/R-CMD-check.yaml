@@ -59,3 +59,17 @@ jobs:
         with:
           upload-snapshots: true
           args: 'c("--no-manual", "--as-cran")'
+
+  # One stable status check to require on main. The matrix jobs are named after
+  # their platform, so requiring them directly would need the protection rule
+  # hand-edited every time the matrix moves. `always()` is load-bearing: without
+  # it this job is skipped when a matrix job fails, and a skipped required check
+  # blocks a pull request forever instead of failing it.
+  check:
+    if: always()
+    needs: R-CMD-check
+    runs-on: ubuntu-latest
+    name: check
+    steps:
+      - name: All platforms passed
+        run: '[ "${{ needs.R-CMD-check.result }}" = "success" ] || exit 1'
