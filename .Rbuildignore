@@ -24,7 +24,6 @@
 # Build artifacts
 ^doc$
 ^Meta$
-^bin$
 
 # Raw data
 ^data-raw$
