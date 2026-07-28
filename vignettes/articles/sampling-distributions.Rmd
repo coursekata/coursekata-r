@@ -1,0 +1,107 @@
+---
+title: "Sampling distributions"
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4)
+library(coursekata)
+```
+
+A sampling distribution answers a question about *what else could have
+happened*. If the empty model were true — if condition made no difference to
+tips at all — how big a `b1` would we see just from the luck of which tables
+happened to land in which group?
+
+`do()` answers that by running the same estimate many times over data that has
+been shuffled, so any relationship between the two variables is broken by
+construction.
+
+```{r}
+set.seed(42)
+sdob1 <- do(1000) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+head(sdob1)
+```
+
+Each row is one `b1` from one shuffle. Plotted, they are the range of estimates
+the empty model produces.
+
+```{r}
+gf_histogram(~b1, data = sdob1, binwidth = 1)
+```
+
+## Marking off regions
+
+The distribution part functions turn a region of that distribution into a fill
+aesthetic. `middle()` marks the values we would expect to see often.
+
+```{r}
+gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95), binwidth = 1)
+```
+
+`tails()` marks the same cutoffs with the opposite coloring — the 5% most
+extreme values, the ones that would be surprising under the empty model.
+
+```{r}
+gf_histogram(~b1, data = sdob1, fill = ~ tails(b1, .95), binwidth = 1)
+```
+
+`outer()` marks the same region but takes the tail proportion directly, which
+reads more naturally when you are thinking in terms of how much is *out* rather
+than how much is *in*.
+
+```{r}
+gf_histogram(~b1, data = sdob1, fill = ~ outer(b1, .05), binwidth = 1)
+```
+
+For a directional hypothesis, all of the 5% goes in one tail.
+
+```{r}
+gf_histogram(~b1, data = sdob1, fill = ~ upper(b1, .05), binwidth = 1)
+gf_histogram(~b1, data = sdob1, fill = ~ lower(b1, .05), binwidth = 1)
+```
+
+## Bootstrapping instead of shuffling
+
+Swap `shuffle()` for `resample()` and the same pattern produces a bootstrap
+confidence interval rather than a null distribution. Nothing is shuffled, so the
+relationship stays intact; what varies is which observations are drawn.
+
+```{r}
+set.seed(42)
+sdob1_boot <- do(1000) * b1(Tip ~ Condition, data = resample(TipExperiment))
+gf_histogram(~b1, data = sdob1_boot, fill = ~ middle(b1, .95), bins = 100)
+```
+
+## Framing the distribution with its DGP
+
+`gf_squareplot()` draws the same distribution as countable squares, and
+`show_dgp = TRUE` frames it with the data generating process: the population
+model on the top axis, the sample estimate on the bottom, and a marker at the
+null hypothesis.
+
+With only ten shuffles the mean of the distribution can land well away from the
+null.
+
+```{r}
+set.seed(42)
+small <- do(10) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+gf_squareplot(~b1,
+  data = small,
+  show_dgp = TRUE, show_mean = TRUE,
+  xrange = c(-30, 30), mincount = 10, binwidth = 2
+)
+```
+
+With a hundred it settles close to the null, which is what the empty model
+predicts. `mincount` holds the y-axis fixed so the two plots are directly
+comparable.
+
+```{r}
+set.seed(42)
+larger <- do(100) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+gf_squareplot(~b1,
+  data = larger,
+  show_dgp = TRUE, show_mean = TRUE,
+  xrange = c(-30, 30), mincount = 10, binwidth = 2
+)
+```

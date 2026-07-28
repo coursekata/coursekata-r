@@ -29,6 +29,6 @@ a histogram that uses a distribution part function (\code{middle()}, \code{tails
 \code{upper()}, \code{lower()}, or \code{outer()}) in its fill aesthetic.
 }
 \examples{
-gf_histogram(~Thumb, data = Fingers, fill = ~middle(Thumb, .95)) \%>\%
+gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) \%>\%
   show_cutoffs(labels = TRUE)
 }

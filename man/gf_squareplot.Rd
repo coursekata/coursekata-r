@@ -121,10 +121,16 @@ gf_squareplot(~Thumb, data = Fingers, show_mean = TRUE)
 # frame a sampling distribution with its data generating process: with only
 # 10 shuffles, the mean of the distribution (dashed red line) can land far
 # from the null hypothesis marker on the top axis
+shuffled_b1 <- function(n) {
+  data.frame(b1 = replicate(n, {
+    shuffled_tip <- base::sample(TipExperiment$Tip)
+    b1(lm(shuffled_tip ~ Condition, data = TipExperiment))
+  }))
+}
+
 set.seed(42)
-sdob1 <- do(10) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
 gf_squareplot(~b1,
-  data = sdob1,
+  data = shuffled_b1(10),
   show_dgp = TRUE,
   show_mean = TRUE,
   xrange = c(-30, 30),
@@ -135,9 +141,8 @@ gf_squareplot(~b1,
 # with 100 shuffles the mean moves close to the null; `mincount` keeps the
 # y-axis fixed so the two plots are directly comparable
 set.seed(42)
-sdob1 <- do(100) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
 gf_squareplot(~b1,
-  data = sdob1,
+  data = shuffled_b1(100),
   show_dgp = TRUE,
   show_mean = TRUE,
   xrange = c(-30, 30),
@@ -147,8 +152,13 @@ gf_squareplot(~b1,
 
 # factors with numeric levels show all levels, even empty ones
 ratings <- data.frame(rating = factor(
-  sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
+  base::sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
   levels = 1:5
 ))
 gf_squareplot(~rating, data = ratings)
+}
+\seealso{
+The sampling distributions guide shows this plot in the context of a full
+shuffle-and-estimate workflow:
+\url{https://coursekata.github.io/coursekata-r/articles/sampling-distributions.html}
 }

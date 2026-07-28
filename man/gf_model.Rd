@@ -41,7 +41,7 @@ work if they map their variables the same way, but they are not tested.
 \examples{
 # the empty model predicts the same value (the mean) for every observation
 empty_model <- lm(body_mass_kg ~ NULL, data = penguins)
-gf_histogram(~body_mass_kg, data = penguins) \%>\%
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) \%>\%
   gf_model(empty_model)
 
 # a two-group model (categorical explanatory variable) on a jitter plot
@@ -55,7 +55,7 @@ gf_jitter(body_mass_kg ~ species, data = penguins, width = .1) \%>\%
   gf_model(species_model)
 
 # group models can also be layered onto faceted histograms
-gf_histogram(~body_mass_kg, data = penguins) \%>\%
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) \%>\%
   gf_facet_grid(species ~ .) \%>\%
   gf_model(species_model)
 

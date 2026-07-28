@@ -16,6 +16,11 @@
 #'
 #' @rdname distribution_parts
 #' @export
+#' @seealso
+#' The sampling distributions guide walks through building these distributions
+#' with `do()` and `shuffle()`, and shows the bootstrap variant:
+#' <https://coursekata.github.io/coursekata-r/articles/sampling-distributions.html>
+#'
 #' @examples
 #' # each function returns a logical vector marking the values in its region
 #' upper(1:10, .1)
@@ -26,29 +31,26 @@
 #' # they are most often used as the fill aesthetic of a histogram of a
 #' # sampling distribution -- here, b1s estimated from shuffled (null) data
 #' set.seed(42)
-#' sdob1 <- do(1000) * b1(shuffle(Tip) ~ Condition, data = TipExperiment)
+#' shuffled <- data.frame(b1 = replicate(200, {
+#'   shuffled_tip <- base::sample(TipExperiment$Tip)
+#'   b1(lm(shuffled_tip ~ Condition, data = TipExperiment))
+#' }))
 #'
 #' # color the middle 95%: the b1 values we would expect to see often
 #' # if the empty model were true
-#' gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95))
+#' gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ middle(b1, .95))
 #'
 #' # tails() marks the same cutoffs with the opposite coloring: the values
 #' # outside the middle 95% are the 5% most extreme
-#' gf_histogram(~b1, data = sdob1, fill = ~ tails(b1, .95))
+#' gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ tails(b1, .95))
 #'
 #' # outer() marks the same region as tails() but takes the tail proportion
 #' # directly: the outer 5%
-#' gf_histogram(~b1, data = sdob1, fill = ~ outer(b1, .05))
+#' gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ outer(b1, .05))
 #'
 #' # upper() and lower() are for directional hypotheses: all 5% goes in one tail
-#' gf_histogram(~b1, data = sdob1, fill = ~ upper(b1, .05))
-#' gf_histogram(~b1, data = sdob1, fill = ~ lower(b1, .05))
-#'
-#' # the same pattern with resample() instead of shuffle() marks off a
-#' # bootstrapped 95% confidence interval
-#' set.seed(42)
-#' sdob1_boot <- do(1000) * b1(Tip ~ Condition, data = resample(TipExperiment))
-#' gf_histogram(~b1, data = sdob1_boot, fill = ~ middle(b1, .95), bins = 100)
+#' gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ upper(b1, .05))
+#' gf_histogram(~b1, data = shuffled, binwidth = 1, fill = ~ lower(b1, .05))
 middle <- function(x, prop = .95, greedy = TRUE) {
   tail_prop <- (1 - prop) / 2
   in_upper <- upper(x, tail_prop, !greedy)

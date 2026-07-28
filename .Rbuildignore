@@ -24,6 +24,7 @@
 # Build artifacts
 ^doc$
 ^Meta$
+Rplots\.pdf$
 
 # Raw data
 ^data-raw$
@@ -36,5 +37,11 @@
 ^\.specify
 ^specs$
 
+# Superpowers
+^\.superpowers
+
 # JupyterLite demo
 ^jupyterlite$
+
+# pkgdown articles (site only, never shipped)
+^vignettes/articles$
