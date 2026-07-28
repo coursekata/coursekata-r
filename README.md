@@ -13,6 +13,9 @@ status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.s
 [![lite-badge](https://jupyterlite.rtfd.io/en/latest/_static/badge.svg)](https://coursekata.github.io/coursekata-r/lite/lab/index.html?path=getting-started.ipynb)
 <!-- badges: end -->
 
+Documentation, including a reference for every function and data set, is
+at <https://coursekata.github.io/coursekata-r/>.
+
 ## Overview
 
 *CourseKata Statistics and Data Science*, is an innovative interactive
@@ -35,10 +38,11 @@ the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
 ## Try it in your browser
 
 You can try coursekata before installing anything: the [live
-demo](https://coursekata.github.io/coursekata-r/lite/lab/index.html?path=getting-started.ipynb) runs R and the
-coursekata package entirely in your browser (no installation required,
-powered by [JupyterLite](https://jupyterlite.readthedocs.io/)). It opens
-a getting-started notebook that walks through loading the package,
+demo](https://coursekata.github.io/coursekata-r/lite/lab/index.html?path=getting-started.ipynb)
+runs R and the coursekata package entirely in your browser (no
+installation required, powered by
+[JupyterLite](https://jupyterlite.readthedocs.io/)). It opens a
+getting-started notebook that walks through loading the package,
 exploring course data sets, and fitting and visualizing models.
 
 ## Installation
@@ -80,12 +84,10 @@ to the [functions and theme](#functions-and-theme) included in the
 library(coursekata)
 ```
 
-- [supernova](https://cran.r-project.org/package=supernova), for
-  - creating ANOVA tables.
-  - tools for extracting information from fitted models (`b0()`, `b1()`,
-    `PRE()`, `fVal()`)
-  - an augmented `print.lm()` which prints the fitted equation as well
-  - … and more!
+- [supernova](https://cran.r-project.org/package=supernova), for ANOVA
+  tables, tools for extracting information from fitted models (`b0()`,
+  `b1()`, `PRE()`, `fVal()`), and an augmented `print.lm()` that prints
+  the fitted equation as well.
 - [mosaic](https://cran.r-project.org/package=mosaic), for a unified
   interface to most statistical tools.
 - [ggformula](https://cran.r-project.org/package=ggformula), for a
@@ -95,13 +97,12 @@ library(coursekata)
 - [Metrics](https://cran.r-project.org/package=Metrics), for model
   evaluation.
 
-In addition to useful functions, a great deal of data sets are used by
-instructors who teach the course. This package installs these:
-
-- [fivethirtyeight](https://cran.r-project.org/package=fivethirtyeight)
-- [fivethirtyeightdata](https://fivethirtyeightdata.github.io/fivethirtyeightdata/index.html)
-- [Lock5withR](https://cran.r-project.org/package=Lock5withR)
-- [dslabs](https://cran.r-project.org/package=dslabs)
+Instructors who teach the course also use a number of data packages,
+which this package installs:
+[fivethirtyeight](https://cran.r-project.org/package=fivethirtyeight),
+[fivethirtyeightdata](https://fivethirtyeightdata.github.io/fivethirtyeightdata/index.html),
+[Lock5withR](https://cran.r-project.org/package=Lock5withR), and
+[dslabs](https://cran.r-project.org/package=dslabs).
 
 ### Startup options
 
