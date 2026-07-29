@@ -119,8 +119,10 @@ gf_histogram(~Thumb, data = Fingers, binwidth = 5) %>%
 ```
 
 Two groups with the same mean and different spread get rulers of different
-lengths, which is the comparison the ruler exists to make. Fixing the axis with
-`gf_lims()` keeps the two plots on the same scale.
+lengths, which is the comparison the ruler exists to make. Zooming both to the
+same x range keeps them comparable. `coord_cartesian()` does that by changing
+what you see; `gf_lims()` would do it by discarding anything outside the range,
+which is not what you want when the whole point is to compare distributions.
 
 ```{r}
 set.seed(154)
@@ -129,12 +131,12 @@ set.seed(141)
 feedback <- data.frame(median_time = round(rnorm(100, 13, 3), 1))
 
 gf_histogram(~median_time, data = no_feedback, binwidth = 1) %>%
-  gf_lims(x = c(0, 31)) %>%
+  gf_refine(coord_cartesian(xlim = c(0, 31))) %>%
   gf_model(lm(median_time ~ NULL, data = no_feedback)) %>%
   gf_sd_ruler(color = "red", size = 2)
 
 gf_histogram(~median_time, data = feedback, binwidth = 1) %>%
-  gf_lims(x = c(0, 31)) %>%
+  gf_refine(coord_cartesian(xlim = c(0, 31))) %>%
   gf_model(lm(median_time ~ NULL, data = feedback)) %>%
   gf_sd_ruler(color = "red", size = 2)
 ```
