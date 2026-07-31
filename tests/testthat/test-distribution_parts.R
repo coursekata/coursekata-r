@@ -82,3 +82,43 @@ test_that("outer returns logical vector of correct length", {
   result <- suppressMessages(outer(x, .05))
   expect_vector(result, logical(), 100)
 })
+
+test_that("a tail whose exact size is a whole number is not rounded down", {
+  # (1 - .90) / 2 is 0.049999999999999989, so 100 * that floors to 4, not 5
+  expect_equal(sum(middle(1:100, .90)), 90)
+  expect_equal(sum(middle(1:100, .80)), 80)
+  expect_equal(sum(middle(1:20, .90)), 18)
+  expect_equal(sum(middle(1:1000, .80)), 800)
+})
+
+test_that("outer() and tails() inherit the corrected tail size", {
+  expect_equal(sum(outer(1:100, .10)), 10)
+  expect_equal(sum(outer(1:100, .20)), 20)
+  expect_equal(sum(tails(1:100, .90)), 10)
+})
+
+test_that("greedy semantics are unchanged", {
+  # documented: the upper 30% of 1:4 is greedy, so it takes 2 of the 4
+  expect_equal(upper(1:4, .3), c(FALSE, FALSE, TRUE, TRUE))
+  # middle() makes its tails non-greedy, so an exact 2.5-value tail floors to 2
+  expect_equal(sum(middle(1:100, .95)), 96)
+  expect_equal(sum(middle(1:100, .50)), 50)
+})
+
+test_that("a large sample's whole-number tail is not rounded down either", {
+  # the drift grows with the tail, so a fixed decimal tolerance fails at scale
+  # 10 * (5e6 * (1 - .90) / 2) is bit-identical to 5e7 * ((1 - .90) / 2), without
+  # allocating 5e7 values
+  expect_equal(tail_size(1:10, (1 - .90) / 2 * 5e6, greedy = FALSE), 2500000)
+  expect_equal(tail_size(1:10, (1 - .90) / 2 * 1e7, greedy = FALSE), 5000000)
+})
+
+test_that("a greedy tail still takes at least one value for any positive proportion", {
+  expect_equal(tail_size(1, 1e-10, greedy = TRUE), 1)
+  expect_equal(tail_size(1, 1e-12, greedy = TRUE), 1)
+})
+
+test_that("a genuinely fractional tail is never snapped, however large", {
+  # a tolerance that grows with n eventually exceeds 0.5 and rounds everything
+  expect_equal(tail_size(seq_len(10), 4999999.96 / 10, greedy = FALSE), 4999999)
+})

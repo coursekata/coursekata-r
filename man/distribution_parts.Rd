@@ -42,7 +42,7 @@ complement of \code{\link[=middle]{middle()}}: \code{outer(x, prop)} is equivale
 \code{tails(x, 1 - prop)}.
 }
 \details{
-Note that \code{NA} values are ignored, i.e. they will always return \code{FALSE}.
+Note that \code{NA} values are ignored when sizing the region, and come back as \code{NA}.
 }
 \examples{
 # each function returns a logical vector marking the values in its region
