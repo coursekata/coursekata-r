@@ -19,7 +19,7 @@ outcome on.
 \code{compute_layer} is overridden to a pass-through, the same shape
 \link[ggplot2:StatIdentity]{ggplot2::StatIdentity} uses, so an observation with an \code{NA} on it (a
 predictor the model dropped) survives the stat instead of being removed
-before \link{PositionResid} runs. \link{PositionResid} anchors its replayed jitter
+before \code{PositionResid} runs. \code{PositionResid} anchors its replayed jitter
 on row count and order, and the point layer's own stat never drops rows
 either -- the geom drops them after the position has run. Losing a row
 here first would hand the position fewer rows than the point layer saw

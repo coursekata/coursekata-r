@@ -64,7 +64,7 @@ square_vertices <- function(data, x_range, y_range, aspect) {
 #' `compute_layer` is overridden to a pass-through, the same shape
 #' [ggplot2::StatIdentity] uses, so an observation with an `NA` on it (a
 #' predictor the model dropped) survives the stat instead of being removed
-#' before [PositionResid] runs. [PositionResid] anchors its replayed jitter
+#' before `PositionResid` runs. `PositionResid` anchors its replayed jitter
 #' on row count and order, and the point layer's own stat never drops rows
 #' either -- the geom drops them after the position has run. Losing a row
 #' here first would hand the position fewer rows than the point layer saw
