@@ -6,7 +6,7 @@
 #' specified region will suck up the extra space. For example, the requesting the upper 30% of the
 #' `[1 2 3 4]` will return `[FALSE FALSE TRUE TRUE]` because the 30% was greedy.
 #'
-#' Note that `NA` values are ignored, i.e. they will always return `FALSE`.
+#' Note that `NA` values are ignored when sizing the region, and come back as `NA`.
 #'
 #' @param x The distribution of values to check.
 #' @param prop The proportion of values to find.
@@ -120,6 +120,12 @@ upper <- function(x, prop = .025, greedy = TRUE) {
 #' @noRd
 tail_size <- function(x, prop, greedy) {
   na_rm <- stats::na.omit(x)
-  tail_unbiased <- length(na_rm) * prop
-  if (greedy) ceiling(tail_unbiased) else floor(tail_unbiased)
+  exact <- length(na_rm) * prop
+  nearest <- round(exact)
+
+  drift_tolerance <- 32 * .Machine$double.eps * max(abs(exact), 1)
+  # without `nearest > 0` a vanishingly small greedy tail snaps to zero and takes nothing
+  if (nearest > 0 && abs(exact - nearest) <= drift_tolerance) exact <- nearest
+
+  if (greedy) ceiling(exact) else floor(exact)
 }
