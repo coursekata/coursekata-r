@@ -71,8 +71,8 @@ label_columns <- function(labels) {
 
 #' Decide what to draw for a model on a plot
 #'
-#' @param spec A [plot_spec()] list.
-#' @param mspec A [model_spec()] list.
+#' @param spec A `plot_spec()` list.
+#' @param mspec A `model_spec()` list.
 #' @param args Named list of user arguments (aesthetics and layer parameters).
 #'
 #' @return A list with `kind`, `args`, `grid` and `tag`.

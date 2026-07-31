@@ -8,7 +8,7 @@
 #' @param call The calling environment, for error reporting.
 #'
 #' @return A list with `func`, `prop` and `greedy`. `greedy` is `NA` for
-#'   `outer()`, which has no such formal, and [cutoff_plan()] reads that as
+#'   `outer()`, which has no such formal, and `cutoff_plan()` reads that as
 #'   `TRUE`.
 #'
 #' @noRd
@@ -59,10 +59,10 @@ cutoff_spec <- function(fill, call = caller_env()) {
 
 #' Decide where a distribution's cutoff markers belong
 #'
-#' Calls [tail_size()] rather than re-deriving it, so the marker and the shading
+#' Calls `tail_size()` rather than re-deriving it, so the marker and the shading
 #' are derived from one count and cannot drift apart.
 #'
-#' @param cspec A [cutoff_spec()] list.
+#' @param cspec A `cutoff_spec()` list.
 #' @param values The x values the plot was built from.
 #' @param call The calling environment, for error reporting.
 #'
