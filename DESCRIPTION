@@ -26,6 +26,7 @@ Imports:
     ggformula (>= 0.12.0),
     ggplot2 (>= 3.5.2),
     glue (>= 1.6.2),
+    grid,
     lifecycle (>= 1.0.3),
     lsr (>= 0.5.2),
     Metrics,

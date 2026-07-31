@@ -31,6 +31,8 @@ reference:
   - gf_sd_ruler
   - StatSdRuler
   - gf_squareplot
+  - StatSquareplot
+  - GeomSquareplot
   - middle
   - show_cutoffs
 
