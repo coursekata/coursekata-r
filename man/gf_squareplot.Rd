@@ -36,11 +36,14 @@ gf_squareplot(
 
 \item{fill}{Rectangle fill color. Default \code{"#7fcecc"}.}
 
-\item{color}{Rectangle border color. Default \code{"black"}.}
+\item{color}{Outline colour for the bars drawn when \code{bars} is \code{"outline"} or
+\code{"solid"}; the separators between squares are always white. \code{"black"} is
+drawn as \code{grey20}.}
 
 \item{alpha}{Transparency. Default \code{1}.}
 
-\item{na.rm}{Remove \code{NA} values. Default \code{TRUE}.}
+\item{na.rm}{Must be \code{TRUE}. Missing values have no rectangle to draw, so they
+are always dropped.}
 
 \item{mincount}{Minimum y-axis height for consistent scaling.}
 
@@ -55,8 +58,7 @@ gf_squareplot(
 
 \item{show_mean}{Show dashed mean line. Default \code{FALSE}.}
 
-\item{auto_subdivide}{Split bins with >75 observations into sub-columns.
-Default \code{FALSE}.}
+\item{auto_subdivide}{Accepted but ignored.}
 }
 \value{
 A ggplot object with S3 class \code{c("gf_squareplot", "gg", "ggplot")}.
@@ -65,23 +67,21 @@ A ggplot object with S3 class \code{c("gf_squareplot", "gg", "ggplot")}.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Creates histograms where individual data points are visible as stacked unit
-rectangles, making counts easy to visualize. Instead of abstract bars, each
-observation becomes a countable square, making sample size and distribution
-shape tangible. Designed for teaching statistical concepts like sampling
-distributions and hypothesis testing, where students benefit from seeing
-that "n = 47" means 47 actual squares.
+Creates histograms where each observation is drawn as its own square, stacked
+into columns, so a bin's height can be counted as well as read off the axis:
+\code{n = 47} is 47 squares. Designed for teaching statistical concepts like
+sampling distributions and hypothesis testing.
 
 Sensible defaults are chosen based on the data:
 \itemize{
 \item For integer-valued data with a small range, the \code{binwidth} defaults to 1
 so that each integer gets its own column.
-\item When the input is a factor with numeric levels, all levels are displayed
-on the x-axis even if some have zero counts.
-\item When any bin has more than 75 observations, the display automatically
-switches to solid bars to remain readable. Opt into subdivision instead
-with \code{auto_subdivide = TRUE}, which splits wide bins into sub-columns so
-that rectangles remain countable.
+\item When the input is a factor with numeric levels and \code{bars} is \code{"outline"} or
+\code{"solid"}, all levels are displayed on the x-axis even if some have zero
+counts.
+\item The white separator between two squares is capped at a quarter of a square's
+smaller side, so as a bin fills and its squares shrink the separator thins
+with them and the squares stay countable.
 }
 
 When teaching about hypothesis testing, the \code{show_dgp = TRUE} overlay
@@ -110,7 +110,7 @@ gf_squareplot(~Thumb,
 int_data <- data.frame(rolls = sample(1:6, 30, replace = TRUE))
 gf_squareplot(~rolls, data = int_data)
 
-# bins with more than 75 observations switch to solid bars automatically
+# with 2000 observations the squares shrink, and their separators thin to fit
 set.seed(24)
 large_data <- data.frame(x = rnorm(2000, mean = 50, sd = 10))
 gf_squareplot(~x, data = large_data)
@@ -150,7 +150,7 @@ gf_squareplot(~b1,
   binwidth = 2
 )
 
-# factors with numeric levels show all levels, even empty ones
+# a factor with numeric levels gets one column per level
 ratings <- data.frame(rating = factor(
   base::sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
   levels = 1:5

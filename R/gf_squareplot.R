@@ -1,25 +1,132 @@
+#' Resolve gf_squareplot()'s formula-or-vector input to a numeric vector
+#'
+#' @param x A one-sided formula naming a variable, or a numeric vector.
+#' @param data A data frame, required when `x` is a formula naming a column.
+#' @param na.rm Must be `TRUE`; `FALSE` is refused because a missing value has
+#'   no rectangle to draw.
+#' @param env Where to look for the variable when `data` is not supplied.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return A list with `values`, `label`, `is_factor` and `levels`.
+#'
+#' @noRd
+squareplot_values <- function(x, data = NULL, na.rm = TRUE, env = caller_env(),
+                              call = caller_env()) {
+  if (!na.rm) {
+    abort(
+      c(
+        "`na.rm = FALSE` is not supported",
+        "gf_squareplot() draws one rectangle per observation",
+        "a missing value has no rectangle to draw",
+        "drop the missing values before plotting, or leave `na.rm = TRUE`"
+      ),
+      call = call
+    )
+  }
+
+  if (inherits(x, "formula")) {
+    if (!is.null(f_lhs(x))) {
+      abort(
+        c(
+          "`x` must be a one-sided formula naming a single variable",
+          glue("found: {deparse(x)}"),
+          "drop the left-hand side, or pass the variable directly as ~var"
+        ),
+        call = call
+      )
+    }
+    expr <- f_rhs(x)
+    if (!is_symbol(expr)) {
+      abort(
+        c(
+          "`x` must name a single variable, not an expression",
+          glue("found: {deparse(expr)}"),
+          "compute the variable first, then plot it"
+        ),
+        call = call
+      )
+    }
+    name <- as_name(expr)
+    if (is.null(data)) {
+      raw <- tryCatch(
+        get(name, envir = env),
+        error = function(e) {
+          abort(glue("Can't find `{name}`; supply `data` or define it first"), call = call)
+        }
+      )
+    } else {
+      if (name %in% names(data) == FALSE) {
+        abort(
+          c(
+            glue("Can't find `{name}` in `data`"),
+            glue("available: {collapse(names(data))}")
+          ),
+          call = call
+        )
+      }
+      raw <- data[[name]]
+    }
+    label <- name
+  } else {
+    raw <- x
+    label <- NULL
+  }
+
+  is_factor <- is.factor(raw)
+  levels_num <- NULL
+  if (is_factor) {
+    levels_num <- suppressWarnings(as.numeric(levels(raw)))
+    if (anyNA(levels_num)) {
+      abort(
+        c(
+          glue("`{label %||% 'x'}` is a factor whose levels are not numbers"),
+          glue("levels: {collapse(levels(raw))}")
+        ),
+        call = call
+      )
+    }
+    values <- as.numeric(as.character(raw))
+  } else {
+    values <- raw
+  }
+
+  values <- values[!is.na(values)]
+  if (!is.numeric(values)) {
+    abort(
+      c(
+        glue("`{label %||% 'x'}` must be numeric"),
+        glue("it is {class(raw)[[1]]}")
+      ),
+      call = call
+    )
+  }
+  if (length(values) == 0) {
+    abort(glue("`{label %||% 'x'}` has no non-missing values"), call = call)
+  }
+
+  list(values = values, label = label, is_factor = is_factor, levels = levels_num)
+}
+
 #' Countable-Rectangle Histogram
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' Creates histograms where individual data points are visible as stacked unit
-#' rectangles, making counts easy to visualize. Instead of abstract bars, each
-#' observation becomes a countable square, making sample size and distribution
-#' shape tangible. Designed for teaching statistical concepts like sampling
-#' distributions and hypothesis testing, where students benefit from seeing
-#' that "n = 47" means 47 actual squares.
+#' Creates histograms where each observation is drawn as its own square, stacked
+#' into columns, so a bin's height can be counted as well as read off the axis:
+#' `n = 47` is 47 squares. Designed for teaching statistical concepts like
+#' sampling distributions and hypothesis testing.
 #'
 #' @details
 #' Sensible defaults are chosen based on the data:
 #'
 #' - For integer-valued data with a small range, the `binwidth` defaults to 1
 #'   so that each integer gets its own column.
-#' - When the input is a factor with numeric levels, all levels are displayed
-#'   on the x-axis even if some have zero counts.
-#' - When any bin has more than 75 observations, the display automatically
-#'   switches to solid bars to remain readable. Opt into subdivision instead
-#'   with `auto_subdivide = TRUE`, which splits wide bins into sub-columns so
-#'   that rectangles remain countable.
+#' - When the input is a factor with numeric levels and `bars` is `"outline"` or
+#'   `"solid"`, all levels are displayed on the x-axis even if some have zero
+#'   counts.
+#' - The white separator between two squares is capped at a quarter of a square's
+#'   smaller side, so as a bin fills and its squares shrink the separator thins
+#'   with them and the squares stay countable.
 #'
 #' When teaching about hypothesis testing, the `show_dgp = TRUE` overlay
 #' frames a sampling distribution with its data generating process. It shows a
@@ -34,9 +141,12 @@
 #' @param origin Starting position for bins.
 #' @param boundary Alias for `origin`.
 #' @param fill Rectangle fill color. Default `"#7fcecc"`.
-#' @param color Rectangle border color. Default `"black"`.
+#' @param color Outline colour for the bars drawn when `bars` is `"outline"` or
+#'   `"solid"`; the separators between squares are always white. `"black"` is
+#'   drawn as `grey20`.
 #' @param alpha Transparency. Default `1`.
-#' @param na.rm Remove `NA` values. Default `TRUE`.
+#' @param na.rm Must be `TRUE`. Missing values have no rectangle to draw, so they
+#'   are always dropped.
 #' @param mincount Minimum y-axis height for consistent scaling.
 #' @param bars Display style: `"none"` (squares only), `"outline"`, or
 #'   `"solid"`.
@@ -44,8 +154,7 @@
 #' @param xrange X-axis limits as `c(min, max)`.
 #' @param show_dgp Show DGP annotation overlay. Default `FALSE`.
 #' @param show_mean Show dashed mean line. Default `FALSE`.
-#' @param auto_subdivide Split bins with >75 observations into sub-columns.
-#'   Default `FALSE`.
+#' @param auto_subdivide Accepted but ignored.
 #'
 #' @return A ggplot object with S3 class `c("gf_squareplot", "gg", "ggplot")`.
 #'
@@ -74,7 +183,7 @@
 #' int_data <- data.frame(rolls = sample(1:6, 30, replace = TRUE))
 #' gf_squareplot(~rolls, data = int_data)
 #'
-#' # bins with more than 75 observations switch to solid bars automatically
+#' # with 2000 observations the squares shrink, and their separators thin to fit
 #' set.seed(24)
 #' large_data <- data.frame(x = rnorm(2000, mean = 50, sd = 10))
 #' gf_squareplot(~x, data = large_data)
@@ -114,7 +223,7 @@
 #'   binwidth = 2
 #' )
 #'
-#' # factors with numeric levels show all levels, even empty ones
+#' # a factor with numeric levels gets one column per level
 #' ratings <- data.frame(rating = factor(
 #'   base::sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
 #'   levels = 1:5
@@ -140,66 +249,15 @@ gf_squareplot <- function(x,
   bars <- match.arg(bars)
   dgp_color <- "#003d70"
 
-  # --- extract x vector ----------------------------------------------------
-  is_formula <- inherits(x, "formula")
-  if (is_formula) {
-    vars <- all.vars(x)
-    if (length(vars) != 1L) abort("Formula must be of form ~var.")
-    if (is.null(data)) {
-      x_raw <- tryCatch(
-        get(vars[1], envir = parent.frame()),
-        error = function(e) {
-          abort(paste0(
-            "Variable '", vars[1],
-            "' not found. Either supply data= or ensure variable exists."
-          ))
-        }
-      )
-    } else {
-      x_raw <- data[[vars[1]]]
-    }
-    x_label <- vars[1]
-  } else {
-    x_raw <- x
-    x_label <- NULL
-  }
-
-  # Handle factors
-  is_factor <- is.factor(x_raw)
-  factor_levels <- NULL
-  if (is_factor) {
-    factor_levels <- levels(x_raw)
-    factor_levels_num <- suppressWarnings(as.numeric(factor_levels))
-    if (any(is.na(factor_levels_num))) {
-      abort("Factor levels must be convertible to numeric for gf_squareplot")
-    }
-    x_vec <- as.numeric(as.character(x_raw))
-  } else {
-    x_vec <- x_raw
-  }
-
-  if (na.rm) x_vec <- x_vec[!is.na(x_vec)]
-  if (!is.numeric(x_vec)) abort("`x` must be numeric.")
-  if (length(x_vec) == 0) abort("`x` has no non-missing values.")
+  input <- squareplot_values(x, data, na.rm, env = parent.frame())
+  x_vec <- input$values
+  x_label <- input$label
+  is_factor <- input$is_factor
+  factor_levels <- if (is_factor) as.character(input$levels) else NULL
 
   # --- binwidth ------------------------------------------------------------
-  if (is.null(binwidth)) {
-    if (is_factor) {
-      binwidth <- 1
-    } else {
-      rng <- range(x_vec)
-      if (diff(rng) == 0) {
-        binwidth <- 1
-      } else {
-        is_integer_like <- all(abs(x_vec - round(x_vec)) < 1e-7)
-        if (is_integer_like && diff(rng) <= 50) {
-          binwidth <- 1
-        } else {
-          binwidth <- diff(rng) / 30
-        }
-      }
-    }
-  }
+  # a factor's levels, not its observed values, set the grid: one column per level
+  if (is.null(binwidth)) binwidth <- if (is_factor) 1 else squareplot_binwidth(x_vec)
 
   # --- origin / boundary ---------------------------------------------------
   if (!is.null(boundary)) {
@@ -208,47 +266,21 @@ gf_squareplot <- function(x,
     if (is_factor) {
       origin <- min(as.numeric(factor_levels))
     } else {
-      origin <- floor(min(x_vec) / binwidth) * binwidth
+      origin <- squareplot_origin(x_vec, binwidth)
     }
   }
 
   # --- assign bins ---------------------------------------------------------
   bin <- floor((x_vec - origin) / binwidth)
   counts_per_bin <- table(bin)
-  max_in_any_bin <- if (length(counts_per_bin) > 0) max(counts_per_bin) else 0
-
-  if (auto_subdivide && max_in_any_bin > 75) {
-    n_cols <- ceiling(max_in_any_bin / 75)
-    if (bars == "none") bars <- "outline"
-  } else if (!auto_subdivide && max_in_any_bin > 75 &&
-               bars %in% c("none", "outline")) {
-    n_cols <- 1
-    bars <- "solid"
-  } else {
-    n_cols <- 1
-  }
-
-  sub_binwidth <- binwidth / n_cols
-  slot <- stats::ave(x_vec, bin, FUN = function(z) seq_along(z) - 1L)
-  row_num <- floor(slot / n_cols)
-  col_num <- slot %% n_cols
-
-  xmin <- origin + bin * binwidth + col_num * sub_binwidth
-  xmax <- xmin + sub_binwidth
-  ymin <- row_num
-  ymax <- row_num + 1
-
-  rect_df <- data.frame(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,
-                        bin = bin)
 
   # --- bar counts ----------------------------------------------------------
-  if (nrow(rect_df) > 0) {
-    bin_summary <- stats::aggregate(ymax ~ bin, rect_df, max)
-    names(bin_summary)[2] <- "count"
+  if (length(counts_per_bin) > 0) {
+    filled_bins <- as.numeric(names(counts_per_bin))
     bar_df <- data.frame(
-      xmin = origin + bin_summary$bin * binwidth,
-      xmax = origin + (bin_summary$bin + 1) * binwidth,
-      count = bin_summary$count
+      xmin = origin + filled_bins * binwidth,
+      xmax = origin + (filled_bins + 1) * binwidth,
+      count = as.numeric(counts_per_bin)
     )
     max_count <- max(bar_df$count)
   } else {
@@ -328,13 +360,14 @@ gf_squareplot <- function(x,
 
   # --- unit rectangles -----------------------------------------------------
   if (bars != "solid") {
-    p <- p + ggplot2::geom_rect(
-      data = rect_df,
-      ggplot2::aes(
-        xmin = .data$xmin, xmax = .data$xmax,
-        ymin = .data$ymin, ymax = .data$ymax
-      ),
-      fill = fill, color = "white", alpha = alpha
+    p <- p + ggplot2::layer(
+      geom = GeomSquareplot, stat = StatSquareplot, data = data.frame(x = x_vec),
+      mapping = ggplot2::aes(x = .data$x), position = "identity",
+      inherit.aes = FALSE, show.legend = FALSE,
+      params = list(
+        binwidth = binwidth, origin = origin,
+        fill = fill, colour = "white", alpha = alpha, na.rm = na.rm
+      )
     )
   }
 

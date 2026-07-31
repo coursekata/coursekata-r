@@ -27,6 +27,7 @@
 ## usethis namespace: start
 #' @import rlang
 #' @importFrom glue glue
+#' @importFrom grid makeContent
 ## usethis namespace: end
 NULL
 
