@@ -6,7 +6,7 @@
 \alias{coursekata-package}
 \title{coursekata: CourseKata Statistics and Data Science}
 \description{
-\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+\if{html}{\figure{logo.svg}{options: style='float: right' alt='logo' width='120'}}
 
 Easily install and load all packages and functions used in 'CourseKata' courses. Aid teaching with helper functions and augment generic functions to provide cohesion between the network of packages. Learn more about 'CourseKata' at \url{https://www.coursekata.org}.
 }
@@ -47,6 +47,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Adam Blake \email{adam@coursekata.org} (\href{https://orcid.org/0000-0001-7881-8652}{ORCID})
   \item Ji Son \email{ji@coursekata.org} (\href{https://orcid.org/0000-0002-4258-4791}{ORCID})
   \item Jim Stigler \email{jim@coursekata.org} (\href{https://orcid.org/0000-0001-6107-7827}{ORCID})
 }
