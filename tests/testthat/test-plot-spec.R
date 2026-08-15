@@ -89,3 +89,33 @@ test_that("resolve_aes returns NULL when an aesthetic is mapped nowhere", {
 
   expect_null(plot_spec(p)$resolve_aes("fill"))
 })
+
+test_that("plot_spec reads axes a plot maps only on its first layer", {
+  p <- ggplot2::ggplot(er) + ggplot2::geom_hex(ggplot2::aes(base_anxiety, later_anxiety))
+  spec <- plot_spec(p)
+
+  expect_equal(spec$axes, c(x = "base_anxiety", y = "later_anxiety"))
+  expect_identical(spec$data, er)
+})
+
+test_that("plot_spec prefers the plot's mapping over the layer's", {
+  p <- ggplot2::ggplot(Fingers, ggplot2::aes(x = Thumb)) +
+    ggplot2::geom_histogram(ggplot2::aes(x = Height), bins = 30)
+
+  expect_equal(unname(plot_spec(p)$axes), "Thumb")
+})
+
+test_that("plot_spec falls back to the first layer's data", {
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_histogram(data = Fingers, mapping = ggplot2::aes(x = Thumb), bins = 30)
+  spec <- plot_spec(p)
+
+  expect_identical(spec$data, Fingers)
+  expect_equal(unname(spec$axes), "Thumb")
+})
+
+test_that("plot_spec reports no axes when nothing anywhere is mapped", {
+  p <- ggplot2::ggplot(er) + ggplot2::geom_hex()
+
+  expect_length(plot_spec(p)$axes, 0)
+})

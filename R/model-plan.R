@@ -9,6 +9,14 @@
 model_spec <- function(plot_data, model, call = caller_env()) {
   formula <- stats::formula(model)
   data <- if (inherits(model, "lm")) model$model else plot_data
+
+  # lm() coerces a non-numeric outcome to double and dies with NA/NaN/Inf in 'y',
+  # so the outcome has to be checked before the formula rung fits anything
+  named <- if (is.null(f_lhs(formula))) NULL else as_label(f_lhs(formula))
+  if (!inherits(model, "lm") && !is.null(named) && named %in% names(data)) {
+    check_numeric_outcome(named, data[[named]], call)
+  }
+
   fit <- if (inherits(model, "lm")) model else stats::lm(formula, data = data)
   terms <- sort(names(fit$model))
   predictors <- sort(setdiff(terms, deparse(f_lhs(formula))))
@@ -17,6 +25,48 @@ model_spec <- function(plot_data, model, call = caller_env()) {
     formula = formula, data = data, fit = fit,
     terms = terms, predictors = predictors, outcome = outcome
   )
+}
+
+#' Refuse an outcome that is not a number
+#'
+#' @param name The outcome variable's name.
+#' @param values The outcome variable's values.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return Nothing. Called for the error it raises.
+#'
+#' @noRd
+check_numeric_outcome <- function(name, values, call = caller_env()) {
+  if (is.numeric(values)) {
+    return(invisible(NULL))
+  }
+  abort(
+    c(
+      "There is only support for plotting models with numeric outcome variables at this time",
+      glue("model outcome: {name}"),
+      glue("detected outcome type: {class(values)[[1]]}")
+    ),
+    call = call
+  )
+}
+
+#' Reduce term/mapping labels to the columns they read
+#'
+#' A model records its terms as deparsed labels (`names(fit$model)`, so
+#' `log(age)` for `lm(y ~ log(age))`) and a plot records its mappings the same
+#' way (`as_label()`). `predict()`, though, consumes columns: it re-evaluates
+#' `log(age)` against a column literally named `age`. Every comparison
+#' between what a model needs and what a plot has -- and the prediction grid
+#' itself -- has to be made on that column footing; the labels survive only
+#' in the messages, because they are what the caller wrote.
+#'
+#' @param labels A character vector of term or mapping labels.
+#'
+#' @return A character vector of the unique columns those labels read from.
+#'
+#' @noRd
+label_columns <- function(labels) {
+  unique(unlist(lapply(labels, function(label) all.vars(str2lang(label))), use.names = FALSE))
 }
 
 #' Decide what to draw for a model on a plot
@@ -54,11 +104,25 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     args$color <- NULL
   }
 
-  outcome_axis <- spec$axes[spec$axes %in% mspec$outcome]
-  non_outcome_axis <- spec$axes[spec$axes %in% outcome_axis == FALSE]
+  # a model's terms and a plot's mappings are both recorded as labels, but
+  # predict() consumes columns -- log(age) is not a column, age is -- so
+  # every comparison below is made on that column footing instead
+  columns_by_axis <- purrr::map(spec$axes, label_columns)
+  columns_by_variable <- purrr::map(spec$variables, label_columns)
+  axis_columns <- label_columns(spec$axes)
+  plot_columns <- label_columns(spec$variables)
+  model_columns <- label_columns(mspec$terms)
+  outcome_columns <- label_columns(mspec$outcome)
+  predictor_columns <- label_columns(mspec$predictors)
+  aesthetic_columns <- label_columns(spec$aesthetics)
+
+  outcome_axis <- spec$axes[purrr::map_lgl(columns_by_axis, ~ any(outcome_columns %in% .x))]
+  # select by aesthetic name, not by value, so two axes mapping the same
+  # label cannot collide
+  non_outcome_axis <- spec$axes[names(spec$axes) %in% names(outcome_axis) == FALSE]
   flipped <- identical(names(outcome_axis), "x")
 
-  missing_in_plot <- setdiff(mspec$terms, spec$variables)
+  missing_in_plot <- setdiff(model_columns, plot_columns)
   if (length(missing_in_plot) > 0) {
     abort(
       c(
@@ -81,7 +145,25 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     )
   }
 
-  if (mspec$outcome %in% spec$axes == FALSE) {
+  if (!is.name(str2lang(mspec$outcome))) {
+    abort(
+      c(
+        paste0(
+          "There is only support for plotting models whose outcome is a variable in the data ",
+          "at this time"
+        ),
+        glue("model outcome: {mspec$outcome}"),
+        i = paste0(
+          "predict() returns the outcome on the transformed scale, and there is no general ",
+          "way to invert that for the plot to draw"
+        ),
+        i = "add the transformed value to the data as its own variable, then fit the model on that"
+      ),
+      call = call
+    )
+  }
+
+  if (length(outcome_axis) == 0) {
     abort(
       c(
         "The model outcome variable must be represented on the plot as one of the axes",
@@ -92,20 +174,12 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     )
   }
 
-  if (!is.numeric(mspec$data[[mspec$outcome]])) {
-    abort(
-      c(
-        "There is only support for plotting models with numeric outcome variables at this time",
-        glue("detected outcome type: {class(mspec$outcome)}")
-      ),
-      call = call
-    )
-  }
+  check_numeric_outcome(mspec$outcome, mspec$data[[mspec$outcome]], call)
 
   mapped <- purrr::keep(args, is_formula)
   bad_aes <- purrr::keep(
-    purrr::map_chr(mapped, ~ as_string(f_rhs(.x))),
-    ~ .x %in% mspec$predictors == FALSE
+    purrr::map_chr(mapped, ~ as_label(f_rhs(.x))),
+    ~ all(label_columns(.x) %in% predictor_columns) == FALSE
   )
   if (length(bad_aes) > 0) {
     abort(
@@ -118,14 +192,16 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     )
   }
 
-  not_in_model <- spec$variables[spec$variables %in% mspec$terms == FALSE]
+  not_in_model <- spec$variables[
+    purrr::map_lgl(columns_by_variable, ~ any(.x %in% model_columns) == FALSE)
+  ]
   for (aesthetic in names(not_in_model)) {
     if (aesthetic %in% ggplot2::GeomLine$aesthetics() && is.null(args[[aesthetic]])) {
       args[[aesthetic]] <- ggplot2::GeomLine$default_aes[[aesthetic]]
     }
   }
 
-  non_axis_predictor <- setdiff(mspec$predictors, spec$axes)
+  non_axis_predictor <- setdiff(predictor_columns, axis_columns)
   if (length(non_axis_predictor) == 1) {
     args$group <- name_to_frm(non_axis_predictor)
   } else if (length(non_axis_predictor) > 1) {
@@ -135,44 +211,53 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     )
   }
 
-  no_predictors <- length(mspec$predictors) == 0
-  predictor_off_axis <- length(mspec$predictors) == 1 &&
-    mspec$predictors %in% spec$axes == FALSE
+  # the shape drawn is a property of what the plot puts on the non-outcome
+  # axis, not of which column its mapping names -- a transformed axis (e.g.
+  # log(age)) still shows a numeric axis to draw a line against. Read after
+  # every abort above, so a mapping that cannot be evaluated never pre-empts
+  # a validation message.
+  along <- if (length(non_outcome_axis) == 1) spec$resolve_aes(names(non_outcome_axis))
+  along_values <- if (!is.null(along)) eval_tidy(along$quo, along$data)
+
+  no_predictors <- length(predictor_columns) == 0
+  predictor_off_axis <- length(predictor_columns) == 1 &&
+    predictor_columns %in% axis_columns == FALSE
 
   if (no_predictors || predictor_off_axis) {
     if (flipped) {
       kind <- "vline"
       geom <- ggplot2::GeomVline
-      args$xintercept <- name_to_frm(mspec$outcome)
+      # the intercept inherits nothing, so it is the one shape that has to
+      # spell the plot's own mapping out rather than inheriting it
+      args$xintercept <- name_to_frm(unname(outcome_axis))
     } else {
       kind <- "hline"
       geom <- ggplot2::GeomHline
-      args$yintercept <- name_to_frm(mspec$outcome)
+      args$yintercept <- name_to_frm(unname(outcome_axis))
     }
-  } else if (is.numeric(spec$data[[non_outcome_axis]])) {
+  } else if (is.numeric(along_values)) {
     kind <- "line"
     geom <- ggplot2::GeomLine
   } else {
-    kind <- "errorbar"
-    geom <- ggplot2::GeomErrorbar
+    kind <- "segment"
+    geom <- GeomModelMark
     args$width <- args$width %||% .4
-    if (flipped) {
-      args$xmin <- name_to_frm(mspec$outcome)
-      args$xmax <- args$xmin
-    } else {
-      args$ymin <- name_to_frm(mspec$outcome)
-      args$ymax <- args$ymin
-    }
+    # internal and authoritative: a caller cannot change which axis holds groups
+    args$mark_axis <- if (flipped) "y" else "x"
   }
 
+  # `size` is the pre-3.4 spelling of `linewidth`; leaving it in args sends both to
+  # the layer and ggplot2 deprecation-warns, naming coursekata as the culprit
+  width_given <- !is.null(args$linewidth) || !is.null(args$size)
   args$linewidth <- args$linewidth %||% args$size %||% 1
+  args$size <- NULL
 
-  remap <- spec$variables[spec$variables %in% mspec$predictors]
+  remap <- spec$variables[purrr::map_lgl(columns_by_variable, ~ any(.x %in% predictor_columns))]
   remap <- remap[names(remap) %in% geom$aesthetics()]
   remap <- remap[names(remap) %in% names(args) == FALSE]
   args[names(remap)] <- purrr::map(remap, name_to_frm)
 
-  if ("size" %in% names(spec$aesthetics)) {
+  if (!width_given && "size" %in% names(spec$aesthetics)) {
     args$linewidth <- name_to_frm(spec$variables[["size"]])
   }
 
@@ -184,25 +269,33 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     args$colour <- name_to_frm(spec$variables[["fill"]])
   }
 
+  if (kind == "segment") {
+    # GeomSegment's colour default is themed while GeomErrorbar's was not, so an
+    # unpinned mark would silently turn blue; keep the neutral the fit line uses
+    args$colour <- args$colour %||% ggplot2::GeomLine$default_aes$colour
+  }
+
   params <- list()
-  for (term in c(mspec$predictors, spec$aesthetics)) {
-    term_data <- spec$data[[term]]
-    if (term == mspec$outcome) {
+  for (column in unique(c(predictor_columns, aesthetic_columns))) {
+    column_data <- spec$data[[column]]
+    if (column %in% outcome_columns) {
       abort("How did you use the outcome as a predictor?", call = call)
-    } else if (!is.numeric(term_data)) {
-      params[[term]] <- if (is.logical(term_data)) {
+    } else if (!is.numeric(column_data)) {
+      params[[column]] <- if (is.logical(column_data)) {
         c(TRUE, FALSE)
       } else {
-        levels(factor(term_data))
+        levels(factor(column_data))
       }
-    } else if (term %in% spec$axes) {
-      rng <- range(term_data)
+    } else if (column %in% axis_columns) {
+      # a predictor with a missing value gives range() an NA endpoint, and the
+      # prediction grid seq() builds from it aborts before anything is drawn
+      rng <- range(column_data, na.rm = TRUE)
       len <- max(nrow(spec$data), 80L)
-      params[[term]] <- seq(rng[[1]], rng[[2]], length.out = len)
+      params[[column]] <- seq(rng[[1]], rng[[2]], length.out = len)
     } else {
-      spread <- stats::sd(term_data, na.rm = TRUE)
-      middle <- mean(term_data, na.rm = TRUE)
-      params[[term]] <- c(middle - spread, middle, middle + spread)
+      spread <- stats::sd(column_data, na.rm = TRUE)
+      middle <- mean(column_data, na.rm = TRUE)
+      params[[column]] <- c(middle - spread, middle, middle + spread)
     }
   }
 

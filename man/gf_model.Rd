@@ -4,16 +4,66 @@
 \alias{gf_model}
 \title{Add a model to a plot}
 \usage{
-gf_model(object, model, ...)
+gf_model(
+  object = NULL,
+  gformula = NULL,
+  data = NULL,
+  ...,
+  model,
+  xlab,
+  ylab,
+  title,
+  subtitle,
+  caption,
+  geom = "line",
+  stat = "identity",
+  position = "identity",
+  show.legend = NA,
+  show.help = NULL,
+  inherit = TRUE,
+  environment = parent.frame()
+)
 }
 \arguments{
 \item{object}{A plot created with the \code{ggformula} package.}
 
-\item{model}{A linear model fit by either \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}.}
+\item{gformula}{Not used. \code{gf_model()} draws a model, not an aesthetic
+formula; a model given positionally lands here and is moved to \code{model}.}
+
+\item{data}{Not used. The layer draws the model's predictions, which are
+computed from the data the plot was built from.}
 
 \item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
 \code{attribute = value}, (b) ggplot2 aesthetics to be mapped with \code{attribute = ~ expression}, or
 (c) attributes of the layer as a whole, which are set with \code{attribute = value}.}
+
+\item{model}{The model to draw. Either a model already fit by \code{\link[=lm]{lm()}} or
+\code{\link[=aov]{aov()}}, or the formula for one -- such as \code{body_mass_kg ~ species} --
+which is fit against the data the plot was built from. The empty model is
+written \code{body_mass_kg ~ NULL}. The outcome must be named: a one-sided
+formula such as \code{~species} names predictors and no claim, so there would be
+nothing to draw that you had not described. May be given positionally or as
+\verb{model =}.}
+
+\item{xlab, ylab, title, subtitle, caption}{Labels for the plot.}
+
+\item{geom}{Not set by the caller. The geometry is derived from the model.}
+
+\item{stat, position}{Reach the layer as given, but \code{gf_model()} already computed
+the model's predictions before the layer is built, so changing these
+recomputes something else on top of that prediction grid (\code{stat = "smooth"}
+re-smooths it, for example) rather than changing how the model's own claim is
+drawn. Leave them at their defaults.}
+
+\item{show.legend}{Whether this layer contributes to the legend.}
+
+\item{show.help}{Print the layer's own help instead of drawing.}
+
+\item{inherit}{Not set by the caller. Whether the layer inherits the plot's
+aesthetics is derived per model shape: an intercept states its own
+position, everything else inherits the axis the plot put the outcome on.}
+
+\item{environment}{The environment mappings are resolved in.}
 }
 \value{
 a gg object (a plot layer) that can be added to a plot.
@@ -75,4 +125,13 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins) \%>\%
 ancova_model <- lm(body_mass_kg ~ species + flipper_length_m, data = penguins)
 gf_point(body_mass_kg ~ flipper_length_m, color = ~species, data = penguins) \%>\%
   gf_model(ancova_model)
+
+# a model that has not been fit yet can be written as a formula, and is fit
+# against the data the plot was built from
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins) \%>\%
+  gf_model(body_mass_kg ~ flipper_length_m)
+
+# the empty model, written as a formula
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) \%>\%
+  gf_model(body_mass_kg ~ NULL)
 }
