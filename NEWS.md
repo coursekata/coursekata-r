@@ -1,5 +1,18 @@
 # coursekata (development version)
 
+- A named argument that is not a parameter of the layer is now discarded without a
+  word, at the call and at the draw. That is how every `gf_` function behaves --
+  `ggformula` builds the layer with parameter checking off -- and `gf_model()`,
+  `gf_sd_ruler()`, `gf_squareplot()` and the five residual functions are ordinary
+  `gf_` functions now, so they behave that way too. That includes the names that
+  moved out of their own signatures: a name this package used to take is not
+  special, and is ignored like any other name the layer does not recognize. Where
+  each one went is on the function's reference page, which is where a reader looks
+  for it. A genuine misspelling is the same story: `gf_squareplot(~Thumb, data = Fingers,
+  binwidht = 5)` draws a plot that ignores it, while a correctly spelled
+  neighbour on the same call is applied. If a parameter appears to do nothing,
+  check its spelling first; `ggplot2::ggplot_build(p)$data[[1]]` shows what the
+  layer actually received.
 - `gf_squareplot()` is now a real ggformula layer. It carries the data it was given
   and maps `x`, so it facets with `~ x | group`, accepts a data frame piped into it,
   takes a mapped `fill`, can be added to a plot you already have, and can be read by
@@ -17,28 +30,31 @@
   and `show_dgp` are `%>% show_mean()` and `%>% show_dgp()`. `auto_subdivide` is gone
   because what it did is now what happens anyway: it was the opt-in that split a bin of
   more than 75 observations into sub-columns so the squares stayed countable, and squares
-  now stay countable at any size without being asked. Passing any of the old names is an error
-  that names the replacement, because a layer discards a parameter it does not
-  recognise without saying so.
+  now stay countable at any size without being asked. Passing one of the old names now
+  does nothing, the same as any other name the layer does not recognize.
 - A squareplot's bins are a histogram's bins, argument for argument: `bins`,
   `binwidth`, `center`, `boundary`, `closed`, `breaks` and `pad` all mean exactly
   what they mean on `gf_histogram()`, because a squareplot now bins through the same
-  code a histogram does. The default grid moved as a result -- bins are centred on
+  code a histogram does. The default grid moved as a result -- bins are centered on
   round numbers rather than starting on them -- and a maximum sitting on a bin edge
   no longer gets a column of its own past the end of the data.
 - `bins`, `center`, `boundary`, `closed` and `breaks` are now named parameters of
   `gf_squareplot()`, not merely accepted through `...`, so they appear in its usage,
   in autocomplete, and in the help sheet a bare `gf_squareplot()` call prints.
 - A discrete x on a squareplot is counted, not binned: a factor, character or logical
-  x now gets one column per level, centred on its own tick, the way `gf_bar()`
+  x now gets one column per level, centered on its own tick, the way `gf_bar()`
   positions its bars, instead of a column of level numbers sitting half a step past
   the labels they belong to. A factor with more than 51 levels no longer merges
   neighbouring levels into shared columns. A binning argument passed alongside a
   discrete x -- `binwidth`, `bins`, `center`, `boundary`, `closed`, `breaks`, `pad` --
   now warns that it has no effect, rather than being silently discarded.
-- `color` colours the bar on a squareplot, which is the only thing it ever affected,
+- `color` colors the bar on a squareplot, which is the only thing it ever affected,
   and an explicit `"black"` is now drawn black rather than silently redrawn as the
   default grey.
+- The undocumented `print.gf_squareplot()` method is gone. It existed to swallow a
+  warning the old constructor caused by building a plot with no complete layer of its
+  own; a real ggformula layer never triggers that warning, so `gf_squareplot()` now
+  prints like any other plot.
 - A factor keeps its levels on a squareplot's x axis, so a level nothing landed in
   still holds its place instead of being closed over by its neighbours -- which also
   moved the columns that were drawn, not just the ticks.
@@ -49,8 +65,8 @@
 - The squareplot no longer imposes its own theme. It uses the package theme like every
   other plot, so its panel and gridlines now match the plots beside it, and adding
   squares to a plot you have themed yourself leaves your theme alone.
-- `GeomSquareplot` can draw a bin as the bar its squares add up to, through a `bar`
-  parameter taking `"none"`, `"outline"` or `"solid"`, with `bar_colour` and
+- `GeomSquareplot` can draw a bin as the bar its squares add up to, through a `bars`
+  parameter taking `"none"`, `"outline"` or `"solid"`, with `bar_color` and
   `bar_linewidth` to style it. All three are one layer on one set of bins, and the bar
   is derived from the squares rather than binned again, so it cannot land anywhere the
   squares did not. A solid bar shows its bin's group composition too: a mapped `fill`
@@ -70,8 +86,8 @@
   `gf_sd_ruler(y = Thumb, x = Height)` -- and with that comes everything the other
   `gf_` functions already had: `y ~ x | group` faceting, data-first piping,
   `title=`/`xlab=`/`ylab=`, and a plot whose aesthetics live on a layer rather
-  than on the plot. `y` and `x` now say to use the formula instead of being
-  quietly ignored, and `size` still works and now says to write `linewidth`.
+  than on the plot. `y` and `x` are names the layer no longer recognizes and are
+  ignored like any other; `size` still works and says to write `linewidth`.
 - Fix `gf_sd_ruler()` placing the ruler where no observations are drawn. On a
   categorical x it derived positions in order of first appearance while the axis
   orders them alphabetically, so on unbalanced data `where = "median"` put the
@@ -92,10 +108,25 @@
 - `gf_model()` draws a model whose predictor is transformed. `gf_model(lm(Thumb ~ log(Height)))` over a plot of `Thumb ~ Height`, and the same claim written in place as `gf_model(Thumb ~ log(Height))`, were both refused as using variables the plot does not have, because `log(Height)` was compared against the plot's columns as though it were the name of one. The prediction grid is now built over the columns a term is made of, which is what `predict()` needs, and drawn against the plot's own mapping. A transformed *outcome* is still refused, and now says so in those terms rather than failing while computing aesthetics.
 - `gf_model()` refuses a one-sided formula by name. `gf_model(~flipper_length_m)` used to fail inside `lm.fit()` with `incompatible dimensions`; it now says the model has no outcome and shows where to write one.
 - `gf_model()` says at the call, rather than while drawing, that a fit line or a group mark needs its outcome mapped by the plot rather than by a layer underneath it. Those two shapes leave the outcome's axis free and inherit it, which is what lets a flipped plot draw correctly without any orientation logic; when there is nothing to inherit, ggplot2 used to report a missing `y` from deep inside the build.
-- `gf_model()` draws a group model as a plain mark at each group mean rather than as an errorbar. An errorbar glyph reads as uncertainty -- a standard error, a confidence interval -- to students who are weeks away from meeting interval estimates, while a group model claims a single value per group and says nothing about how sure of it you should be. The mark is drawn at the same place, the same width and the same colour as before; what goes away is the eight-point path with two identical caps around a zero-length stem, and the `ymin`, `ymax` and `flipped_aes` columns that described an interval that was never there. A group mark drawn with `alpha` is now as translucent as you asked for, instead of nearly twice as dark where the two identical caps overlapped.
+- `gf_model()` draws a group model as a plain mark at each group mean rather than as an errorbar. An errorbar glyph reads as uncertainty -- a standard error, a confidence interval -- to students who are weeks away from meeting interval estimates, while a group model claims a single value per group and says nothing about how sure of it you should be. The mark is drawn at the same place, the same width and the same color as before; what goes away is the eight-point path with two identical caps around a zero-length stem, and the `ymin`, `ymax` and `flipped_aes` columns that described an interval that was never there. A group mark drawn with `alpha` is now as translucent as you asked for, instead of nearly twice as dark where the two identical caps overlapped.
 - `gf_model()` now says a model's outcome has to be numeric, instead of letting `lm()` coerce it and report `NA/NaN/Inf in 'y'`. The carefully worded refusal was already written; it just sat after the fit, where nothing with a categorical outcome could ever reach it. On the one path that did reach it -- a logical outcome, which `lm()` accepts -- it reported the type as "character", because it read the class of the variable's name rather than of the variable.
 - `gf_model(size = )` no longer trips ggplot2's `size`-is-now-`linewidth` deprecation warning, which told the reader that coursekata had done something wrong and asked them to file an issue. The value was correctly folded into `linewidth` and then also passed along under its old name, where the geom accepted and discarded it. A `size` mapped by the plot underneath also used to overwrite a `linewidth` given explicitly to `gf_model()`; the explicit one now wins.
 - `gf_model()`, `show_cutoffs()` and the residual overlays now read a plot through one reader, which finds a variable whether it was mapped on the plot or on the plot's first layer, and finds the data there too. Plots built with ggformula always map at plot level, so this changes nothing about the documented pipelines. For `show_cutoffs()` and the residual overlays it changes how they read rather than what they can draw: a plot written as `ggplot(data) + geom_point(aes(x, y))` already worked. What it buys is `gf_model()`, which used to refuse that plot outright and now draws an intercept model on it. A fit line or a group mark still needs its outcome mapped on the plot rather than on a layer beneath it -- those two shapes leave the outcome's axis free and inherit it, so there is nothing for them to inherit from -- and that is now refused by name, at the call. The residual overlays' refusal, for a plot that really has no x or y anywhere, names the axis that is absent.
+- The five residual functions -- `gf_resid()`, `gf_square_resid()`, `gf_squaresid()`,
+  `gf_resid_fun()` and `gf_square_resid_fun()` -- are now built the same way every other
+  `gf_` layer is, which closes the last place this package had two ways of making the
+  same kind of thing. Nothing they draw has changed. What arrives with it is the rest of
+  the family's behavior: a bare call prints its own help, `title=`/`xlab=`/`ylab=` reach
+  the plot, and a first argument that is not a plot says so rather than failing with
+  `attempt to apply non-function`. A call with no model, or no function, names what it
+  needs instead of reporting R's own missing-argument error.
+- The residual functions take the plot as `object`, the name every other `gf_` function
+  uses for it, and their remaining arguments have to be named. The released signatures
+  put `linewidth` third on `gf_resid()`, and `aspect` and `alpha` third and fourth on
+  `gf_square_resid()`; those positions belong to the arguments every generated layer
+  carries there, so write `gf_resid(p, model, linewidth = 0.5)` and
+  `gf_square_resid(p, model, aspect = 1)`. A value left in the third position is refused
+  by ggformula, in the words it uses for any other `gf_` function.
 - `gf_resid()` and `gf_square_resid()` now measure the residual along whichever axis the plot puts the model's outcome on. A plot of `Thumb ~ Height` with `lm(Height ~ Thumb)` over it drew every segment vertically, to a predicted *height* read off as though it were a thumb length, with nothing to say so; the squares squared that same wrong distance. The residual now runs across x for a model of the x variable, its square turns with it, and the fitted end lands on the line `gf_model()` draws for the same model.
 - `show_cutoffs()` now draws its markers on a plot whose count axis has been transformed.
   The triangles hang below the axis, which means a negative count, and `scale_y_sqrt()` or
@@ -137,8 +168,9 @@
 - `gf_model()` now errors when an aesthetic is mapped to a variable that is not one of the model's predictors, instead of silently dropping the mapping. A mapping the model could not honor used to just vanish from the plot without a word, which is a hard thing to debug in a notebook.
 - Expand reference examples for the model visualization and distribution functions with textbook-style, pedagogy-focused examples.
 - `gf_squareplot()` now names the variable it could not use. A misspelled column, a data-first pipe, a character column and a date column all reported the same ``` `x` must be numeric. ```, and a formula holding an expression such as `~log(Thumb)` silently plotted the untransformed variable and labelled the axis with it. `na.rm = FALSE` now says it is unsupported instead of failing inside `range()` or shipping a rectangle at `NA`. A two-sided formula such as `gf_squareplot(y ~ x)` used to silently plot `x` and discard `y` with no error; it now says the formula must be one-sided.
+- `gf_squareplot()` keeps drawing countable squares on large samples. Above 75 observations in a bin it used to replace every square with a solid bar, so the 2000-observation example in its own documentation drew 27 bars and not one countable square. The separator between squares is now fitted to the squares -- at 2000 observations a square is about 1.2 pt tall while the old separator was 1.4 pt wide, so each square erased itself. A `linewidth` set explicitly on the layer is still honored, now with a warning when the border is wide enough to hide the observations behind it.
 - New `StatSquareplot` and `GeomSquareplot` exports. `gf_squareplot()` now draws through a real ggplot2 stat and geom instead of assembling rectangles itself, and both are exported so you can put countable squares into a plot you are building yourself -- including with a mapped `fill`, which stacks its groups within each bin rather than drawing them on top of one another.
-- `show_cutoffs()` now reads its fill aesthetic the way R reads any call. `fill = ~middle(Thumb)` was told it needed at least two arguments even though `prop` is documented to default to .95; named arguments in any other order, such as `~middle(prop = .9, x = Thumb)` or `~middle(Thumb, greedy = FALSE, prop = .9)`, were still read by position and failed on whatever landed in the third slot; and `~coursekata::middle(Thumb, .95)` crashed on a length-3 coercion rather than being recognised as `middle()`. The call is matched against the real function's formals now, so naming arguments, reordering them, leaving them at their documented defaults, and qualifying the call with `coursekata::` all behave as they do everywhere else in R. `greedy` is honoured too, having previously been ignored.
+- `show_cutoffs()` now reads its fill aesthetic the way R reads any call. `fill = ~middle(Thumb)` was told it needed at least two arguments even though `prop` is documented to default to .95; named arguments in any other order, such as `~middle(prop = .9, x = Thumb)` or `~middle(Thumb, greedy = FALSE, prop = .9)`, were still read by position and failed on whatever landed in the third slot; and `~coursekata::middle(Thumb, .95)` crashed on a length-3 coercion rather than being recognized as `middle()`. The call is matched against the real function's formals now, so naming arguments, reordering them, leaving them at their documented defaults, and qualifying the call with `coursekata::` all behave as they do everywhere else in R. `greedy` is honored too, having previously been ignored.
 - `show_cutoffs()` now puts its markers on values the fill actually shades. The marker positions reimplemented the arithmetic that decides how many observations fall in a tail rather than asking for it, and the two disagreed whenever the tail's exact size was a whole number: with `upper(x, .05)` on 200 observations the triangle sat on the 190th value while the shading started at the 191st. They come from the same count now, so they cannot drift apart. The labels also compared floating-point values against literals and never matched, so the flagship example annotated its cutoffs `0.025` where a textbook writes `.025`.
 - `show_cutoffs()` now refuses a plot it cannot mark instead of guessing at it. An `x` aesthetic holding an expression rather than a bare variable surfaced a raw `rlang` coercion error, and a plot without cartesian axes -- `coord_polar()`, say -- fell back on an invented y axis running to 30 and drew the markers at heights that meant nothing. Both are named errors now, raised before any position is computed.
 - `gf_model()` now documents the model you can write in place. Alongside a model already fit by `lm()` or `aov()`, it takes the formula for one -- `gf_model(body_mass_kg ~ species)` -- and fits it against the data the plot was built from, with `body_mass_kg ~ NULL` for the empty model. That has always worked, and the help page promised `lm()` or `aov()` only, so the shortest way to draw a claim was also the least discoverable one. The outcome still has to be named: `~species` would describe predictors and no claim, and the only way to draw it would be to guess the outcome off the axes, which is what `gf_lm()` already does.
