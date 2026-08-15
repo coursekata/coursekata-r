@@ -9,7 +9,7 @@ show_mean(plot, color = "#E60000", linetype = "longdash", linewidth = 0.7)
 \arguments{
 \item{plot}{A plot of one distribution.}
 
-\item{color}{Line colour. Default \code{"#E60000"}.}
+\item{color}{Line color. Default \code{"#E60000"}.}
 
 \item{linetype}{Line type. Default \code{"longdash"}.}
 

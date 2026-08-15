@@ -188,7 +188,7 @@ sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
 #'   `"middle"` (midpoint of x range), `"mean"`, or `"median"`. Ignored for
 #'   a horizontal ruler, which always starts at the mean.
 #' @param na.rm Should missing values be silently removed?
-#' @param ... Additional arguments: `colour`/`color` (default `"red"`),
+#' @param ... Additional arguments: `color` (default `"red"`),
 #'   `linewidth` (default `0.8`), and any other [ggplot2::geom_segment()]
 #'   parameter.
 #' @param xlab,ylab,title,subtitle,caption Axis and plot labels; see

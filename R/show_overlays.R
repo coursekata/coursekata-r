@@ -169,7 +169,7 @@ StatDistMean <- ggplot2::ggproto(
 #' a panel added later has no top to draw against and is left without a line.
 #'
 #' @param plot A plot of one distribution.
-#' @param color Line colour. Default `"#E60000"`.
+#' @param color Line color. Default `"#E60000"`.
 #' @param linetype Line type. Default `"longdash"`.
 #' @param linewidth Line width. Default `0.7`.
 #'
@@ -301,7 +301,7 @@ show_dgp <- function(plot, color = "#003d70", null_color = "#E60000", size = 4) 
     abort(c(
       "`show_dgp()` needs to raise the count axis, and this plot's count axis is fixed",
       limits_line,
-      "drop the limits and set the axis height with `expand_limits(y = )` instead"
+      "drop the limits and set the axis height with `%>% gf_refine(expand_limits(y = ))`"
     ))
   }
 
@@ -309,7 +309,7 @@ show_dgp <- function(plot, color = "#003d70", null_color = "#E60000", size = 4) 
   if (!is.null(coord_y) && any(!is.na(coord_y))) {
     abort(c(
       "`show_dgp()` needs to raise the count axis, and this plot's coordinate y range is fixed",
-      "*" = "drop `coord_cartesian(ylim = )` or set a minimum height with `expand_limits(y = )`",
+      "*" = "drop `coord_cartesian(ylim = )`, or set a minimum height with `%>% gf_refine(expand_limits(y = ))`",
       "*" = "an x-only coordinate zoom is supported and is preserved"
     ))
   }
@@ -328,7 +328,7 @@ show_dgp <- function(plot, color = "#003d70", null_color = "#E60000", size = 4) 
   mark_zero <- spec$x_limits[[1]] <= 0 && 0 <= spec$x_limits[[2]]
 
   plot <- plot +
-    tag_layer(ggplot2::expand_limits(y = top + band + 1.0), "dgp_headroom") +
+    tag_layer(ggplot2::geom_blank(), "dgp_headroom") +
     tag_layer(ggplot2::annotate(
       "segment", x = -Inf, xend = Inf, y = axis_y, yend = axis_y,
       color = color, linewidth = 0.5
@@ -372,9 +372,12 @@ show_dgp <- function(plot, color = "#003d70", null_color = "#E60000", size = 4) 
     ), "dgp_estimate_marker")
   }
 
-  # ggproto() re-evaluates the parent expression later, so the old coord needs its own name
+  # ggproto() re-evaluates the parent expression later, so the old coord needs its
+  # own name. The band makes room in the panel rather than in the scale: an
+  # expanded limit is a count the axis would then put a tick on.
   coord <- plot$coordinates
-  plot$coordinates <- ggplot2::ggproto(NULL, coord, clip = "off")
+  plot$coordinates <- ggplot2::ggproto(NULL, coord, clip = "off",
+    limits = list(x = coord$limits$x, y = c(NA, top + band + 1.0)))
 
   # the bottom band lives in the margin, and the x title is replaced by "Parameter Estimate"
   plot +

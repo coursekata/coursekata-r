@@ -1,5 +1,54 @@
 # coursekata (development version)
 
+- `gf_squareplot()` is now a real ggformula layer. It carries the data it was given
+  and maps `x`, so it facets with `~ x | group`, accepts a data frame piped into it,
+  takes a mapped `fill`, can be added to a plot you already have, and can be read by
+  `gf_model()` and `gf_sd_ruler()` -- none of which worked before, because the
+  function built an empty plot and handed the layer a renamed one-column frame.
+  `~log(Thumb)` and any other expression now plots what it says.
+- `gf_squareplot()` bins the values that are actually drawn. It used to choose the
+  binwidth and the origin from the raw data when the call was made, then hand them to
+  a stat that runs after the scales have transformed everything, so `scale_x_log10()`
+  drew four values spanning three orders of magnitude as a single column on an axis
+  running to 10^33. The stat decides now.
+- `gf_squareplot()`'s scale and annotation arguments have moved to the scales and
+  annotations that own them: `xrange` is `gf_lims(x = )`, `xbreaks` is
+  `scale_x_continuous(breaks = )`, `mincount` is `expand_limits(y = )`, and `show_mean`
+  and `show_dgp` are `%>% show_mean()` and `%>% show_dgp()`. `auto_subdivide` is gone
+  because what it did is now what happens anyway: it was the opt-in that split a bin of
+  more than 75 observations into sub-columns so the squares stayed countable, and squares
+  now stay countable at any size without being asked. Passing any of the old names is an error
+  that names the replacement, because a layer discards a parameter it does not
+  recognise without saying so.
+- A squareplot's bins are a histogram's bins, argument for argument: `bins`,
+  `binwidth`, `center`, `boundary`, `closed`, `breaks` and `pad` all mean exactly
+  what they mean on `gf_histogram()`, because a squareplot now bins through the same
+  code a histogram does. The default grid moved as a result -- bins are centred on
+  round numbers rather than starting on them -- and a maximum sitting on a bin edge
+  no longer gets a column of its own past the end of the data.
+- `bins`, `center`, `boundary`, `closed` and `breaks` are now named parameters of
+  `gf_squareplot()`, not merely accepted through `...`, so they appear in its usage,
+  in autocomplete, and in the help sheet a bare `gf_squareplot()` call prints.
+- A discrete x on a squareplot is counted, not binned: a factor, character or logical
+  x now gets one column per level, centred on its own tick, the way `gf_bar()`
+  positions its bars, instead of a column of level numbers sitting half a step past
+  the labels they belong to. A factor with more than 51 levels no longer merges
+  neighbouring levels into shared columns. A binning argument passed alongside a
+  discrete x -- `binwidth`, `bins`, `center`, `boundary`, `closed`, `breaks`, `pad` --
+  now warns that it has no effect, rather than being silently discarded.
+- `color` colours the bar on a squareplot, which is the only thing it ever affected,
+  and an explicit `"black"` is now drawn black rather than silently redrawn as the
+  default grey.
+- A factor keeps its levels on a squareplot's x axis, so a level nothing landed in
+  still holds its place instead of being closed over by its neighbours -- which also
+  moved the columns that were drawn, not just the ticks.
+- When squares are added to an existing plot, its x scale and any identity-continuous
+  y scale are preserved. A transformed or discrete y scale is refused because a square
+  cannot stay exactly one count tall on it; the check works whether that scale is added
+  before or after `gf_squareplot()`.
+- The squareplot no longer imposes its own theme. It uses the package theme like every
+  other plot, so its panel and gridlines now match the plots beside it, and adding
+  squares to a plot you have themed yourself leaves your theme alone.
 - `GeomSquareplot` can draw a bin as the bar its squares add up to, through a `bar`
   parameter taking `"none"`, `"outline"` or `"solid"`, with `bar_colour` and
   `bar_linewidth` to style it. All three are one layer on one set of bins, and the bar

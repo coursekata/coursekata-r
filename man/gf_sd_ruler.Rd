@@ -35,7 +35,7 @@ already names one.}
 
 \item{data}{Dataset. Defaults to the plot's data.}
 
-\item{...}{Additional arguments: \code{colour}/\code{color} (default \code{"red"}),
+\item{...}{Additional arguments: \code{color} (default \code{"red"}),
 \code{linewidth} (default \code{0.8}), and any other \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}}
 parameter.}
 
