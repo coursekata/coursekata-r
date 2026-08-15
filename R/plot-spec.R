@@ -51,7 +51,9 @@ plot_spec <- function(p) {
 #'
 #' @param p A ggplot object.
 #'
-#' @return A list with `x`, `y`, `x_range` and `y_range`.
+#' @return A list with `x`, `y`, `x_range` and `y_range`, plus the
+#'   `x_transform` and `y_transform` those ranges are expressed in. A scale
+#'   that has no transformation, such as a discrete one, reports `NULL`.
 #'
 #' @noRd
 plot_geometry <- function(p) {
@@ -62,6 +64,8 @@ plot_geometry <- function(p) {
     x = built$data[[1]]$x,
     y = built$data[[1]]$y,
     x_range = panel$x.range,
-    y_range = panel$y.range
+    y_range = panel$y.range,
+    x_transform = built$layout$panel_scales_x[[1]]$get_transformation(),
+    y_transform = built$layout$panel_scales_y[[1]]$get_transformation()
   )
 }

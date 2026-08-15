@@ -14,8 +14,7 @@ function, e.g., \code{fill = ~middle(Thumb, .95)}.}
 
 \item{size}{Marker size. Default \code{4}.}
 
-\item{labels}{Whether to add text annotations explaining the cutoffs.
-Default \code{FALSE}.}
+\item{labels}{Whether to annotate the cutoffs. Default \code{FALSE}.}
 }
 \value{
 A ggplot object with cutoff markers and optional labels.
