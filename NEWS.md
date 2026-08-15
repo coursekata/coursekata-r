@@ -1,5 +1,23 @@
 # coursekata (development version)
 
+- `show_cutoffs()` now draws its markers on a plot whose count axis has been transformed.
+  The triangles hang below the axis, which means a negative count, and `scale_y_sqrt()` or
+  `scale_y_log10()` has no such value to offer: both markers came out at `NA` and both
+  dashed uprights lost their lower end, with eight warnings, and the labels, which did
+  survive, were placed by treating a square root as a count and landed a third of the way up
+  the panel where they belong two thirds of the way up. None of those heights was ever a
+  count -- they are fractions of the panel -- so they are now measured in the space the axis
+  is drawn in and handed over as positions no scale is asked to represent.
+- Adding cutoff markers no longer changes the histogram they are added to. The markers were
+  placed as data, so the count axis stretched to enclose a triangle that was meant to sit
+  outside the panel: the bars were redrawn almost 6% shorter, the triangle ended up inside
+  the panel after all, and calling `show_cutoffs()` on a plot that already had markers moved
+  them, because the second call measured the axis the first one had stretched. On a
+  `coord_flip()` histogram it was worse -- the heights were measured against the range of
+  the variable on the vertical axis rather than the counts, so the labels were placed off
+  the end of the count axis and the bars were redrawn at under two thirds of their length.
+  The reference figure for `middle(Thumb, .95)` changes accordingly: the markers are in the
+  same place relative to the bars, and the empty band beneath the axis is gone.
 - Fix `middle()`, `tails()`, and `outer()` dropping one value from each tail when the tail's exact size is a whole number. `middle(x, .90)` on 20 values highlighted all twenty instead of eighteen. The tail proportion is computed as `(1 - prop) / 2`, which cannot represent .05 exactly, so the count landed a fraction below the whole number and rounded down. `prop = .95` was unaffected, which is why this survived.
 - `library(coursekata)` no longer attaches `fivethirtyeightdata`, and the drat repository that existed only to serve it is gone. No CourseKata teaching content uses any of its 19 exclusive datasets, and it accounted for roughly 63 MiB of the browser-based Playground bundle -- 93% of the cost of shipping every suggested data package. `fivethirtyeight` itself is unaffected; if you use a dataset that lived only in `fivethirtyeightdata`, install it with `install.packages("fivethirtyeightdata", repos = "https://fivethirtyeightdata.github.io/drat/")`.
 - Relicensed from AGPL-3 to GPL-3-or-later. The Affero clause obliges anyone who runs modified code as a network service to publish their changes, which is aimed at hosted applications rather than at a package people install and teach with. GPL keeps the copyleft that matters here -- modifications stay open -- without attaching a condition that has no bearing on how `coursekata` is actually used.
@@ -16,6 +34,9 @@
 - `gf_squaresid()` is no longer deprecated: it remains a fully supported alias of `gf_square_resid()`. With our appreciation to Tyler Haslam (@TH4SL4M), the Utah high school teacher whose efforts shaped the residual and squared-residual visualizations -- including working out how `gf_resid()` and `gf_square_resid()` handle jitter plots, and the insight to emphasize the area of the squares rather than their outline -- and who requested the function by this name.
 - `gf_model()` now errors when an aesthetic is mapped to a variable that is not one of the model's predictors, instead of silently dropping the mapping. A mapping the model could not honor used to just vanish from the plot without a word, which is a hard thing to debug in a notebook.
 - Expand reference examples for the model visualization and distribution functions with textbook-style, pedagogy-focused examples.
+- `show_cutoffs()` now reads its fill aesthetic the way R reads any call. `fill = ~middle(Thumb)` was told it needed at least two arguments even though `prop` is documented to default to .95; named arguments in any other order, such as `~middle(prop = .9, x = Thumb)` or `~middle(Thumb, greedy = FALSE, prop = .9)`, were still read by position and failed on whatever landed in the third slot; and `~coursekata::middle(Thumb, .95)` crashed on a length-3 coercion rather than being recognised as `middle()`. The call is matched against the real function's formals now, so naming arguments, reordering them, leaving them at their documented defaults, and qualifying the call with `coursekata::` all behave as they do everywhere else in R. `greedy` is honoured too, having previously been ignored.
+- `show_cutoffs()` now puts its markers on values the fill actually shades. The marker positions reimplemented the arithmetic that decides how many observations fall in a tail rather than asking for it, and the two disagreed whenever the tail's exact size was a whole number: with `upper(x, .05)` on 200 observations the triangle sat on the 190th value while the shading started at the 191st. They come from the same count now, so they cannot drift apart. The labels also compared floating-point values against literals and never matched, so the flagship example annotated its cutoffs `0.025` where a textbook writes `.025`.
+- `show_cutoffs()` now refuses a plot it cannot mark instead of guessing at it. An `x` aesthetic holding an expression rather than a bare variable surfaced a raw `rlang` coercion error, and a plot without cartesian axes -- `coord_polar()`, say -- fell back on an invented y axis running to 30 and drew the markers at heights that meant nothing. Both are named errors now, raised before any position is computed.
 
 # coursekata 0.19.2
 
