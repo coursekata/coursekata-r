@@ -1,5 +1,28 @@
 # coursekata (development version)
 
+- `gf_sd_ruler()` is now a real ggformula layer. It takes a formula rather than
+  `y` and `x` arguments -- `gf_sd_ruler(Thumb ~ Height)` where you used to write
+  `gf_sd_ruler(y = Thumb, x = Height)` -- and with that comes everything the other
+  `gf_` functions already had: `y ~ x | group` faceting, data-first piping,
+  `title=`/`xlab=`/`ylab=`, and a plot whose aesthetics live on a layer rather
+  than on the plot. `y` and `x` now say to use the formula instead of being
+  quietly ignored, and `size` still works and now says to write `linewidth`.
+- Fix `gf_sd_ruler()` placing the ruler where no observations are drawn. On a
+  categorical x it derived positions in order of first appearance while the axis
+  orders them alphabetically, so on unbalanced data `where = "median"` put the
+  ruler over one group and the median over another.
+- `gf_sd_ruler()` on a faceted plot now measures each panel's own data. It used
+  to compute one ruler from the pooled data and stamp the same segment into every
+  panel, which is the one thing a facet exists to avoid.
+- `gf_sd_ruler()` measures the values the plot draws. A transformed axis or a
+  computed mapping such as `~log(Thumb)` used to be refused outright; both are now
+  measured in the space they are drawn in.
+- `gf_sd_ruler()` draws one ruler per panel, so an aesthetic mapped on the call --
+  `gf_sd_ruler(color = ~Sex)` -- is refused and points at `y ~ x | Sex`. It used to
+  be discarded without a word.
+- New `StatSdRuler` export. `gf_sd_ruler()` now draws through a real ggplot2 stat
+  instead of computing the ruler by hand, and is exported so you can put a
+  standard deviation ruler into a plot you are building yourself.
 - `gf_model()` is now built the same way every other `gf_` layer is, so it behaves like one. Calling it with no arguments prints its own help instead of reporting a missing argument, and calling it on a plot with no model says which model it needs and names both ways of giving one -- a fitted `lm()` or `aov()`, or the formula for one -- rather than surfacing R's own missing-argument error. `show.help = TRUE` now prints that same help on a plot that already has a model to check, rather than running the check anyway and reporting its result instead of the help you asked for. Everything it draws is unchanged.
 - `gf_model()` draws a model whose predictor is transformed. `gf_model(lm(Thumb ~ log(Height)))` over a plot of `Thumb ~ Height`, and the same claim written in place as `gf_model(Thumb ~ log(Height))`, were both refused as using variables the plot does not have, because `log(Height)` was compared against the plot's columns as though it were the name of one. The prediction grid is now built over the columns a term is made of, which is what `predict()` needs, and drawn against the plot's own mapping. A transformed *outcome* is still refused, and now says so in those terms rather than failing while computing aesthetics.
 - `gf_model()` refuses a one-sided formula by name. `gf_model(~flipper_length_m)` used to fail inside `lm.fit()` with `incompatible dimensions`; it now says the model has no outcome and shows where to write one.
