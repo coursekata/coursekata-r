@@ -1,29 +1,204 @@
+#' Refuse a placement rule the ruler does not have
+#'
+#' @param where A single string.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return `where`, invisibly.
+#'
+#' @noRd
+check_ruler_where <- function(where, call = caller_env()) {
+  choices <- c("middle", "mean", "median")
+  if (!(is.character(where) && length(where) == 1L && where %in% choices)) {
+    abort(
+      c(
+        glue('`where` must be one of "middle", "mean", or "median"'),
+        glue("found: {deparse(where)}")
+      ),
+      call = call
+    )
+  }
+  invisible(where)
+}
+
+#' Say where an argument that left the signature went
+#'
+#' Recover the formula from a plot that maps an axis on its first layer
+#'
+#' A layer inherits the plot's mapping, never a sibling layer's, so an axis
+#' written on the first layer rather than the plot is invisible to the
+#' ruler's own layer. The ruler then measures only what it did inherit --
+#' nothing, if neither axis was named at plot level, or the wrong axis
+#' drawn horizontally along zero, if only one was. Merging the aesthetics
+#' the plot does not already name is what `plot_spec()` does for every
+#' other reader of a plot.
+#'
+#' @param object A ggplot object.
+#'
+#' @return A list with `gformula` and `data`, or `NULL` when the plot already
+#'   names every axis its first layer does and there is nothing to recover.
+#'
+#' @noRd
+sd_ruler_inherited <- function(object) {
+  mapping <- plot_spec(object)$mapping
+  recovered <- setdiff(intersect(c("x", "y"), names(mapping)), names(object$mapping))
+  if (length(recovered) == 0 || is.null(mapping$x)) {
+    return(NULL)
+  }
+
+  # a first layer with its own data is drawing that data, so that is what the
+  # ruler has to measure; plot_spec()'s own `data` prefers the plot's
+  data <- object$layers[[1]]$data
+  if (!is.data.frame(data)) data <- object$data
+
+  list(
+    gformula = new_formula(
+      if (is.null(mapping$y)) NULL else quo_get_expr(mapping$y),
+      quo_get_expr(mapping$x)
+    ),
+    data = data
+  )
+}
+
+#' Measure one standard deviation of the outcome, anchored at its mean
+#'
+#' Reduces a panel to the single segment a standard deviation ruler draws. The
+#' outcome is whichever axis carries it: with a `y` aesthetic the ruler is
+#' vertical and `where` places it along x; without one the outcome is on x and
+#' the ruler runs along the baseline from the mean. Both are measured in the
+#' space the panel is drawn in, so a facet measures its own subset and a
+#' transformed axis measures the transformed values.
+#'
+#' @format A [ggplot2::Stat] object.
+#'
+#' @seealso [gf_sd_ruler()], which pairs this stat with a segment for you.
+#' @export
+StatSdRuler <- ggplot2::ggproto(
+  "StatSdRuler", ggplot2::Stat,
+  required_aes = "x",
+  dropped_aes = c("y", "weight"),
+  setup_params = function(data, params) {
+    check_ruler_where(params$where %||% "middle")
+    params
+  },
+  # a categorical outcome arrives as integer positions, so the guard needs the
+  # scale; an error raised in compute_panel is downgraded to a warning and the
+  # layer silently draws nothing, an error raised here is not
+  compute_layer = function(self, data, params, layout) {
+    scales <- layout$get_scales(data$PANEL[[1]])
+    outcome <- if ("y" %in% names(data)) "y" else "x"
+    if (!is.null(scales[[outcome]]) && scales[[outcome]]$is_discrete()) {
+      abort(c(
+        glue("The plot's {outcome} variable is categorical"),
+        "a standard deviation ruler needs a quantitative outcome"
+      ))
+    }
+    ggplot2::ggproto_parent(ggplot2::Stat, self)$compute_layer(data, params, layout)
+  },
+  # one ruler per panel, so this is compute_panel and not compute_group: the
+  # groups a discrete x creates are what `where` measures across
+  compute_panel = function(data, scales, where = "middle") {
+    if ("y" %in% names(data)) {
+      m <- mean(data$y, na.rm = TRUE)
+      s <- stats::sd(data$y, na.rm = TRUE)
+      at <- switch(where,
+        middle = (min(data$x, na.rm = TRUE) + max(data$x, na.rm = TRUE)) / 2,
+        mean = mean(data$x, na.rm = TRUE),
+        median = stats::median(data$x, na.rm = TRUE)
+      )
+      return(data.frame(x = at, xend = at, y = m, yend = m + s))
+    }
+    m <- mean(data$x, na.rm = TRUE)
+    s <- stats::sd(data$x, na.rm = TRUE)
+    data.frame(x = m, xend = m + s, y = 0, yend = 0)
+  }
+)
+
+#' Build the ruler's layer, tagged, reading `size` as `linewidth`
+#'
+#' `layer_factory()` reads its extras out of `match.call()`, so `pre` cannot
+#' rename one argument into another -- the rename has to happen where the params
+#' are assembled. This is also the only place a generated layer can be tagged.
+#'
+#' @param geom,stat,position,params,mapping,data,... Passed to [ggplot2::layer()].
+#'
+#' @return A tagged ggplot2 layer.
+#'
+#' @noRd
+sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
+                           data = NULL, ...) {
+  if (!is.null(params$size)) {
+    warn(c(
+      "`size` is now `linewidth` in `gf_sd_ruler()`",
+      glue("write `linewidth = {deparse(params$size)}` instead")
+    ))
+    params$linewidth <- params$linewidth %||% params$size
+    params$size <- NULL
+  }
+
+  mapped <- setdiff(names(mapping), c("x", "y"))
+  if (length(mapped) > 0) {
+    abort(c(
+      glue("gf_sd_ruler() draws one ruler per panel, so {collapse(mapped)} can't be mapped"),
+      "give it a value instead, or split the plot with `y ~ x | group` to get one per group"
+    ))
+  }
+
+  params$colour <- params$colour %||% params$color %||% "red"
+  params$linewidth <- params$linewidth %||% 0.8
+  params$color <- NULL
+
+  tag_layer(
+    ggplot2::layer(
+      geom = geom, stat = stat, position = position, params = params,
+      mapping = mapping, data = data, ...
+    ),
+    "sd_ruler"
+  )
+}
+
 #' Add a Standard Deviation Ruler to a Plot
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' Adds a segment showing one standard deviation of a variable, anchored at
-#' the mean. The orientation depends on where the outcome variable lives:
-#' on a scatter or jitter plot (outcome on the y-axis) the ruler is a
-#' vertical segment placed at a chosen x position; on a histogram (outcome
-#' on the x-axis, no y aesthetic) it is a horizontal segment running from
-#' the mean to mean + SD along the baseline. The orientation is detected
-#' automatically from the plot's axis mappings.
+#' Adds a segment showing one standard deviation of the outcome, anchored at
+#' its mean. The orientation depends on where the outcome variable lives: on
+#' a scatter or jitter plot (outcome on the y-axis) the ruler is a vertical
+#' segment placed at a chosen x position; on a histogram (outcome on the
+#' x-axis, no y aesthetic) it is a horizontal segment running from the mean to
+#' mean + SD along the baseline. The orientation is detected automatically
+#' from the plot's axis mappings.
 #'
-#' @param p A ggplot object (typically from `gf_point()`, `gf_jitter()`, or
-#'   `gf_histogram()`).
-#' @param y The y-variable (bare name or string). Defaults to the plot's
-#'   mapped y aesthetic if omitted.
-#' @param data Dataset. Defaults to `p$data`.
-#' @param x The x-variable (bare name or string). On scatter and jitter
-#'   plots this controls the ruler's placement; on histograms it is the
-#'   outcome variable. Defaults to the plot's mapped x.
-#' @param where For vertical rulers, where on the x-axis to place the ruler:
+#' Both the outcome and, where relevant, the placement are measured in the
+#' space the panel is drawn in: a faceted plot measures each panel's own
+#' subset, and a transformed axis or a computed mapping such as
+#' `~log(Thumb)` is measured in the transformed or computed values, not the
+#' raw column.
+#'
+#' `gf_sd_ruler()` draws one ruler per panel, so an aesthetic mapped on the
+#' call -- `gf_sd_ruler(color = ~Sex)` -- is refused; split the plot instead
+#' with `y ~ x | group` to get one ruler per group.
+#'
+#' @param object The plot or data to add the ruler to; typically a plot
+#'   piped in from `gf_point()`, `gf_jitter()`, or `gf_histogram()`.
+#' @param gformula A formula naming the outcome and, optionally, the x
+#'   variable: `y ~ x`. Defaults to the plot's own mapping when the plot
+#'   already names one.
+#' @param data Dataset. Defaults to the plot's data.
+#' @param where For a vertical ruler, where on the x-axis to place it:
 #'   `"middle"` (midpoint of x range), `"mean"`, or `"median"`. Ignored for
-#'   histograms, where the ruler always starts at the mean.
-#' @param color Segment color. Default `"red"`.
-#' @param size Segment `linewidth`. Default `0.8`.
-#' @param ... Additional arguments passed to [ggplot2::geom_segment()].
+#'   a horizontal ruler, which always starts at the mean.
+#' @param na.rm Should missing values be silently removed?
+#' @param ... Additional arguments: `colour`/`color` (default `"red"`),
+#'   `linewidth` (default `0.8`), and any other [ggplot2::geom_segment()]
+#'   parameter.
+#' @param xlab,ylab,title,subtitle,caption Axis and plot labels; see
+#'   [ggformula::gf_point()].
+#' @param geom,stat,position Layer components; see [ggformula::gf_point()].
+#' @param show.legend Should this layer be included in the legends?
+#' @param show.help If `TRUE`, display some minimal help.
+#' @param inherit A logical indicating whether default attributes are
+#'   inherited from a parent plot.
+#' @param environment An environment in which to evaluate the formula.
 #'
 #' @return A ggplot object with the SD ruler segment added.
 #'
@@ -51,184 +226,34 @@
 #' # on a histogram the outcome is on the x-axis, so the ruler is horizontal
 #' # and runs along the baseline from the mean to one SD above it
 #' gf_histogram(~Thumb, data = Fingers, binwidth = 5) %>%
-#'   gf_sd_ruler(color = "red", size = 2)
+#'   gf_sd_ruler(linewidth = 2)
 #'
 #' # name the variable explicitly when the plot does not make it obvious
 #' gf_point(Thumb ~ Height, data = Fingers, alpha = .4) %>%
-#'   gf_sd_ruler(y = Thumb)
-gf_sd_ruler <- function(p, y = NULL, data = NULL, x = NULL,
-                        where = c("middle", "mean", "median"),
-                        color = "red", size = 0.8, ...) {
-  lifecycle::signal_stage("experimental", "gf_sd_ruler()")
-  where <- match.arg(where)
-  spec <- plot_spec(p)
-  if (is.null(data)) data <- spec$data
-
-  # capture bare variable names before any evaluation forces them
-  y_arg <- arg_name(substitute(y), function() y, data)
-  x_arg <- arg_name(substitute(x), function() x, data)
-
-  # histogram mode: no y aesthetic and no explicit y, so the outcome is on
-  # the x-axis and the ruler is a horizontal segment along the baseline
-  if (is.null(y_arg) && is.null(spec$mapping$y)) {
-    if (is.null(x_arg)) {
-      if (is.null(spec$mapping$x)) {
-        abort("Can't infer the outcome variable; please pass y or x explicitly.")
+#'   gf_sd_ruler(Thumb ~ Height)
+#'
+#' # one ruler per panel
+#' gf_sd_ruler(Thumb ~ Height | Sex, data = Fingers)
+gf_sd_ruler <- ggformula::layer_factory(
+  geom = "segment",
+  # A bare ggproto symbol here only resolves through the search path -- see the
+  # matching note above `gf_squareplot`'s `layer_factory()` call, including why
+  # this needs ggformula 0.12.0 -- so it is package-qualified instead, which `::`
+  # resolves the same regardless of whether `coursekata` is attached.
+  stat = coursekata::StatSdRuler,
+  position = "identity",
+  aes_form = list(NULL, ~x, y ~ x),
+  extras = alist(where = "middle", na.rm = TRUE),
+  pre = {
+    lifecycle::signal_stage("experimental", "gf_sd_ruler()")
+    coursekata:::check_ruler_where(where)
+    if (!missing(object) && inherits(object, "ggplot") && missing(gformula)) {
+      inherited <- coursekata:::sd_ruler_inherited(object)
+      if (!is.null(inherited)) {
+        gformula <- inherited$gformula
+        if (missing(data)) data <- inherited$data
       }
-      x_name <- mapped_name(spec$mapping$x, "x")
-    } else {
-      x_name <- x_arg
     }
-
-    x_vals <- outcome_values(data, x_name)
-    m <- mean(x_vals, na.rm = TRUE)
-    s <- stats::sd(x_vals, na.rm = TRUE)
-
-    seg <- data.frame(x = m, xend = m + s, y = 0, yend = 0)
-    return(p + tag_layer(
-      ggplot2::geom_segment(
-        data = seg,
-        mapping = ggplot2::aes(
-          x = .data$x, xend = .data$xend,
-          y = .data$y, yend = .data$yend
-        ),
-        inherit.aes = FALSE,
-        color = color,
-        linewidth = size,
-        ...
-      ),
-      "sd_ruler"
-    ))
-  }
-
-  # scatter/jitter mode: outcome on the y-axis, vertical ruler at a chosen x
-  y_name <- if (is.null(y_arg)) mapped_name(spec$mapping$y, "y") else y_arg
-
-  y_vals <- outcome_values(data, y_name)
-  m <- mean(y_vals, na.rm = TRUE)
-  s <- stats::sd(y_vals, na.rm = TRUE)
-
-  # infer x for placement; unlike the outcome this may be categorical
-  if (is.null(x_arg)) {
-    if (!is.null(spec$mapping$x)) {
-      x_name <- mapped_name(spec$mapping$x, "x")
-      x_vals_raw <- column(data, x_name)
-    } else {
-      x_vals_raw <- seq_along(y_vals)
-    }
-  } else {
-    x_vals_raw <- column(data, x_arg)
-  }
-
-  # turn categorical x into numeric positions
-  x_vals <- x_vals_raw
-  if (!is.numeric(x_vals)) {
-    if (is.factor(x_vals)) {
-      x_vals <- as.numeric(x_vals)
-    } else {
-      x_vals <- as.numeric(factor(x_vals, levels = unique(x_vals)))
-    }
-  }
-
-  # compute placement
-  x0 <- switch(where,
-    middle = (min(x_vals, na.rm = TRUE) + max(x_vals, na.rm = TRUE)) / 2,
-    mean   = mean(x_vals, na.rm = TRUE),
-    median = stats::median(x_vals, na.rm = TRUE)
-  )
-
-  seg <- data.frame(x = x0, xend = x0, y = m, yend = m + s)
-
-  p +
-    tag_layer(
-      ggplot2::geom_segment(
-        data = seg,
-        mapping = ggplot2::aes(
-          x = .data$x, xend = .data$xend,
-          y = .data$y, yend = .data$yend
-        ),
-        inherit.aes = FALSE,
-        color = color,
-        linewidth = size,
-        ...
-      ),
-      "sd_ruler"
-    )
-}
-
-#' Resolve `Thumb`, `"Thumb"`, or a variable holding `"Thumb"` to a column name
-#'
-#' Reads the data before the caller's environment, so an object of the same
-#' name in scope can't shadow a real column.
-#'
-#' @noRd
-arg_name <- function(expr, value, data, call = caller_env()) {
-  if (is.null(expr)) {
-    return(NULL)
-  }
-  if (!is_symbol(expr)) {
-    return(value())
-  }
-
-  name <- deparse(expr)
-  if (name %in% names(data)) {
-    return(name)
-  }
-
-  held <- tryCatch(value(), error = function(e) NULL)
-  if (is.character(held) && length(held) == 1L) held else name
-}
-
-#' Read a variable name out of a plot's aesthetic mapping
-#'
-#' A computed mapping like `~log(Thumb)` is a call, not a name, and bare
-#' `as_name()` would fail on it without mentioning this function.
-#'
-#' @noRd
-mapped_name <- function(mapping, aes_name, call = caller_env()) {
-  if (!is_symbol(quo_get_expr(mapping))) {
-    abort(
-      c(
-        glue("Can't read the {aes_name} variable from the plot's mapping"),
-        glue("the plot maps {aes_name} to `{as_label(mapping)}`, not a variable"),
-        glue("pass {aes_name} explicitly to say which variable to measure")
-      ),
-      call = call
-    )
-  }
-  as_name(mapping)
-}
-
-#' Pull a column out of the data, by name
-#'
-#' @noRd
-column <- function(data, name, call = caller_env()) {
-  if (!name %in% names(data)) {
-    abort(
-      c(
-        glue("Can't find `{name}` in the data"),
-        glue("available variables: {collapse(names(data))}")
-      ),
-      call = call
-    )
-  }
-  data[[name]]
-}
-
-#' Pull the quantitative column the ruler measures
-#'
-#' @noRd
-outcome_values <- function(data, name, call = caller_env()) {
-  values <- column(data, name, call = call)
-  if (!is.numeric(values)) {
-    abort(
-      c(
-        glue("`{name}` is not a quantitative variable"),
-        glue("detected type: {class(values)[[1]]}"),
-        "a standard deviation ruler needs a quantitative outcome"
-      ),
-      call = call
-    )
-  }
-  values
-}
+  },
+  layer_fun = sd_ruler_layer
+)

@@ -29,6 +29,7 @@ reference:
     markers), and a standard deviation ruler.
   contents:
   - gf_sd_ruler
+  - StatSdRuler
   - gf_squareplot
   - middle
   - show_cutoffs

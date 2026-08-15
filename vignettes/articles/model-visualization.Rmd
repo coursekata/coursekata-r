@@ -115,7 +115,7 @@ runs along the baseline from the mean to one SD above it.
 ```{r}
 gf_histogram(~Thumb, data = Fingers, binwidth = 5) %>%
   gf_model(lm(Thumb ~ NULL, data = Fingers)) %>%
-  gf_sd_ruler(color = "red", size = 2)
+  gf_sd_ruler(color = "red", linewidth = 2)
 ```
 
 Two groups with the same mean and different spread get rulers of different
@@ -133,10 +133,10 @@ feedback <- data.frame(median_time = round(rnorm(100, 13, 3), 1))
 gf_histogram(~median_time, data = no_feedback, binwidth = 1) %>%
   gf_refine(coord_cartesian(xlim = c(0, 31))) %>%
   gf_model(lm(median_time ~ NULL, data = no_feedback)) %>%
-  gf_sd_ruler(color = "red", size = 2)
+  gf_sd_ruler(color = "red", linewidth = 2)
 
 gf_histogram(~median_time, data = feedback, binwidth = 1) %>%
   gf_refine(coord_cartesian(xlim = c(0, 31))) %>%
   gf_model(lm(median_time ~ NULL, data = feedback)) %>%
-  gf_sd_ruler(color = "red", size = 2)
+  gf_sd_ruler(color = "red", linewidth = 2)
 ```

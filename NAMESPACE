@@ -2,6 +2,7 @@
 
 S3method(print,gf_squareplot)
 export(PRE)
+export(StatSdRuler)
 export(b)
 export(b0)
 export(b1)

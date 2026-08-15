@@ -5,38 +5,59 @@
 \title{Add a Standard Deviation Ruler to a Plot}
 \usage{
 gf_sd_ruler(
-  p,
-  y = NULL,
+  object = NULL,
+  gformula = NULL,
   data = NULL,
-  x = NULL,
-  where = c("middle", "mean", "median"),
-  color = "red",
-  size = 0.8,
-  ...
+  ...,
+  where = "middle",
+  na.rm = TRUE,
+  xlab,
+  ylab,
+  title,
+  subtitle,
+  caption,
+  geom = "segment",
+  stat = coursekata::StatSdRuler,
+  position = "identity",
+  show.legend = NA,
+  show.help = NULL,
+  inherit = TRUE,
+  environment = parent.frame()
 )
 }
 \arguments{
-\item{p}{A ggplot object (typically from \code{gf_point()}, \code{gf_jitter()}, or
-\code{gf_histogram()}).}
+\item{object}{The plot or data to add the ruler to; typically a plot
+piped in from \code{gf_point()}, \code{gf_jitter()}, or \code{gf_histogram()}.}
 
-\item{y}{The y-variable (bare name or string). Defaults to the plot's
-mapped y aesthetic if omitted.}
+\item{gformula}{A formula naming the outcome and, optionally, the x
+variable: \code{y ~ x}. Defaults to the plot's own mapping when the plot
+already names one.}
 
-\item{data}{Dataset. Defaults to \code{p$data}.}
+\item{data}{Dataset. Defaults to the plot's data.}
 
-\item{x}{The x-variable (bare name or string). On scatter and jitter
-plots this controls the ruler's placement; on histograms it is the
-outcome variable. Defaults to the plot's mapped x.}
+\item{...}{Additional arguments: \code{colour}/\code{color} (default \code{"red"}),
+\code{linewidth} (default \code{0.8}), and any other \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}}
+parameter.}
 
-\item{where}{For vertical rulers, where on the x-axis to place the ruler:
+\item{where}{For a vertical ruler, where on the x-axis to place it:
 \code{"middle"} (midpoint of x range), \code{"mean"}, or \code{"median"}. Ignored for
-histograms, where the ruler always starts at the mean.}
+a horizontal ruler, which always starts at the mean.}
 
-\item{color}{Segment color. Default \code{"red"}.}
+\item{na.rm}{Should missing values be silently removed?}
 
-\item{size}{Segment \code{linewidth}. Default \code{0.8}.}
+\item{xlab, ylab, title, subtitle, caption}{Axis and plot labels; see
+\code{\link[ggformula:gf_point]{ggformula::gf_point()}}.}
 
-\item{...}{Additional arguments passed to \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}}.}
+\item{geom, stat, position}{Layer components; see \code{\link[ggformula:gf_point]{ggformula::gf_point()}}.}
+
+\item{show.legend}{Should this layer be included in the legends?}
+
+\item{show.help}{If \code{TRUE}, display some minimal help.}
+
+\item{inherit}{A logical indicating whether default attributes are
+inherited from a parent plot.}
+
+\item{environment}{An environment in which to evaluate the formula.}
 }
 \value{
 A ggplot object with the SD ruler segment added.
@@ -45,13 +66,23 @@ A ggplot object with the SD ruler segment added.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Adds a segment showing one standard deviation of a variable, anchored at
-the mean. The orientation depends on where the outcome variable lives:
-on a scatter or jitter plot (outcome on the y-axis) the ruler is a
-vertical segment placed at a chosen x position; on a histogram (outcome
-on the x-axis, no y aesthetic) it is a horizontal segment running from
-the mean to mean + SD along the baseline. The orientation is detected
-automatically from the plot's axis mappings.
+Adds a segment showing one standard deviation of the outcome, anchored at
+its mean. The orientation depends on where the outcome variable lives: on
+a scatter or jitter plot (outcome on the y-axis) the ruler is a vertical
+segment placed at a chosen x position; on a histogram (outcome on the
+x-axis, no y aesthetic) it is a horizontal segment running from the mean to
+mean + SD along the baseline. The orientation is detected automatically
+from the plot's axis mappings.
+
+Both the outcome and, where relevant, the placement are measured in the
+space the panel is drawn in: a faceted plot measures each panel's own
+subset, and a transformed axis or a computed mapping such as
+\code{~log(Thumb)} is measured in the transformed or computed values, not the
+raw column.
+
+\code{gf_sd_ruler()} draws one ruler per panel, so an aesthetic mapped on the
+call -- \code{gf_sd_ruler(color = ~Sex)} -- is refused; split the plot instead
+with \code{y ~ x | group} to get one ruler per group.
 }
 \examples{
 # the ruler runs from the mean (the empty model) up by one standard
@@ -71,11 +102,14 @@ gf_jitter(Thumb ~ Sex, data = Fingers, width = .1, alpha = .4) \%>\%
 # on a histogram the outcome is on the x-axis, so the ruler is horizontal
 # and runs along the baseline from the mean to one SD above it
 gf_histogram(~Thumb, data = Fingers, binwidth = 5) \%>\%
-  gf_sd_ruler(color = "red", size = 2)
+  gf_sd_ruler(linewidth = 2)
 
 # name the variable explicitly when the plot does not make it obvious
 gf_point(Thumb ~ Height, data = Fingers, alpha = .4) \%>\%
-  gf_sd_ruler(y = Thumb)
+  gf_sd_ruler(Thumb ~ Height)
+
+# one ruler per panel
+gf_sd_ruler(Thumb ~ Height | Sex, data = Fingers)
 }
 \seealso{
 The model visualization guide shows the ruler alongside residuals and
