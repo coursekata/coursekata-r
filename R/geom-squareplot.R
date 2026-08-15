@@ -14,69 +14,80 @@ squareplot_binwidth <- function(x) {
   if (is_integer_like && diff(rng) <= 50) 1 else diff(rng) / 30
 }
 
-#' Place the bin grid so the smallest value lands at the start of a bin
+#' Refuse a y scale a squareplot's stat cannot draw into
 #'
-#' @param x A numeric vector.
-#' @param binwidth The width of a bin.
+#' `Layer$compute_statistic` is the only build-time hook with `layout` in scope,
+#' so this is where the guard has to run regardless of which parent is binning:
+#' [ggplot2::StatBin] for a continuous x, [ggplot2::StatCount] for a discrete one.
 #'
-#' @return A single number.
+#' @param data The layer's data, one row per panel at minimum.
+#' @param layout The plot's `Layout`.
+#'
+#' @return Invisible `NULL`, or an abort.
 #'
 #' @noRd
-squareplot_origin <- function(x, binwidth) {
-  floor(min(x, na.rm = TRUE) / binwidth) * binwidth
+squareplot_check_panels <- function(data, layout) {
+  for (panel in unique(data$PANEL)) {
+    squareplot_check_y_scale(layout$get_scales(panel)$y)
+  }
+  invisible(NULL)
 }
 
-#' Bin observations for a countable-rectangle histogram
+#' Bin observations the way `ggplot2::stat_bin()` does
 #'
-#' Counts observations per bin on a fixed grid. [GeomSquareplot] re-expands each
-#' bin into one rectangle per observation. Pair the two in a `ggplot2::layer()`
-#' to put countable squares in a plot you are assembling yourself.
+#' `StatSquareplot` *is* `ggplot2::StatBin`: `binwidth`, `bins`, `center`,
+#' `boundary`, `closed`, `breaks` and `pad` all mean exactly what they mean on
+#' a histogram, because they are the histogram's own code. [GeomSquareplot]
+#' re-expands each bin into one rectangle per observation. Pair the two in a
+#' `ggplot2::layer()` to put countable squares in a plot you are assembling
+#' yourself.
+#'
+#' The one difference from a plain histogram is the binwidth chosen when the
+#' call names no grid at all: integer-valued data over a small range gets one
+#' bin per integer, rather than `stat_bin`'s `bins = 30` default, because
+#' thirty slivers is the wrong advice for a plot whose point is countability.
 #'
 #' @format A [ggplot2::Stat] object.
 #'
 #' @seealso [gf_squareplot()], which pairs this stat and geom for you.
 #' @export
 StatSquareplot <- ggplot2::ggproto(
-  "StatSquareplot", ggplot2::StatBindot,
-  setup_params = function(data, params) {
-    params$binaxis <- "x"
-    values <- data$x[!is.na(data$x)]
-    if (length(values) == 0) {
-      params$binwidth <- params$binwidth %||% 1
-      params$origin <- params$origin %||% 0
-      return(params)
-    }
-    if (is.null(params$binwidth)) params$binwidth <- squareplot_binwidth(values)
-    if (is.null(params$origin)) params$origin <- squareplot_origin(values, params$binwidth)
-    params
+  "StatSquareplot", ggplot2::StatBin,
+  compute_layer = function(self, data, params, layout) {
+    squareplot_check_panels(data, layout)
+    ggplot2::ggproto_parent(ggplot2::StatBin, self)$compute_layer(data, params, layout)
   },
-  # StatBindot's histodot path stops its break vector at max(x), folding the
-  # largest value into the bin below it; the floor() rule gives it its own bin
-  compute_group = function(self, data, scales, binwidth = NULL, binaxis = "x",
-                           origin = NULL, drop = FALSE, ...) {
-    values <- data$x[!is.na(data$x)]
-    if (length(values) == 0) {
-      return(data.frame(
-        count = numeric(0), x = numeric(0), xmin = numeric(0),
-        xmax = numeric(0), binwidth = numeric(0), width = numeric(0)
-      ))
+  # the only bin decision this package still makes: stat_bin's own fallback is
+  # bins = 30, which renders integer data as slivers, so a caller who named no
+  # grid at all -- no breaks, no binwidth, no bins -- gets a countable one instead.
+  # Mirrors fix_bin_params()'s own condition for when it falls back to bins = 30,
+  # so the two cannot drift on when a default applies.
+  setup_params = function(self, data, params) {
+    if (is.null(params$breaks %||% params$binwidth %||% params$bins)) {
+      values <- data$x[!is.na(data$x)]
+      params$binwidth <- if (length(values) == 0) 1 else squareplot_binwidth(values)
     }
+    ggplot2::ggproto_parent(ggplot2::StatBin, self)$setup_params(data, params)
+  }
+)
 
-    bin <- floor((values - origin) / binwidth)
-    bins <- seq(min(bin), max(bin))
-    count <- as.numeric(tabulate(bin - min(bin) + 1L, nbins = length(bins)))
-    if (drop) {
-      keep <- count > 0
-      bins <- bins[keep]
-      count <- count[keep]
-    }
-
-    xmin <- origin + bins * binwidth
-    data.frame(
-      count = count, x = xmin + binwidth / 2,
-      xmin = xmin, xmax = xmin + binwidth,
-      binwidth = binwidth, width = binwidth
-    )
+#' Count a discrete x the way `geom_bar()` does
+#'
+#' A histogram's own answer for a discrete x is `stat_count`, not a binning
+#' arithmetic of ours: `stat_bin` refuses a factor outright, and its refusal
+#' names this pairing. The only reason this ggproto exists at all is to keep
+#' the panel y-scale guard reachable at build time for the discrete path too --
+#' every other member, including `compute_group` and `parameters()`, is
+#' [ggplot2::StatCount] untouched.
+#'
+#' @format A [ggplot2::Stat] object.
+#'
+#' @noRd
+StatSquareplotCount <- ggplot2::ggproto(
+  "StatSquareplotCount", ggplot2::StatCount,
+  compute_layer = function(self, data, params, layout) {
+    squareplot_check_panels(data, layout)
+    ggplot2::ggproto_parent(ggplot2::StatCount, self)$compute_layer(data, params, layout)
   }
 )
 
@@ -88,13 +99,20 @@ StatSquareplot <- ggplot2::ggproto(
 #' `ggplot2::layer()` to draw the squares yourself, where a mapped `fill` stacks
 #' its groups within each bin.
 #'
-#' The `bar` parameter chooses what a bin is drawn as, on one grid and in one
+#' The geom takes either a bin's edges (`xmin`/`xmax`, from `ggplot2::stat_bin()`)
+#' or a level's position plus a column width (`x`/`width`, from
+#' `ggplot2::stat_count()`), deriving the edges it was not given. Paired with
+#' `stat = "count"`, it draws one countable column per category the way
+#' `geom_bar()` draws one bar.
+#'
+#' The `bars` parameter chooses what a bin is drawn as, on one grid and in one
 #' layer: `"none"` draws the squares, `"outline"` frames them with the bar they
 #' add up to, and `"solid"` draws that bar with the squares covered over. The
 #' bar is derived from the squares rather than re-binned, so a bin holding no
 #' observations has no bar, and a solid bar stacks a mapped `fill` in the same
-#' spans its squares did. `bar_colour` and `bar_linewidth` belong to the bar;
-#' `colour` and `linewidth` are the separators between the squares.
+#' spans its squares did. `bar_color` and `bar_linewidth` are the bar's own
+#' color and width; `color` and `linewidth` are the separators between the
+#' squares, and either may be mapped.
 #'
 #' @format A [ggplot2::Geom] object.
 #'
@@ -115,6 +133,15 @@ GeomSquareplot <- ggplot2::ggproto(
     data
   },
   setup_data = function(data, params) {
+    # StatBin supplies xmin/xmax itself -- a bin's edges -- and those are honored
+    # untouched. StatCount supplies neither, only a level's position and a column
+    # width, so a counted x needs the same derivation stat_bin's own bin_out()
+    # uses for its default edges: x is the center, the column is width wide.
+    if (is.null(data$xmin) || is.null(data$xmax)) {
+      half <- data$width / 2
+      data$xmin <- data$x - half
+      data$xmax <- data$x + half
+    }
     data <- data[rep(seq_len(nrow(data)), data$count), , drop = FALSE]
     if (nrow(data) == 0) {
       return(data)
@@ -133,16 +160,19 @@ GeomSquareplot <- ggplot2::ggproto(
     data
   },
   setup_params = function(self, data, params) {
-    params$bar <- params$bar %||% "none"
-    if (params$bar %in% c("none", "outline", "solid") == FALSE) {
+    params$bars <- params$bars %||% "none"
+    if (params$bars %in% c("none", "outline", "solid") == FALSE) {
       abort(c(
-        "`bar` must be one of \"none\", \"outline\" or \"solid\"",
-        glue("found: {deparse(params$bar)}")
+        "`bars` must be one of \"none\", \"outline\" or \"solid\"",
+        glue("found: {deparse(params$bars)}")
       ))
     }
     ggplot2::ggproto_parent(ggplot2::GeomRect, self)$setup_params(data, params)
   },
-  draw_panel = function(self, data, panel_params, coord, bar = "none",
+  draw_panel = function(self, data, panel_params, coord, bars = "none",
+                        # ggplot2 rewrites "color" to "colour" anywhere in a parameter
+                        # name before a geom sees it, so the documented `bar_color`
+                        # arrives spelled this way and this formal cannot be renamed
                         bar_colour = NULL, bar_linewidth = 0.5,
                         lineend = "butt", linejoin = "mitre") {
     if (nrow(data) == 0) {
@@ -150,14 +180,14 @@ GeomSquareplot <- ggplot2::ggproto(
     }
 
     bar_grob <- NULL
-    if (!identical(bar, "none")) {
+    if (!identical(bars, "none")) {
       # the solid bar replaces the squares, so it has to show what they showed:
       # one span per group in the bin, stacked, rather than one rectangle per bin
-      rows <- squareplot_bar_rows(data, by_group = identical(bar, "solid"))
+      rows <- squareplot_bar_rows(data, by_group = identical(bars, "solid"))
       rows$colour <- bar_colour %||% "grey20"
       rows$linewidth <- bar_linewidth
       rows$linetype <- 1
-      if (identical(bar, "outline")) {
+      if (identical(bars, "outline")) {
         rows$fill <- NA
         rows$alpha <- NA
       }
@@ -165,7 +195,7 @@ GeomSquareplot <- ggplot2::ggproto(
         rows, panel_params, coord, lineend = lineend, linejoin = linejoin
       )
     }
-    if (identical(bar, "solid")) {
+    if (identical(bars, "solid")) {
       return(bar_grob)
     }
 

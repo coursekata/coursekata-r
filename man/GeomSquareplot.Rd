@@ -17,13 +17,20 @@ y axis is a real count. Pair it with \link{StatSquareplot} in a
 its groups within each bin.
 }
 \details{
-The \code{bar} parameter chooses what a bin is drawn as, on one grid and in one
+The geom takes either a bin's edges (\code{xmin}/\code{xmax}, from \code{ggplot2::stat_bin()})
+or a level's position plus a column width (\code{x}/\code{width}, from
+\code{ggplot2::stat_count()}), deriving the edges it was not given. Paired with
+\code{stat = "count"}, it draws one countable column per category the way
+\code{geom_bar()} draws one bar.
+
+The \code{bars} parameter chooses what a bin is drawn as, on one grid and in one
 layer: \code{"none"} draws the squares, \code{"outline"} frames them with the bar they
 add up to, and \code{"solid"} draws that bar with the squares covered over. The
 bar is derived from the squares rather than re-binned, so a bin holding no
 observations has no bar, and a solid bar stacks a mapped \code{fill} in the same
-spans its squares did. \code{bar_colour} and \code{bar_linewidth} belong to the bar;
-\code{colour} and \code{linewidth} are the separators between the squares.
+spans its squares did. \code{bar_color} and \code{bar_linewidth} are the bar's own
+color and width; \code{color} and \code{linewidth} are the separators between the
+squares, and either may be mapped.
 }
 \seealso{
 \code{\link[=gf_squareplot]{gf_squareplot()}}, which pairs this stat and geom for you.

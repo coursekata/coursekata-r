@@ -2,7 +2,7 @@
 % Please edit documentation in R/geom-squareplot.R
 \name{StatSquareplot}
 \alias{StatSquareplot}
-\title{Bin observations for a countable-rectangle histogram}
+\title{Bin observations the way \code{ggplot2::stat_bin()} does}
 \format{
 A \link[ggplot2:Stat]{ggplot2::Stat} object.
 }
@@ -10,9 +10,18 @@ A \link[ggplot2:Stat]{ggplot2::Stat} object.
 StatSquareplot
 }
 \description{
-Counts observations per bin on a fixed grid. \link{GeomSquareplot} re-expands each
-bin into one rectangle per observation. Pair the two in a \code{ggplot2::layer()}
-to put countable squares in a plot you are assembling yourself.
+\code{StatSquareplot} \emph{is} \code{ggplot2::StatBin}: \code{binwidth}, \code{bins}, \code{center},
+\code{boundary}, \code{closed}, \code{breaks} and \code{pad} all mean exactly what they mean on
+a histogram, because they are the histogram's own code. \link{GeomSquareplot}
+re-expands each bin into one rectangle per observation. Pair the two in a
+\code{ggplot2::layer()} to put countable squares in a plot you are assembling
+yourself.
+}
+\details{
+The one difference from a plain histogram is the binwidth chosen when the
+call names no grid at all: integer-valued data over a small range gets one
+bin per integer, rather than \code{stat_bin}'s \code{bins = 30} default, because
+thirty slivers is the wrong advice for a plot whose point is countability.
 }
 \seealso{
 \code{\link[=gf_squareplot]{gf_squareplot()}}, which pairs this stat and geom for you.

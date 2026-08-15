@@ -1,110 +1,250 @@
-#' Resolve gf_squareplot()'s formula-or-vector input to a numeric vector
+#' Choose the whole-number ticks a count axis wants
 #'
-#' @param x A one-sided formula naming a variable, or a numeric vector.
-#' @param data A data frame, required when `x` is a formula naming a column.
-#' @param na.rm Must be `TRUE`; `FALSE` is refused because a missing value has
-#'   no rectangle to draw.
-#' @param env Where to look for the variable when `data` is not supplied.
-#' @param call The calling environment, for error reporting.
+#' @param max_count The largest count the scale was trained on.
 #'
-#' @return A list with `values`, `label`, `is_factor` and `levels`.
+#' @return A numeric vector of breaks.
 #'
 #' @noRd
-squareplot_values <- function(x, data = NULL, na.rm = TRUE, env = caller_env(),
-                              call = caller_env()) {
-  if (!na.rm) {
+count_breaks <- function(max_count) {
+  if (!is.finite(max_count) || max_count <= 0) {
+    return(0)
+  }
+  step <- if (max_count <= 10) {
+    1
+  } else if (max_count <= 20) {
+    2
+  } else if (max_count <= 50) {
+    5
+  } else if (max_count <= 100) {
+    10
+  } else {
+    ceiling(max_count / 10)
+  }
+  seq(0, max_count, by = step)
+}
+
+#' A y scale whose breaks are whole counts
+#'
+#' The rule is applied to the trained count, not to the panel range: a `breaks`
+#' *function* is handed the expanded limit -- 10.5 for a maximum of 10 -- and the
+#' 1/2/5/10 step rule tips from step 1 to step 2, quietly turning a countable axis
+#' into every-other-count.
+#'
+#' @return A ggplot2 scale.
+#'
+#' @noRd
+scale_y_count <- function() {
+  # ggproto() captures `_inherit` lazily and re-evaluates it, so the object being
+  # extended has to be bound to a name first or it parents itself
+  base <- ggplot2::scale_y_continuous()
+  ggplot2::ggproto(NULL, base,
+    count_top = NULL,
+    train = function(self, x) {
+      # a count is a whole number, so the whole numbers this scale is trained on
+      # are where the counts reach; an overlay drawn above them is not a count
+      whole <- x[is.finite(x) & x >= 0 & x == round(x)]
+      if (length(whole) > 0) self$count_top <- max(self$count_top %||% 0, whole)
+      ggplot2::ggproto_parent(base, self)$train(x)
+    },
+    get_breaks = function(self, limits = self$get_limits()) {
+      count_breaks(min(self$get_limits()[[2]], self$count_top %||% Inf))
+    }
+  )
+}
+
+#' Refuse a y scale that destroys unit-count squares
+#'
+#' @param scale A y-position scale.
+#' @param call The environment used for error reporting.
+#'
+#' @return Invisible `NULL`, or an abort.
+#'
+#' @noRd
+squareplot_check_y_scale <- function(scale, call = caller_env()) {
+  # With no explicit y scale, layout has no y object yet at Stat time; ggplot2
+  # will install its identity-continuous default after the Stat produces y.
+  if (is.null(scale)) return(invisible(NULL))
+  transform <- scale$get_transformation()
+  if (scale$is_discrete() || is.null(transform) || !identical(transform$name, "identity")) {
+    abort(c(
+      "`gf_squareplot()` needs an identity continuous y scale",
+      "*" = "each square is exactly one count tall, which a transformed or discrete y axis cannot preserve",
+      "*" = "remove the y scale or use an identity continuous y scale"
+    ), call = call)
+  }
+  invisible(NULL)
+}
+
+#' Decide which default scales a squareplot is allowed to add
+#'
+#' @param object The object supplied to the generated ggformula function.
+#'
+#' @return A list with logical `add_x` and `add_y` fields.
+#'
+#' @noRd
+squareplot_scale_plan <- function(object) {
+  if (!inherits(object, c("gg", "ggplot"))) {
+    return(list(add_x = TRUE, add_y = TRUE))
+  }
+  x <- object$scales$get_scales("x")
+  y <- object$scales$get_scales("y")
+  if (!is.null(y)) squareplot_check_y_scale(y)
+  list(add_x = is.null(x), add_y = is.null(y))
+}
+
+#' Resolve the x values a squareplot layer is about to draw
+#'
+#' A layer's `mapping`/`data` are `NULL` whenever it inherits them from the
+#' plot -- measured, for `plot %>% gf_squareplot()` both arrive `NULL` -- so
+#' each slot falls back to the plot's own mapping/data before evaluating `x`.
+#' This is the one predicate that has to see a discrete x correctly: a scale
+#' that misses it merely keeps a default, but a stat that misses it tries to
+#' bin a factor's integer codes.
+#'
+#' @param mapping,data The layer's own mapping and data, as `squareplot_layer()`
+#'   receives them.
+#' @param object The object supplied to the generated ggformula function.
+#'
+#' @return The evaluated x values, or `NULL` when they cannot be resolved.
+#'
+#' @noRd
+squareplot_x_values <- function(mapping, data, object) {
+  plot <- inherits(object, c("gg", "ggplot"))
+  x <- mapping$x %||% (if (plot) object$mapping$x)
+  values_from <- data %||% (if (plot) object$data)
+  if (is.null(x) || is.null(values_from)) {
+    return(NULL)
+  }
+  tryCatch(eval_tidy(x, values_from), error = function(e) NULL)
+}
+
+#' Warn that a binning argument cannot reach a counted x
+#'
+#' `binwidth` is in `gf_squareplot()`'s own signature and the rest of the
+#' binning vocabulary is in its own Rd, so a caller who supplies one alongside
+#' a discrete x is advertised an effect that a counted x cannot honor. The
+#' plot drawn is still the right plot -- only the override is lost -- so this
+#' warns rather than aborts.
+#'
+#' @param params The layer's params, after ggformula's own extras are merged in.
+#'
+#' @return Invisible `NULL`, or a warning.
+#'
+#' @noRd
+squareplot_warn_binning <- function(params) {
+  binning <- setdiff(ggplot2::StatBin$parameters(TRUE), ggplot2::StatCount$parameters(TRUE))
+  present <- intersect(names(params), binning)
+  if (length(present) == 0) {
+    return(invisible(NULL))
+  }
+  warn(c(
+    "a discrete x is counted, not binned",
+    "*" = glue("no effect here: {collapse(paste0('`', present, '`'))}")
+  ), class = "coursekata_squareplot_binning")
+  invisible(NULL)
+}
+
+#' Build the squareplot layer together with defaults it is allowed to own
+#'
+#' `layer_factory()` composes whatever the returned closure produces with `+`.
+#' The closure captures scale ownership before the layer is assembled: defaults
+#' are added only for axes the caller has not already configured. The x values
+#' are resolved once, here, and drive both which stat draws the layer and
+#' whether the x scale keeps unobserved factor levels -- one predicate for both,
+#' rather than two that can disagree about what "discrete" means.
+#'
+#' @param object The object supplied to the generated ggformula function. Also
+#'   the input to `squareplot_scale_plan()`, computed here so the call-time
+#'   y-scale refusal fires at the same moment it always has.
+#'
+#' @return A layer function for [ggformula::layer_factory()].
+#'
+#' @noRd
+squareplot_layer <- function(object) {
+  force(object)
+  scale_plan <- squareplot_scale_plan(object)
+  function(geom, stat, position, params, mapping = NULL, data = NULL, ...) {
+    # `colour` is the separator between two squares, and it may be mapped like
+    # any other aesthetic; `bar_color` is the bar's own. ggformula hands
+    # `color` and `colour` through verbatim, so fold the American spelling into
+    # the one the geom uses, and default the separators to white only when
+    # nothing is mapped to them.
+    params$colour <- params$colour %||% params$color
+    params$color <- NULL
+    if (is.null(mapping$colour)) params$colour <- params$colour %||% "white"
+    if (is.null(mapping$fill)) params$fill <- params$fill %||% "#7fcecc"
+
+    values <- squareplot_x_values(mapping, data, object)
+    discrete <- is.factor(values) || is.character(values) || is.logical(values)
+    if (discrete) {
+      stat <- StatSquareplotCount
+      squareplot_warn_binning(params)
+    }
+
+    parts <- list(ggplot2::layer(
+      geom = geom, stat = stat, position = position, params = params,
+      mapping = mapping, data = data, ...
+    ))
+    if (scale_plan$add_y) parts <- c(parts, list(scale_y_count()))
+
+    # Retain unobserved factor levels only when this new plot owns its x scale.
+    # An existing scale's order, limits and drop policy belong to the caller.
+    if (scale_plan$add_x && discrete) {
+      parts <- c(parts, list(ggplot2::scale_x_discrete(drop = FALSE)))
+    }
+    parts
+  }
+}
+
+#' Refuse at call time what the layer would discard in silence
+#'
+#' Runs inside `layer_factory()`'s `pre`, which is evaluated before the help gate,
+#' so every argument it reads has to have a real default rather than be missing.
+#'
+#' @param object,gformula The first two formals of the generated function. The
+#'   formula arrives as `object` when it is passed positionally, which is how all
+#'   but a handful of calls spell it.
+#' @param na.rm The `na.rm` extra.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return Invisible `NULL`, or an abort.
+#'
+#' @noRd
+squareplot_check <- function(object, gformula, na.rm, call = caller_env()) {
+  if (!isTRUE(na.rm)) {
     abort(
       c(
         "`na.rm = FALSE` is not supported",
-        "gf_squareplot() draws one rectangle per observation",
-        "a missing value has no rectangle to draw",
-        "drop the missing values before plotting, or leave `na.rm = TRUE`"
+        "*" = "gf_squareplot() draws one square per observation, and a missing value has none",
+        "*" = "drop the missing values before plotting, or leave `na.rm = TRUE`"
       ),
       call = call
     )
   }
 
-  if (inherits(x, "formula")) {
-    if (!is.null(f_lhs(x))) {
-      abort(
-        c(
-          "`x` must be a one-sided formula naming a single variable",
-          glue("found: {deparse(x)}"),
-          "drop the left-hand side, or pass the variable directly as ~var"
-        ),
-        call = call
-      )
-    }
-    expr <- f_rhs(x)
-    if (!is_symbol(expr)) {
-      abort(
-        c(
-          "`x` must name a single variable, not an expression",
-          glue("found: {deparse(expr)}"),
-          "compute the variable first, then plot it"
-        ),
-        call = call
-      )
-    }
-    name <- as_name(expr)
-    if (is.null(data)) {
-      raw <- tryCatch(
-        get(name, envir = env),
-        error = function(e) {
-          abort(glue("Can't find `{name}`; supply `data` or define it first"), call = call)
-        }
-      )
-    } else {
-      if (name %in% names(data) == FALSE) {
-        abort(
-          c(
-            glue("Can't find `{name}` in `data`"),
-            glue("available: {collapse(names(data))}")
-          ),
-          call = call
-        )
-      }
-      raw <- data[[name]]
-    }
-    label <- name
-  } else {
-    raw <- x
-    label <- NULL
-  }
-
-  is_factor <- is.factor(raw)
-  levels_num <- NULL
-  if (is_factor) {
-    levels_num <- suppressWarnings(as.numeric(levels(raw)))
-    if (anyNA(levels_num)) {
-      abort(
-        c(
-          glue("`{label %||% 'x'}` is a factor whose levels are not numbers"),
-          glue("levels: {collapse(levels(raw))}")
-        ),
-        call = call
-      )
-    }
-    values <- as.numeric(as.character(raw))
-  } else {
-    values <- raw
-  }
-
-  values <- values[!is.na(values)]
-  if (!is.numeric(values)) {
+  frm <- if (inherits(object, "formula")) object else gformula
+  if (inherits(frm, "formula") && length(frm) == 3L) {
     abort(
       c(
-        glue("`{label %||% 'x'}` must be numeric"),
-        glue("it is {class(raw)[[1]]}")
+        "`gf_squareplot()` takes a one-sided formula",
+        "*" = glue("found: {deparse(frm)}"),
+        "*" = "write it as `~variable`"
       ),
       call = call
     )
   }
-  if (length(values) == 0) {
-    abort(glue("`{label %||% 'x'}` has no non-missing values"), call = call)
+
+  if (!is.null(object) && is.atomic(object)) {
+    abort(
+      c(
+        "`gf_squareplot()` takes a formula and a data frame",
+        "*" = "write it as `gf_squareplot(~variable, data = my_data)`"
+      ),
+      call = call
+    )
   }
 
-  list(values = values, label = label, is_factor = is_factor, levels = levels_num)
+  invisible(NULL)
 }
 
 #' Countable-Rectangle Histogram
@@ -119,46 +259,66 @@ squareplot_values <- function(x, data = NULL, na.rm = TRUE, env = caller_env(),
 #' @details
 #' Sensible defaults are chosen based on the data:
 #'
-#' - For integer-valued data with a small range, the `binwidth` defaults to 1
-#'   so that each integer gets its own column.
-#' - When the input is a factor with numeric levels and `bars` is `"outline"` or
-#'   `"solid"`, all levels are displayed on the x-axis even if some have zero
-#'   counts.
+#' - For integer-valued data with a small range, the `binwidth` defaults to 1 so
+#'   that each integer gets its own column. Everything else about the bins is
+#'   `stat_bin()`'s: `bins`, `center`, `boundary`, `closed`, `breaks` and `pad`
+#'   put a squareplot's columns exactly where a `gf_histogram()`'s bars would be.
+#' - A factor keeps its levels, so a level nobody landed in still holds its place
+#'   on the axis. Knowing a value never occurred is the point.
+#' - A discrete x -- a factor, character or logical vector -- is counted, one
+#'   column per level, positioned the way `gf_bar()` positions its bars. The
+#'   binning arguments (`bins`, `binwidth`, `center`, `boundary`, `closed`,
+#'   `breaks`, `pad`) belong to a continuous x; supplying one alongside a
+#'   discrete x warns rather than changing the plot.
 #' - The white separator between two squares is capped at a quarter of a square's
 #'   smaller side, so as a bin fills and its squares shrink the separator thins
 #'   with them and the squares stay countable.
+#' - The y axis is a count, so its breaks are whole numbers.
 #'
-#' When teaching about hypothesis testing, the `show_dgp = TRUE` overlay
-#' frames a sampling distribution with its data generating process. It shows a
-#' top axis labeled "Population Parameter (DGP)" with the population model
-#' equation, a bottom axis labeled "Parameter Estimate" with the sample
-#' estimate equation, and a red triangle marking the null hypothesis position
-#' (\eqn{\beta_1 = 0}).
+#' The bins are a histogram's bins: `binwidth`, `bins`, `center`, `boundary`,
+#' `closed` and `breaks` mean what they mean on [ggformula::gf_histogram()], and
+#' the same arguments give the same bin edges and the same counts, so squares
+#' laid over bars land inside them.
 #'
-#' @param x Formula (`~variable`) or numeric vector.
-#' @param data Data frame (required if `x` is a formula).
-#' @param binwidth Width of histogram bins. Auto-calculated if `NULL`.
-#' @param origin Starting position for bins.
-#' @param boundary Alias for `origin`.
-#' @param fill Rectangle fill color. Default `"#7fcecc"`.
-#' @param color Outline colour for the bars drawn when `bars` is `"outline"` or
-#'   `"solid"`; the separators between squares are always white. `"black"` is
-#'   drawn as `grey20`.
-#' @param alpha Transparency. Default `1`.
-#' @param na.rm Must be `TRUE`. Missing values have no rectangle to draw, so they
-#'   are always dropped.
-#' @param mincount Minimum y-axis height for consistent scaling.
-#' @param bars Display style: `"none"` (squares only), `"outline"`, or
-#'   `"solid"`.
-#' @param xbreaks Number of x-axis breaks or vector of specific positions.
-#' @param xrange X-axis limits as `c(min, max)`.
-#' @param show_dgp Show DGP annotation overlay. Default `FALSE`.
-#' @param show_mean Show dashed mean line. Default `FALSE`.
-#' @param auto_subdivide Accepted but ignored.
+#' Everything that is not the squares is a layer or a scale: `%>% show_mean()`,
+#' `%>% show_dgp()`, `%>% gf_lims(x = )`,
+#' `%>% gf_refine(ggplot2::expand_limits(y = ))`.
 #'
-#' @return A ggplot object with S3 class `c("gf_squareplot", "gg", "ggplot")`.
+#' @param object A ggplot object, a data frame, or a formula. When a plot, the
+#'   squares are added to it.
+#' @param gformula A formula with shape `~x`, optionally faceted as `~ x | z`.
+#' @param data A data frame holding the variable in `gformula`.
+#' @param ... Aesthetics such as `fill` or `alpha`, either set to a value or
+#'   mapped with a one-sided formula (`fill = ~group`). `color` sets the color
+#'   of the separators between squares and may be mapped; `bar_color` sets the
+#'   bar's own color, and `bar_linewidth` its width. Also takes
+#'   `ggplot2::stat_bin()`'s `pad`, which adds an empty bin on either end of
+#'   the range.
+#' @param binwidth Width of the bins, for a continuous x. Chosen from the data
+#'   when unset: `1` for whole-number data spanning 50 or less, so every value
+#'   gets a column of its own, and a thirtieth of the range otherwise. Has no
+#'   effect on a discrete x, which is counted instead.
+#' @param bins How many bins to divide the range into, used when `binwidth` is
+#'   unset.
+#' @param center,boundary The center of one bin, or an edge of one. Either
+#'   places the whole grid; give one or the other, not both.
+#' @param closed Which end of a bin holds a value that lands exactly on it,
+#'   `"right"` or `"left"`. For whole-number data, `boundary = 0.5` puts every
+#'   value in the column it is labelled with, whichever end is closed.
+#' @param breaks The bin edges themselves, which need not be evenly spaced.
+#' @param bars Display style: `"none"` (squares only), `"outline"` (squares inside
+#'   the bar they add up to) or `"solid"` (that bar alone).
+#' @param na.rm Must be `TRUE`. A missing value has no square to draw.
+#' @param xlab,ylab,title,subtitle,caption Labels.
+#' @param geom,stat,position The layer's geom, stat and position.
+#' @param show.legend Whether to show a legend, or `NA` to decide per aesthetic.
+#' @param show.help Print the function's own help instead of drawing.
+#' @param inherit Whether to inherit the plot's aesthetics.
+#' @param environment Where to evaluate the formula.
 #'
-#' @seealso
+#' @return A ggplot object.
+#'
+#' @seealso [show_mean()] and [show_dgp()] annotate a distribution.
 #' The sampling distributions guide shows this plot in the context of a full
 #' shuffle-and-estimate workflow:
 #' <https://coursekata.github.io/coursekata-r/articles/sampling-distributions.html>
@@ -171,17 +331,21 @@ squareplot_values <- function(x, data = NULL, na.rm = TRUE, env = caller_env(),
 #' # `bars` controls the display: "none" (default), "outline", or "solid"
 #' gf_squareplot(~Thumb, data = Fingers, bars = "outline")
 #'
+#' # the bins are a histogram's bins, so squares laid over bars land inside them --
+#' # name the grid on both layers, because a layer never reads its neighbour's
+#' gf_histogram(~Thumb, data = Fingers, bins = 8) %>% gf_squareplot(bins = 8)
+#'
 #' # customize fill color, binwidth, and axis limits
-#' gf_squareplot(~Thumb,
-#'   data = Fingers,
-#'   fill = "coral",
-#'   binwidth = 5,
-#'   xrange = c(30, 90)
-#' )
+#' gf_squareplot(~Thumb, data = Fingers, fill = "coral", binwidth = 5) %>%
+#'   gf_lims(x = c(30, 90))
 #'
 #' # integer data with a small range gets one column per integer
 #' int_data <- data.frame(rolls = sample(1:6, 30, replace = TRUE))
 #' gf_squareplot(~rolls, data = int_data)
+#'
+#' # the plot is a real ggformula layer, so it facets and takes mapped aesthetics
+#' gf_squareplot(~ Thumb | Sex, data = Fingers)
+#' gf_squareplot(~Thumb, data = Fingers, fill = ~Sex)
 #'
 #' # with 2000 observations the squares shrink, and their separators thin to fit
 #' set.seed(24)
@@ -189,11 +353,12 @@ squareplot_values <- function(x, data = NULL, na.rm = TRUE, env = caller_env(),
 #' gf_squareplot(~x, data = large_data)
 #'
 #' # show a dashed line at the sample mean
-#' gf_squareplot(~Thumb, data = Fingers, show_mean = TRUE)
+#' gf_squareplot(~Thumb, data = Fingers) %>% show_mean()
 #'
 #' # frame a sampling distribution with its data generating process: with only
-#' # 10 shuffles, the mean of the distribution (dashed red line) can land far
-#' # from the null hypothesis marker on the top axis
+#' # 10 shuffles, the mean of the distribution can land far from the null.
+#' # The limits come before the overlays: show_dgp() reads the top of the count
+#' # axis to decide how much room its band needs.
 #' shuffled_b1 <- function(n) {
 #'   data.frame(b1 = replicate(n, {
 #'     shuffled_tip <- base::sample(TipExperiment$Tip)
@@ -202,320 +367,43 @@ squareplot_values <- function(x, data = NULL, na.rm = TRUE, env = caller_env(),
 #' }
 #'
 #' set.seed(42)
-#' gf_squareplot(~b1,
-#'   data = shuffled_b1(10),
-#'   show_dgp = TRUE,
-#'   show_mean = TRUE,
-#'   xrange = c(-30, 30),
-#'   mincount = 10,
-#'   binwidth = 2
-#' )
+#' gf_squareplot(~b1, data = shuffled_b1(10), binwidth = 2) %>%
+#'   gf_lims(x = c(-30, 30)) %>%
+#'   gf_refine(ggplot2::expand_limits(y = 10)) %>%
+#'   show_mean() %>%
+#'   show_dgp()
 #'
-#' # with 100 shuffles the mean moves close to the null; `mincount` keeps the
-#' # y-axis fixed so the two plots are directly comparable
-#' set.seed(42)
-#' gf_squareplot(~b1,
-#'   data = shuffled_b1(100),
-#'   show_dgp = TRUE,
-#'   show_mean = TRUE,
-#'   xrange = c(-30, 30),
-#'   mincount = 10,
-#'   binwidth = 2
-#' )
-#'
-#' # a factor with numeric levels gets one column per level
+#' # a factor keeps every level, including the ones nothing landed in
 #' ratings <- data.frame(rating = factor(
 #'   base::sample(1:5, 20, replace = TRUE, prob = c(1, 2, 4, 2, 1)),
 #'   levels = 1:5
 #' ))
 #' gf_squareplot(~rating, data = ratings)
-gf_squareplot <- function(x,
-                          data = NULL,
-                          binwidth = NULL,
-                          origin = NULL,
-                          boundary = NULL,
-                          fill = "#7fcecc",
-                          color = "black",
-                          alpha = 1,
-                          na.rm = TRUE,
-                          mincount = NULL,
-                          bars = c("none", "outline", "solid"),
-                          xbreaks = NULL,
-                          xrange = NULL,
-                          show_dgp = FALSE,
-                          show_mean = FALSE,
-                          auto_subdivide = FALSE) {
-  lifecycle::signal_stage("experimental", "gf_squareplot()")
-  bars <- match.arg(bars)
-  dgp_color <- "#003d70"
-
-  input <- squareplot_values(x, data, na.rm, env = parent.frame())
-  x_vec <- input$values
-  x_label <- input$label
-  is_factor <- input$is_factor
-  factor_levels <- if (is_factor) as.character(input$levels) else NULL
-
-  # --- binwidth ------------------------------------------------------------
-  # a factor's levels, not its observed values, set the grid: one column per level
-  if (is.null(binwidth)) binwidth <- if (is_factor) 1 else squareplot_binwidth(x_vec)
-
-  # --- origin / boundary ---------------------------------------------------
-  if (!is.null(boundary)) {
-    origin <- boundary
-  } else if (is.null(origin)) {
-    if (is_factor) {
-      origin <- min(as.numeric(factor_levels))
-    } else {
-      origin <- squareplot_origin(x_vec, binwidth)
-    }
+gf_squareplot <- ggformula::layer_factory(
+  # `layer_factory()` captures `geom`/`stat` unevaluated and stores them as the
+  # generated closure's own defaults, resolved with `rlang::eval_tidy()` at call
+  # time inside that closure -- whose lexical scope is ggformula's namespace, not
+  # this package's. A bare symbol only resolves there if `coursekata` is attached;
+  # the package-qualified form resolves the same regardless, because `::` looks up
+  # the namespace directly rather than walking the calling scope.
+  #
+  # Capturing unevaluated is what makes the qualified form safe, and it arrived in
+  # ggformula 0.12.0. Before that these arguments are forced here, while this
+  # namespace is still being built and its exports are empty, and the package fails
+  # to install rather than failing at run time. That is the floor DESCRIPTION names.
+  geom = coursekata::GeomSquareplot,
+  stat = coursekata::StatSquareplot,
+  position = "identity",
+  aes_form = ~x,
+  extras = alist(
+    binwidth = NULL, bins = NULL, center = NULL, boundary = NULL,
+    closed = NULL, breaks = NULL, bars = "none", na.rm = TRUE
+  ),
+  note = "each observation is drawn as its own square, so a bin can be counted",
+  layer_fun = ggplot2::layer,
+  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
+  pre = {
+    coursekata:::squareplot_check(object, gformula, na.rm)
+    layer_fun <- coursekata:::squareplot_layer(object)
   }
-
-  # --- assign bins ---------------------------------------------------------
-  bin <- floor((x_vec - origin) / binwidth)
-  counts_per_bin <- table(bin)
-
-  # --- bar counts ----------------------------------------------------------
-  if (length(counts_per_bin) > 0) {
-    filled_bins <- as.numeric(names(counts_per_bin))
-    bar_df <- data.frame(
-      xmin = origin + filled_bins * binwidth,
-      xmax = origin + (filled_bins + 1) * binwidth,
-      count = as.numeric(counts_per_bin)
-    )
-    max_count <- max(bar_df$count)
-  } else {
-    bar_df <- data.frame(xmin = numeric(0), xmax = numeric(0),
-                         count = numeric(0))
-    max_count <- 0
-  }
-
-  # For factors, ensure all levels represented
-  if (is_factor && binwidth == 1) {
-    factor_levels_num <- as.numeric(factor_levels)
-    all_bins <- floor((factor_levels_num - origin) / binwidth)
-    complete_bar_df <- data.frame(
-      bin = all_bins,
-      xmin = origin + all_bins * binwidth,
-      xmax = origin + (all_bins + 1) * binwidth,
-      count = 0
-    )
-    if (nrow(bar_df) > 0) {
-      for (i in seq_len(nrow(bar_df))) {
-        idx <- which(complete_bar_df$xmin == bar_df$xmin[i])
-        if (length(idx) > 0) {
-          complete_bar_df$count[idx] <- bar_df$count[i]
-        }
-      }
-    }
-    bar_df <- complete_bar_df[, c("xmin", "xmax", "count")]
-    if (nrow(bar_df) > 0) max_count <- max(max_count, max(bar_df$count))
-  }
-
-  max_plot_count <- max(max_count, mincount %||% max_count)
-  extra_top <- if (show_dgp) max(3, 0.25 * max_plot_count) else 0
-  y_upper <- max_plot_count + extra_top + 1.0
-
-  # --- y-axis ticks --------------------------------------------------------
-  if (max_plot_count <= 10) {
-    step_y <- 1
-  } else if (max_plot_count <= 20) {
-    step_y <- 2
-  } else if (max_plot_count <= 50) {
-    step_y <- 5
-  } else if (max_plot_count <= 100) {
-    step_y <- 10
-  } else {
-    step_y <- ceiling(max_plot_count / 10)
-  }
-  breaks_y <- seq(0, max_plot_count, by = step_y)
-
-  # --- x-range and breaks --------------------------------------------------
-  if (is_factor) {
-    factor_levels_num <- as.numeric(factor_levels)
-    rng_x <- range(factor_levels_num)
-    x_limits <- rng_x
-    breaks_range <- if (!is.null(xrange)) xrange else x_limits
-    if (is.null(xbreaks)) {
-      breaks_x <- factor_levels_num
-    } else if (is.numeric(xbreaks) && length(xbreaks) == 1L) {
-      breaks_x <- pretty(breaks_range, n = xbreaks)
-    } else {
-      breaks_x <- xbreaks
-    }
-  } else {
-    rng_x <- range(x_vec)
-    if (diff(rng_x) == 0) rng_x <- rng_x + c(-0.5, 0.5)
-    x_limits <- rng_x
-    breaks_range <- if (!is.null(xrange)) xrange else x_limits
-    if (is.null(xbreaks)) {
-      breaks_x <- pretty(breaks_range, n = 8)
-    } else if (is.numeric(xbreaks) && length(xbreaks) == 1L) {
-      breaks_x <- pretty(breaks_range, n = xbreaks)
-    } else {
-      breaks_x <- xbreaks
-    }
-  }
-
-  p <- ggplot2::ggplot()
-
-  # --- unit rectangles -----------------------------------------------------
-  if (bars != "solid") {
-    p <- p + ggplot2::layer(
-      geom = GeomSquareplot, stat = StatSquareplot, data = data.frame(x = x_vec),
-      mapping = ggplot2::aes(x = .data$x), position = "identity",
-      inherit.aes = FALSE, show.legend = FALSE,
-      params = list(
-        binwidth = binwidth, origin = origin,
-        fill = fill, colour = "white", alpha = alpha, na.rm = na.rm
-      )
-    )
-  }
-
-  # --- bar outlines / solid bars -------------------------------------------
-  if (bars %in% c("outline", "solid") && nrow(bar_df) > 0) {
-    outline_color <- if (color == "black") "grey20" else color
-    p <- p + ggplot2::geom_rect(
-      data = bar_df,
-      ggplot2::aes(
-        xmin = .data$xmin, xmax = .data$xmax,
-        ymin = 0, ymax = .data$count
-      ),
-      fill = if (bars == "solid") fill else NA,
-      color = outline_color,
-      linewidth = 0.5,
-      alpha = if (bars == "solid") alpha else 1
-    )
-  }
-
-  # --- mean line -----------------------------------------------------------
-  if (show_mean) {
-    mean_val <- mean(x_vec)
-    line_top <- if (show_dgp) {
-      max_plot_count + extra_top * 0.40
-    } else {
-      max_plot_count
-    }
-    p <- p + ggplot2::geom_segment(
-      ggplot2::aes(
-        x = mean_val, xend = mean_val,
-        y = 0, yend = line_top
-      ),
-      color = "#E60000", linetype = "longdash", linewidth = 0.7
-    )
-  }
-
-  x_lab <- if (show_dgp) "" else x_label
-
-  base_theme <- ggplot2::theme_minimal() +
-    ggplot2::theme(
-      axis.line.x = ggplot2::element_line(
-        color = if (show_dgp) dgp_color else "black"
-      ),
-      axis.line.y = if (show_dgp) {
-        ggplot2::element_blank()
-      } else {
-        ggplot2::element_line(color = "black")
-      },
-      axis.text.x = ggplot2::element_text(
-        color = if (show_dgp) dgp_color else "black"
-      ),
-      axis.title.x = ggplot2::element_text(
-        color = if (show_dgp) dgp_color else "black"
-      ),
-      plot.margin = if (show_dgp) {
-        ggplot2::margin(5, 5, 30, 5)
-      } else {
-        ggplot2::margin(5, 5, 5, 5)
-      },
-      panel.grid.minor.y = ggplot2::element_blank()
-    )
-
-  p <- p +
-    ggplot2::labs(x = x_lab, y = "count") +
-    ggplot2::scale_y_continuous(
-      limits = c(0, y_upper),
-      breaks = breaks_y,
-      labels = breaks_y
-    ) +
-    ggplot2::scale_x_continuous(limits = xrange, breaks = breaks_x) +
-    base_theme +
-    ggplot2::coord_cartesian(clip = "off")
-
-  x_min <- if (!is.null(xrange)) xrange[1] else x_limits[1]
-  x_max <- if (!is.null(xrange)) xrange[2] else x_limits[2]
-
-  # --- DGP overlay ---------------------------------------------------------
-  if (show_dgp) {
-    axis_y <- max_plot_count + extra_top * 0.40
-    eq_y <- max_plot_count + extra_top * 0.70
-    title_y <- max_plot_count + extra_top * 0.98
-
-    p <- p +
-      ggplot2::annotate(
-        "segment", x = -Inf, xend = Inf,
-        y = axis_y, yend = axis_y,
-        color = dgp_color, linewidth = 0.5
-      ) +
-      ggplot2::annotate(
-        "text", x = -Inf, y = title_y,
-        label = "Population Parameter (DGP)",
-        hjust = -0.01, vjust = 0,
-        size = 4, fontface = "bold", color = dgp_color
-      ) +
-      ggplot2::annotate(
-        "text", x = -Inf, y = eq_y,
-        label = "Y[i] == beta[0] + beta[1] * X[i] + epsilon[i]",
-        parse = TRUE, hjust = -0.01, vjust = 0.5,
-        size = 4, fontface = "bold", color = dgp_color
-      )
-
-    if (0 >= x_min && 0 <= x_max) {
-      triangle_y <- axis_y + extra_top * 0.16
-      label_y <- axis_y + extra_top * 0.48
-
-      p <- p +
-        ggplot2::annotate(
-          "point", x = 0, y = triangle_y,
-          shape = 25, size = 4,
-          color = "#E60000", fill = "#E60000"
-        ) +
-        ggplot2::annotate(
-          "text", x = 0, y = label_y,
-          label = "beta[1] == 0", parse = TRUE,
-          size = 5, fontface = "bold", color = "#E60000"
-        )
-    }
-
-    # Bottom x-axis annotations
-    p <- p +
-      ggplot2::annotate(
-        "text", x = -Inf, y = -Inf,
-        label = "Parameter Estimate",
-        hjust = -0.01, vjust = 3.2,
-        size = 4, fontface = "bold", color = dgp_color
-      ) +
-      ggplot2::annotate(
-        "text", x = -Inf, y = -Inf,
-        label = "Y[i] == b[0] + b[1] * X[i] + e[i]",
-        parse = TRUE, hjust = -0.01, vjust = 4.0,
-        size = 4, fontface = "bold", color = dgp_color
-      )
-
-    if (0 >= x_min && 0 <= x_max) {
-      p <- p + ggplot2::annotate(
-        "text", x = 0, y = -Inf, vjust = 2.5,
-        label = "b[1]", parse = TRUE,
-        size = 5, fontface = "bold", color = dgp_color
-      )
-    }
-  }
-
-  class(p) <- c("gf_squareplot", class(p))
-  p
-}
-
-#' @export
-print.gf_squareplot <- function(x, ...) {
-  suppressWarnings(NextMethod("print", x, ...))
-  invisible(x)
-}
+)

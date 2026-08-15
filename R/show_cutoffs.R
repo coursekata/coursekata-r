@@ -58,9 +58,9 @@ show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
 #' Draw a cutoff_plan() as tagged marker layers
 #'
 #' @param plot A ggplot object.
-#' @param plan A [cutoff_plan()] list.
-#' @param geometry A [plot_geometry()] list.
-#' @param color Marker and line colour.
+#' @param plan A `cutoff_plan()` list.
+#' @param geometry A `plot_geometry()` list.
+#' @param color Marker and line color.
 #' @param size Marker size.
 #' @param labels Whether to annotate the cutoffs.
 #'

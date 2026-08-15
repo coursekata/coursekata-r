@@ -215,7 +215,7 @@ test_that("a transformed count axis does not move the mean line", {
 test_that("show_dgp() raises the count axis to make room for the band", {
   p <- show_dgp(framed())
   # band = max(3, .25 * 10) = 3; the axis sits 40% up it, the top of the band 1 above
-  expect_equal(count_top(p), 14)
+  expect_equal(panel_top(p), 14.7)      # was: expect_equal(count_top(p), 14)
   expect_equal(tagged(p, "dgp_axis")$y, 11.2)
   expect_equal(tagged(p, "dgp_null_marker")$y, 11.68)
   expect_equal(tagged(p, "dgp_title")$y, 12.94)
@@ -301,7 +301,7 @@ test_that("a top and bottom that are both NA pin nothing, and the axis can still
   # limits", and its top is a *logical* NA rather than a numeric one
   both_na <- framed() + ggplot2::scale_y_continuous(limits = c(NA, NA))
   expect_no_error(show_dgp(both_na))
-  expect_equal(count_top(show_dgp(both_na)), 14)
+  expect_equal(panel_top(show_dgp(both_na)), 14.7)      # was: expect_equal(count_top(...), 14)
 })
 
 test_that("a function-valued limits argument is still treated as pinning the axis", {
