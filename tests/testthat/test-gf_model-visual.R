@@ -1,5 +1,5 @@
 # Visual snapshots of what gf_model(), gf_resid() and gf_square_resid() draw:
-# the empty/fit/errorbar model shapes, faceting, and the residual overlays.
+# the empty/fit/group model shapes, faceting, and the residual overlays.
 
 test_that("the empty model renders as a horizontal line", {
   gf_point(later_anxiety ~ base_anxiety, color = ~condition, data = er) %>%
@@ -19,10 +19,10 @@ test_that("a continuous predictor renders as a fit line", {
     expect_doppelganger("fit line")
 })
 
-test_that("a categorical predictor renders as hashes at the group means", {
+test_that("a categorical predictor renders as a mark at each group mean", {
   gf_point(later_anxiety ~ condition, color = ~condition, data = er) %>%
     gf_model(lm(later_anxiety ~ condition, data = er)) %>%
-    expect_doppelganger("errorbar hashes")
+    expect_doppelganger("group mark at each mean")
 })
 
 test_that("a model renders across facets", {

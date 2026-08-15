@@ -13,29 +13,37 @@
 #'
 #' @noRd
 plot_spec <- function(p) {
+  layer <- if (length(p$layers) > 0) p$layers[[1]] else NULL
+
+  # ggformula always maps at plot level, but a plot built with ggplot2 directly may
+  # carry its aesthetics on the layer; they are the plot's variables either way
   mapping <- p$mapping
+  for (aes in setdiff(names(layer$mapping), names(mapping))) {
+    mapping[[aes]] <- layer$mapping[[aes]]
+  }
+
+  data <- p$data
+  if (!is.data.frame(data) && is.data.frame(layer$data)) data <- layer$data
+
   aes_names <- sort(setdiff(names(mapping), c("x", "y")))
   facets <- p$facet$vars()
   variables <- sort(c(purrr::map_chr(mapping, as_label), facet = facets))
   axes <- variables[names(variables) %in% aes_names == FALSE & variables %in% facets == FALSE]
 
   resolve_aes <- function(aes) {
-    if (!is.null(mapping[[aes]])) {
-      return(list(quo = mapping[[aes]], data = p$data))
+    if (!is.null(p$mapping[[aes]])) {
+      return(list(quo = p$mapping[[aes]], data = p$data))
     }
-    if (length(p$layers) > 0) {
-      layer <- p$layers[[1]]
-      if (!is.null(layer$mapping[[aes]])) {
-        layer_data <- if (is.data.frame(layer$data)) layer$data else p$data
-        return(list(quo = layer$mapping[[aes]], data = layer_data))
-      }
+    if (!is.null(layer$mapping[[aes]])) {
+      layer_data <- if (is.data.frame(layer$data)) layer$data else p$data
+      return(list(quo = layer$mapping[[aes]], data = layer_data))
     }
     NULL
   }
 
   list(
     mapping = mapping,
-    data = p$data,
+    data = data,
     variables = variables,
     aesthetics = variables[aes_names],
     facets = facets,

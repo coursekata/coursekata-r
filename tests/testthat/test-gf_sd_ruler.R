@@ -32,7 +32,7 @@ test_that("gf_sd_ruler works with explicit y and data parameters", {
 })
 
 test_that("gf_sd_ruler errors when y cannot be inferred", {
-  p <- ggplot2::ggplot(Fingers) + ggplot2::geom_point(ggplot2::aes(x = Height))
+  p <- ggplot2::ggplot(Fingers) + ggplot2::geom_point()
   expect_error(suppressMessages(gf_sd_ruler(p)), "Can't infer the outcome variable")
 })
 

@@ -111,12 +111,8 @@
 <circle cx='207.12' cy='426.40' r='2.49' style='stroke-width: 0.71; stroke: #009D9A; stroke-opacity: 0.60; fill: #009D9A; fill-opacity: 0.60;' />
 <circle cx='207.12' cy='236.46' r='2.49' style='stroke-width: 0.71; stroke: #009D9A; stroke-opacity: 0.60; fill: #009D9A; fill-opacity: 0.60;' />
 <circle cx='207.12' cy='426.40' r='2.49' style='stroke-width: 0.71; stroke: #009D9A; stroke-opacity: 0.60; fill: #009D9A; fill-opacity: 0.60;' />
-<polyline points='151.46,273.52 262.79,273.52 ' style='stroke-width: 2.13; stroke: #009D9A; stroke-linecap: butt;' />
-<polyline points='207.12,273.52 207.12,273.52 ' style='stroke-width: 2.13; stroke: #009D9A; stroke-linecap: butt;' />
-<polyline points='151.46,273.52 262.79,273.52 ' style='stroke-width: 2.13; stroke: #009D9A; stroke-linecap: butt;' />
-<polyline points='429.78,353.52 541.11,353.52 ' style='stroke-width: 2.13; stroke: #6929C4; stroke-linecap: butt;' />
-<polyline points='485.44,353.52 485.44,353.52 ' style='stroke-width: 2.13; stroke: #6929C4; stroke-linecap: butt;' />
-<polyline points='429.78,353.52 541.11,353.52 ' style='stroke-width: 2.13; stroke: #6929C4; stroke-linecap: butt;' />
+<line x1='151.46' y1='273.52' x2='262.79' y2='273.52' style='stroke-width: 2.13; stroke: #009D9A; stroke-linecap: butt;' />
+<line x1='429.78' y1='353.52' x2='541.11' y2='353.52' style='stroke-width: 2.13; stroke: #6929C4; stroke-linecap: butt;' />
 <rect x='40.13' y='22.78' width='612.30' height='522.33' style='stroke-width: 1.07; stroke: #333333;' />
 </g>
 <g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
@@ -146,6 +142,6 @@
 <line x1='665.12' y1='300.25' x2='678.94' y2='300.25' style='stroke-width: 2.13; stroke: #6929C4; stroke-linecap: butt;' />
 <text x='686.15' y='286.00' style='font-size: 8.80px; font-family: sans;' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Control</text>
 <text x='686.15' y='303.28' style='font-size: 8.80px; font-family: sans;' textLength='16.15px' lengthAdjust='spacingAndGlyphs'>Dog</text>
-<text x='40.13' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='93.19px' lengthAdjust='spacingAndGlyphs'>errorbar hashes</text>
+<text x='40.13' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='150.44px' lengthAdjust='spacingAndGlyphs'>group mark at each mean</text>
 </g>
 </svg>
