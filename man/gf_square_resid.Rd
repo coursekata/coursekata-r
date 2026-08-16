@@ -5,23 +5,95 @@
 \alias{gf_squaresid}
 \title{Add Squared Residual Visualization to a Plot}
 \usage{
-gf_square_resid(plot, model, aspect = 4/6, alpha = 0.1, ...)
+gf_square_resid(
+  object = NULL,
+  gformula = NULL,
+  data = NULL,
+  ...,
+  model,
+  aspect = 4/6,
+  alpha = 0.1,
+  xlab,
+  ylab,
+  title,
+  subtitle,
+  caption,
+  geom = coursekata::GeomSquareResid,
+  stat = coursekata::StatResid,
+  position = "identity",
+  show.legend = NA,
+  show.help = NULL,
+  inherit = FALSE,
+  environment = parent.frame()
+)
 
-gf_squaresid(plot, model, aspect = 4/6, alpha = 0.1, ...)
+gf_squaresid(
+  object = NULL,
+  gformula = NULL,
+  data = NULL,
+  ...,
+  model,
+  aspect = 4/6,
+  alpha = 0.1,
+  xlab,
+  ylab,
+  title,
+  subtitle,
+  caption,
+  geom = coursekata::GeomSquareResid,
+  stat = coursekata::StatResid,
+  position = "identity",
+  show.legend = NA,
+  show.help = NULL,
+  inherit = FALSE,
+  environment = parent.frame()
+)
 }
 \arguments{
-\item{plot}{A ggformula plot object, typically created with \code{gf_point()}.}
+\item{object}{A ggformula plot object, typically created with \code{gf_point()}.}
 
-\item{model}{A fitted linear model object created using \code{lm()}.}
+\item{gformula}{Not used. \code{gf_square_resid()} measures a model, not an
+aesthetic formula; a model given positionally lands here and is moved to
+\code{model}.}
 
-\item{aspect}{A numeric value controlling the square's aspect ratio. Default is \code{4/6}.}
+\item{data}{Not used. The residuals are measured over the data the plot was
+built from. Anything supplied here is left for ggformula and ggplot2 to
+answer, exactly as it is for any other \code{gf_} layer.}
 
-\item{alpha}{A numeric value specifying the transparency of the square's fill. Default is \code{0.1}.}
+\item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
+\code{attribute = value}, such as \code{color} or \code{fill}, (b) ggplot2 aesthetics to be mapped with
+\code{attribute = ~ expression}, or (c) attributes of the layer as a whole.}
 
-\item{...}{Additional aesthetics passed to \code{geom_polygon()}, such as \code{color} and \code{fill}.}
+\item{model}{A model already fit by \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}. The plot supplies
+the observations; the model supplies what it predicted for each of them.
+May be given positionally or as \verb{model =}.}
+
+\item{aspect}{The square's aspect ratio. Default is \code{4/6}. Must be named.}
+
+\item{alpha}{The transparency of the square's fill. Default is \code{0.1}. Must be named.}
+
+\item{xlab, ylab, title, subtitle, caption}{Labels for the plot.}
+
+\item{geom, stat, position}{Not set by the caller. A squared residual is drawn
+by its own geom and stat, and moved by the position the observations are
+already drawn with, so that a square stays on the point it belongs to.}
+
+\item{show.legend}{Whether this layer contributes to the legend.}
+
+\item{show.help}{Print the layer's own help instead of drawing.}
+
+\item{inherit}{Whether the layer inherits the plot's aesthetics. \code{FALSE},
+where \code{\link[=gf_resid]{gf_resid()}} is \code{TRUE}: a square is a filled region drawn in the
+geom's own colors, so inheriting a plot's mapped \code{color} outlines every
+square in the color of the group it measures instead of leaving one
+neutral area per observation. The axes and the prediction are stated
+outright, so nothing the square needs is lost by not inheriting. Set it to
+\code{TRUE} to take the outline anyway.}
+
+\item{environment}{The environment mappings are resolved in.}
 }
 \value{
-A ggplot object with squared residuals added.
+A ggplot object with squared residual polygons added.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -32,9 +104,11 @@ school teacher whose efforts shaped the residual and squared-residual
 visualizations and who requested this function by that name.
 }
 \details{
-This function adds squared residual representations to a ggformula plot, illustrating
-squared error as a polygon. The function dynamically adjusts the aspect ratio to ensure
-proper scaling of squares.
+Draws squared residual polygons between observed points and the values a
+fitted model predicts for them, so squared error is an area you can see. The
+square is built on the residual itself and turns with it: a model of the
+variable the plot puts on x squares the horizontal distance. Its side is
+scaled to stay square on the page rather than in data units.
 }
 \examples{
 # squared residuals can be drawn on a full data set, but with hundreds of

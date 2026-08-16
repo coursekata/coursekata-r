@@ -48,6 +48,9 @@ reference:
   - gf_resid_fun
   - gf_square_resid
   - gf_square_resid_fun
+  - StatResid
+  - GeomResid
+  - GeomSquareResid
 
 - title: Evaluating models
   desc: >

@@ -4,28 +4,76 @@
 \alias{gf_resid_fun}
 \title{Add Residual Lines from a Function to a Plot}
 \usage{
-gf_resid_fun(plot, fun, linewidth = 0.2, ...)
+gf_resid_fun(
+  object = NULL,
+  gformula = NULL,
+  data = NULL,
+  ...,
+  fun,
+  linewidth = 0.2,
+  xlab,
+  ylab,
+  title,
+  subtitle,
+  caption,
+  geom = coursekata::GeomResid,
+  stat = coursekata::StatResid,
+  position = "identity",
+  show.legend = NA,
+  show.help = NULL,
+  inherit = TRUE,
+  environment = parent.frame()
+)
 }
 \arguments{
-\item{plot}{A ggformula/ggplot object, typically created with \code{gf_point()}.}
+\item{object}{A ggformula plot object, typically created with \code{gf_point()}.}
 
-\item{fun}{A function that takes a numeric vector x and returns predicted y.}
+\item{gformula}{Not used. \code{gf_resid_fun()} measures a function, not an
+aesthetic formula; a function given positionally lands here and is moved to
+\code{fun}.}
 
-\item{linewidth}{Numeric width of the residual lines. Default \code{0.2}.}
+\item{data}{Not used. The residuals are measured over the data the plot was
+built from. Anything supplied here is left for ggformula and ggplot2 to
+answer, exactly as it is for any other \code{gf_} layer.}
 
-\item{...}{Additional aesthetics passed to \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}}, e.g.,
-\code{color}, \code{alpha}, \code{linetype}.}
+\item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
+\code{attribute = value}, such as \code{color}, \code{alpha} or \code{linetype}, (b) ggplot2 aesthetics to be
+mapped with \code{attribute = ~ expression}, or (c) attributes of the layer as a whole.}
+
+\item{fun}{A function of one argument. It is called on the x values the plot
+draws and must return one predicted y for each of them. May be given
+positionally or as \verb{fun =}.}
+
+\item{linewidth}{The width of the residual lines. Default is \code{0.2}. Must be named.}
+
+\item{xlab, ylab, title, subtitle, caption}{Labels for the plot.}
+
+\item{geom, stat, position}{Not set by the caller. A residual is drawn by its
+own geom and stat, and moved by the position the observations are already
+drawn with, so that a segment stays on the point it belongs to.}
+
+\item{show.legend}{Whether this layer contributes to the legend.}
+
+\item{show.help}{Print the layer's own help instead of drawing.}
+
+\item{inherit}{Whether the layer inherits the plot's aesthetics. The axes and
+the prediction are stated outright; everything else -- a mapped \code{color}, for
+instance -- is inherited from the plot.}
+
+\item{environment}{The environment mappings are resolved in.}
 }
 \value{
-A ggplot object with residual segments added.
+A ggplot object with residual lines added.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Draws vertical residual lines from observed points to predicted values
-computed by a user-supplied function of x (e.g., the function plotted with
-\code{gf_function()}).
+Draws residual lines from observed points to the values predicted by a
+user-supplied function of x (e.g., the function plotted with
+\code{gf_function()}). Where \code{\link[=gf_resid]{gf_resid()}} measures a fitted model, this measures a
+function you wrote: it is called on the x values the plot draws, and each
+residual runs from an observation to what the function predicts for it.
 }
 \examples{
 set.seed(1)
