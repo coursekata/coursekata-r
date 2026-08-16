@@ -26,7 +26,8 @@ reference:
   desc: >
     Make counts, spread, and portions of a distribution visible: countable
     histograms, distribution part functions for shading (with cutoff
-    markers), and a standard deviation ruler.
+    markers), a standard deviation ruler, and overlays that mark a
+    distribution's mean and the process that generated it.
   contents:
   - gf_sd_ruler
   - StatSdRuler
@@ -35,6 +36,8 @@ reference:
   - GeomSquareplot
   - middle
   - show_cutoffs
+  - show_mean
+  - show_dgp
 
 - title: Visualizing models
   desc: >

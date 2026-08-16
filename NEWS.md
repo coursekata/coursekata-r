@@ -6,7 +6,16 @@
   is derived from the squares rather than binned again, so it cannot land anywhere the
   squares did not. A solid bar shows its bin's group composition too: a mapped `fill`
   stacks in the bar the way it stacks in the squares.
-
+- New `show_mean()` and `show_dgp()`: pipe a plot of one distribution through them to mark
+  its mean, or to frame it with the process that generated it -- the population model on a
+  top axis, the sample estimate below the plot, and a marker at the null hypothesis. They
+  describe a distribution rather than one particular way of drawing one, so the same frame
+  now goes on a `gf_histogram()` or a `gf_dotplot()` of the same data, and each layer they
+  add carries a name so it can be found and changed afterwards. On a faceted plot
+  `show_mean()` draws each panel's own mean. `show_dgp()` raises the count axis to make
+  room for the population band rather than hanging it in the margin: countable squares size
+  the separator between them from the fraction of the panel they fill, so a band drawn
+  outside the panel silently redraws every square 39% taller.
 - `gf_sd_ruler()` is now a real ggformula layer. It takes a formula rather than
   `y` and `x` arguments -- `gf_sd_ruler(Thumb ~ Height)` where you used to write
   `gf_sd_ruler(y = Thumb, x = Height)` -- and with that comes everything the other

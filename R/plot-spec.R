@@ -59,13 +59,27 @@ plot_spec <- function(p) {
 #'
 #' @param p A ggplot object.
 #'
-#' @return A list with `x`, `y`, `x_range` and `y_range`, plus the
-#'   `x_transform` and `y_transform` those ranges are expressed in. A scale
+#' @return A list with `x`, `y`, `x_range` and `y_range`, the `x_limits` and
+#'   `y_limits` those ranges expand,
+#'   plus the `x_transform` and `y_transform` they are expressed in. A scale
 #'   that has no transformation, such as a discrete one, reports `NULL`.
 #'
 #' @noRd
 plot_geometry <- function(p) {
-  built <- ggplot2::ggplot_build(p)
+  geometry_from_build(ggplot2::ggplot_build(p))
+}
+
+#' Extract `plot_geometry()`'s fields from an already-built plot
+#'
+#' Split out of `plot_geometry()` so a caller that also needs something else
+#' off the same build -- `overlay_spec()` needs the plot's labels -- can read
+#' both off one `ggplot_build()` rather than paying for a second one, which
+#' re-runs every stat and repeats any warning the build emits.
+#'
+#' @param built The return value of `ggplot2::ggplot_build()`.
+#'
+#' @noRd
+geometry_from_build <- function(built) {
   panel <- built$layout$panel_params[[1]]
 
   list(
@@ -73,6 +87,11 @@ plot_geometry <- function(p) {
     y = built$data[[1]]$y,
     x_range = panel$x.range,
     y_range = panel$y.range,
+    # the ranges above carry ggplot2's expansion; the limits are what the data
+    # and any expand_limits() trained, which is where an overlay's own headroom
+    # has to be measured from
+    x_limits = built$layout$panel_scales_x[[1]]$get_limits(),
+    y_limits = built$layout$panel_scales_y[[1]]$get_limits(),
     x_transform = built$layout$panel_scales_x[[1]]$get_transformation(),
     y_transform = built$layout$panel_scales_y[[1]]$get_transformation()
   )
