@@ -4,20 +4,70 @@
 \alias{gf_square_resid_fun}
 \title{Add Squared Residual Visualization from a Function to a Plot}
 \usage{
-gf_square_resid_fun(plot, fun, aspect = 4/6, alpha = 0.1, ...)
+gf_square_resid_fun(
+  object = NULL,
+  gformula = NULL,
+  data = NULL,
+  ...,
+  fun,
+  aspect = 4/6,
+  alpha = 0.1,
+  xlab,
+  ylab,
+  title,
+  subtitle,
+  caption,
+  geom = coursekata::GeomSquareResid,
+  stat = coursekata::StatResid,
+  position = "identity",
+  show.legend = NA,
+  show.help = NULL,
+  inherit = FALSE,
+  environment = parent.frame()
+)
 }
 \arguments{
-\item{plot}{A ggformula/ggplot object, typically created with \code{gf_point()}.}
+\item{object}{A ggformula plot object, typically created with \code{gf_point()}.}
 
-\item{fun}{A function that takes a numeric vector x and returns predicted y.}
+\item{gformula}{Not used. \code{gf_square_resid_fun()} measures a function, not an
+aesthetic formula; a function given positionally lands here and is moved to
+\code{fun}.}
 
-\item{aspect}{A numeric value controlling the square's aspect ratio.
-Default is \code{4/6}.}
+\item{data}{Not used. The residuals are measured over the data the plot was
+built from. Anything supplied here is left for ggformula and ggplot2 to
+answer, exactly as it is for any other \code{gf_} layer.}
 
-\item{alpha}{Transparency of the filled squares. Default \code{0.1}.}
+\item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
+\code{attribute = value}, such as \code{color} or \code{fill}, (b) ggplot2 aesthetics to be mapped with
+\code{attribute = ~ expression}, or (c) attributes of the layer as a whole.}
 
-\item{...}{Additional aesthetics passed to \code{\link[ggplot2:geom_polygon]{ggplot2::geom_polygon()}}, e.g.,
-\code{color}, \code{fill}, \code{linetype}.}
+\item{fun}{A function of one argument. It is called on the x values the plot
+draws and must return one predicted y for each of them. May be given
+positionally or as \verb{fun =}.}
+
+\item{aspect}{The square's aspect ratio. Default is \code{4/6}. Must be named.}
+
+\item{alpha}{The transparency of the square's fill. Default is \code{0.1}. Must be named.}
+
+\item{xlab, ylab, title, subtitle, caption}{Labels for the plot.}
+
+\item{geom, stat, position}{Not set by the caller. A squared residual is drawn
+by its own geom and stat, and moved by the position the observations are
+already drawn with, so that a square stays on the point it belongs to.}
+
+\item{show.legend}{Whether this layer contributes to the legend.}
+
+\item{show.help}{Print the layer's own help instead of drawing.}
+
+\item{inherit}{Whether the layer inherits the plot's aesthetics. \code{FALSE},
+where \code{\link[=gf_resid_fun]{gf_resid_fun()}} is \code{TRUE}: a square is a filled region drawn in the
+geom's own colors, so inheriting a plot's mapped \code{color} outlines every
+square in the color of the group it measures instead of leaving one neutral
+area per observation. The axes and the prediction are stated outright, so
+nothing the square needs is lost by not inheriting. Set it to \code{TRUE} to take
+the outline anyway.}
+
+\item{environment}{The environment mappings are resolved in.}
 }
 \value{
 A ggplot object with squared residual polygons added.
@@ -26,8 +76,11 @@ A ggplot object with squared residual polygons added.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Draws squared residual polygons between observed points and predicted values
-computed by a user-supplied function of x.
+Draws squared residual polygons between observed points and the values
+predicted by a user-supplied function of x. Where \code{\link[=gf_square_resid]{gf_square_resid()}}
+measures a fitted model, this measures a function you wrote: it is called on
+the x values the plot draws, and each square is built on the residual from an
+observation to what the function predicts for it.
 }
 \examples{
 set.seed(1)
