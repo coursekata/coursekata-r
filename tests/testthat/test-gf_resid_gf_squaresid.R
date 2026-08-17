@@ -138,6 +138,44 @@ test_that("gf_resid segments are anchored to the jittered points", {
   expect_equal(segments$yend, unname(stats::predict(model)))
 })
 
+test_that("the points keep their jitter however many layers the plot already has", {
+  # The residual and its point agree because both layers declare the same
+  # jittered position, not because anything replays anything: two layers sharing
+  # a seed land on identical offsets. The design this replaced reached back into
+  # the plot and rewrote the points layer's position, which under ggplot2 4 left
+  # that position without a width -- a jitter with no width offsets nothing, so
+  # every point snapped to its group's centre. It only bit once the plot carried
+  # a second layer, which is every documented pipeline, and no test had one.
+  model <- lm(Thumb ~ Sex, data = Fingers)
+  layered <- suppressMessages(
+    gf_jitter(Thumb ~ Sex, data = Fingers, width = .1) %>%
+      gf_model(model) %>%
+      gf_resid(model)
+  )
+  built <- ggplot2::ggplot_build(layered)
+  points <- built$data[[1]]
+  segments <- built$data[[layer_index(layered, "resid")]]
+
+  expect_gt(length(unique(points$x)), 100)
+  expect_equal(segments$x, points$x)
+  expect_equal(segments$y, points$y)
+  # and the fitted end stays on the model rather than being jittered with them
+  expect_equal(segments$yend, unname(stats::predict(model)))
+})
+
+test_that("two overlays on one plot land on the same dots", {
+  model <- lm(Thumb ~ Sex, data = Fingers)
+  p <- suppressMessages(
+    gf_jitter(Thumb ~ Sex, data = Fingers, width = .1) %>%
+      gf_resid(model) %>%
+      gf_square_resid(model)
+  )
+  built <- ggplot2::ggplot_build(p)
+
+  expect_equal(built$data[[layer_index(p, "resid")]]$x, built$data[[1]]$x)
+  expect_equal(built$data[[layer_index(p, "square_resid")]]$x, built$data[[1]]$x)
+})
+
 test_that("a jittered segment stays on its point when the model drops rows for missingness", {
   # SSLast has 29 missing values; Sex does not, so predict() never returns NA -- the
   # mismatch is between how many rows the point layer's jitter sees and how many the
@@ -462,7 +500,9 @@ test_that("the residual draws with its own geom, stat and position whatever is a
 
   expect_s3_class(layer$geom, "GeomResid")
   expect_s3_class(layer$stat, "StatResid")
-  expect_s3_class(layer$position, "PositionResid")
+  # an unjittered plot needs no offset, so the layer declares identity;
+  # what matters is that the caller's `position =` did not reach it
+  expect_s3_class(layer$position, "PositionIdentity")
 })
 
 test_that("residual segments keep their own default linewidth, and take an override", {
@@ -614,7 +654,9 @@ test_that("a squared residual draws with its own geom, stat and position whateve
 
   expect_s3_class(layer$geom, "GeomSquareResid")
   expect_s3_class(layer$stat, "StatResid")
-  expect_s3_class(layer$position, "PositionResid")
+  # an unjittered plot needs no offset, so the layer declares identity;
+  # what matters is that the caller's `position =` did not reach it
+  expect_s3_class(layer$position, "PositionIdentity")
   expect_false(isTRUE(layer$inherit.aes))
 })
 
@@ -717,7 +759,7 @@ test_that("the alias draws exactly what the function it aliases draws", {
       grob_x = as.numeric(ggplot2::layer_grob(plot, i)[[1]]$x)
     )
   }
-  # `freeze_jitter()` draws a fresh seed per call, so a jittered pair is only
+  # an unseeded jitter is pinned with a fresh seed per call, so a jittered pair is only
   # comparable under the same seed
   jittered <- function(fn) {
     set.seed(7)

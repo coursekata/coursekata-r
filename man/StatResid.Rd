@@ -19,12 +19,10 @@ outcome on.
 \code{compute_layer} is overridden to a pass-through, the same shape
 \link[ggplot2:StatIdentity]{ggplot2::StatIdentity} uses, so an observation with an \code{NA} on it (a
 predictor the model dropped) survives the stat instead of being removed
-before \code{PositionResid} runs. \code{PositionResid} anchors its replayed jitter
-on row count and order, and the point layer's own stat never drops rows
-either -- the geom drops them after the position has run. Losing a row
-here first would hand the position fewer rows than the point layer saw
-for the same observations, so the replayed jitter draws a different
-sequence and the segment lands away from its point.
+before the position runs. The residual's jitter is a function of the seed
+and the rows it is handed, exactly as the point layer's is, so losing a row
+here would hand it a different sequence of draws and the segment would land
+away from its point.
 }
 \seealso{
 \code{\link[=gf_resid]{gf_resid()}} and \code{\link[=gf_square_resid]{gf_square_resid()}}, which pair this stat and a

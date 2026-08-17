@@ -53,7 +53,7 @@ test_that("plot_geometry reads the observations, not a model layer drawn over th
 })
 
 test_that("plot_geometry is stable across repeated reads of a jittered plot", {
-  p <- freeze_jitter(gf_jitter(Thumb ~ Sex, data = Fingers, width = .1))
+  p <- resid_jitter(gf_jitter(Thumb ~ Sex, data = Fingers, width = .1))$plot
 
   expect_equal(plot_geometry(p)$x, plot_geometry(p)$x)
   expect_equal(plot_geometry(p)$y, plot_geometry(p)$y)

@@ -142,7 +142,9 @@ test_that("a squared residual draws with its own geom, stat and position whateve
 
   expect_s3_class(layer$geom, "GeomSquareResid")
   expect_s3_class(layer$stat, "StatResid")
-  expect_s3_class(layer$position, "PositionResid")
+  # an unjittered plot needs no offset, so the layer declares identity;
+  # what matters is that the caller's `position =` did not reach it
+  expect_s3_class(layer$position, "PositionIdentity")
   expect_false(isTRUE(layer$inherit.aes))
 })
 
