@@ -207,7 +207,12 @@ GeomSquareplot <- ggplot2::ggproto(
     squares <- grid::gTree(
       children = grid::gList(rects),
       width_frac = (data$xmax[[1]] - data$xmin[[1]]) / diff(panel_params$x.range),
-      height_frac = (data$ymax[[1]] - data$ymin[[1]]) / diff(panel_params$y.range),
+      # one height per square, not one for the layer. A non-linear coord draws
+      # the same one-count square shorter the higher it sits, and it does that
+      # after this hook runs -- `data` here is still in count space -- so ask
+      # the coord where these corners land before measuring them. A border
+      # fitted to the bottom square would swallow every square above it.
+      height_frac = squareplot_drawn_heights(data, panel_params, coord),
       linewidth = data$linewidth[[1]], fit = fit, n = nrow(data),
       cl = "coursekata_squares"
     )
@@ -256,7 +261,40 @@ fit_square_border <- function(width_pt, height_pt, linewidth, fit = TRUE) {
   if (!fit) {
     return(requested)
   }
-  min(requested, min(width_pt, height_pt) / 4)
+  # pmin, not min: `height_pt` carries one height per square once a non-linear
+  # coord has had its say, and a border is fitted to the square it borders
+  pmin(requested, pmin(width_pt, height_pt) / 4)
+}
+
+#' How tall each square is once the coord has had its say
+#'
+#' `draw_panel()` runs before the coord distorts anything, so a square's corners
+#' arrive in count space and every square looks one count tall. Under a linear
+#' coord that is also what gets drawn. Under `coord_transform()` it is not: the
+#' same one count is drawn shorter the higher up the stack it sits, which is the
+#' picture a transformed count axis exists to show. Asking the coord to place
+#' the corners is the only way to measure the squares that will actually appear.
+#'
+#' @param data The layer's data, in count space.
+#' @param panel_params The panel's parameters.
+#' @param coord The plot's coord.
+#'
+#' @return One height per square, as a fraction of the panel.
+#'
+#' @noRd
+squareplot_drawn_heights <- function(data, panel_params, coord) {
+  placed <- tryCatch(
+    coord$transform(data[c("x", "y", "ymin", "ymax")], panel_params),
+    error = function(cnd) NULL
+  )
+  # a coord that will not place bare corners (or has no y to place) leaves the
+  # count-space height, which is what a linear coord would have answered anyway
+  if (is.null(placed) || is.null(placed$ymin) || is.null(placed$ymax)) {
+    return((data$ymax - data$ymin) / diff(panel_params$y.range))
+  }
+  # every coord places corners in npc, so the heights come back as panel
+  # fractions already -- which is exactly what the border fit wants
+  placed$ymax - placed$ymin
 }
 
 #' Size a squareplot's borders once the device is known
@@ -277,14 +315,18 @@ makeContent.coursekata_squares <- function(x) {
   width_pt <- x$width_frac * grid::convertWidth(grid::unit(1, "npc"), "pt", valueOnly = TRUE)
   height_pt <- x$height_frac * grid::convertHeight(grid::unit(1, "npc"), "pt", valueOnly = TRUE)
   stroke <- fit_square_border(width_pt, height_pt, x$linewidth, fit = x$fit)
-  smaller <- min(width_pt, height_pt)
+  smaller <- pmin(width_pt, height_pt)
 
-  if (!x$fit && stroke >= smaller) {
+  # count the squares a fixed border really covers, rather than deciding from
+  # the first one: under a coord transform they are not all the same height
+  hidden <- sum(stroke >= smaller)
+  if (!x$fit && hidden > 0) {
     warn(c(
       glue(
-        "{x$n} observations are hidden behind their own borders: ",
-        "each square is {signif(smaller, 2)} pt across ",
-        "but its border is {signif(stroke, 2)} pt wide"
+        "{hidden} observation{if (hidden == 1) '' else 's'} hidden behind ",
+        "{if (hidden == 1) 'its' else 'their'} own border: ",
+        "the smallest square is {signif(min(smaller), 2)} pt across ",
+        "but its border is {signif(max(stroke), 2)} pt wide"
       ),
       i = "leave `linewidth` unset to fit the border to the square"
     ), class = "coursekata_squares_hidden")

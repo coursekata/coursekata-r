@@ -103,17 +103,20 @@ test_that("caller-owned scales win, and incompatible count axes are refused", {
   expect_equal(factor_plot$scales$get_scales("x")$limits, c("c", "b", "a"))
   expect_true(factor_plot$scales$get_scales("x")$drop)
 
+  # a scale transform is applied before the squares are built, so it is
+  # redirected to the coord spelling rather than refused as impossible
   expect_error(
     (gf_histogram(~x, data = squares) + ggplot2::scale_y_sqrt()) %>% gf_squareplot(),
-    "identity continuous y scale"
+    'coord_transform\\(y = "sqrt"\\)'
   )
   expect_error(
     ggplot2::ggplot_build(gf_squareplot(~x, data = squares) + ggplot2::scale_y_sqrt()),
-    "identity continuous y scale"
+    'coord_transform\\(y = "sqrt"\\)'
   )
+  # a discrete y keeps its refusal, and says why rather than naming a scale type
   expect_error(
     ggplot2::ggplot_build(gf_squareplot(~x, data = squares) + ggplot2::scale_y_discrete()),
-    "identity continuous y scale"
+    "no count to be one of"
   )
 })
 
@@ -448,8 +451,57 @@ test_that("a large distribution still draws its fitted border", {
   p <- gf_squareplot(~x, data = data.frame(x = rnorm(2000, 50, 10)))
   drawn <- rect_grobs(p)[[1]]
   expect_equal(length(drawn$x), 2000)
-  expect_length(drawn$gp$lwd, 1)
-  expect_lt(drawn$gp$lwd, 0.5 * ggplot2::.pt)
+  expect_length(drawn$gp$lwd, 2000)
+  expect_lt(max(drawn$gp$lwd), 0.5 * ggplot2::.pt)
+})
+
+test_that("a coord transform distorts the squares instead of being refused", {
+  # the distortion IS the picture: a square is one count wherever it sits, so a
+  # non-linear count axis draws the higher ones shorter, which is what shows a
+  # reader that the unit changes as the scale climbs
+  d <- data.frame(x = c(rep(1, 16), rep(2, 4)))
+  p <- gf_squareplot(~x, data = d, binwidth = 1) %>%
+    gf_refine(ggplot2::coord_transform(y = "sqrt"))
+
+  expect_no_error(built <- ggplot2::ggplot_build(p))
+  # every square still spans exactly one count before the coord draws it
+  drawn <- built$data[[1]]
+  expect_true(all(drawn$ymax - drawn$ymin == 1))
+  # and the axis still counts
+  labels <- built$layout$panel_params[[1]]$y$get_labels()
+  expect_true(all(grepl("^[0-9]+$", stats::na.omit(labels))))
+
+  heights <- coursekata:::squareplot_drawn_heights(
+    drawn, built$layout$panel_params[[1]], built$layout$coord
+  )
+  tallest <- heights[which.min(drawn$ymin)]
+  shortest <- heights[which.max(drawn$ymin)]
+  expect_gt(tallest, shortest * 2)
+})
+
+test_that("an identity coord leaves every square the same height", {
+  # the mirror of the test above: the same code path must not distort a plot
+  # nobody asked to distort
+  d <- data.frame(x = c(rep(1, 16), rep(2, 4)))
+  built <- ggplot2::ggplot_build(gf_squareplot(~x, data = d, binwidth = 1))
+  heights <- coursekata:::squareplot_drawn_heights(
+    built$data[[1]], built$layout$panel_params[[1]], built$layout$coord
+  )
+
+  expect_length(unique(round(heights, 10)), 1)
+})
+
+test_that("a border is fitted to the square it borders, not to the first one", {
+  # under a coord transform the top squares are drawn a fraction of the height
+  # of the bottom ones, so one stroke for the layer would swallow them
+  set.seed(24)
+  d <- data.frame(x = rnorm(400, 50, 10))
+  drawn <- rect_grobs(
+    gf_squareplot(~x, data = d) %>% gf_refine(ggplot2::coord_transform(y = "sqrt"))
+  )[[1]]
+
+  expect_gt(length(unique(round(drawn$gp$lwd, 3))), 1)
+  expect_lt(min(drawn$gp$lwd), max(drawn$gp$lwd))
 })
 
 test_that("gf_squareplot snapshot", {

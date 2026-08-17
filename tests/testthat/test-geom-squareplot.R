@@ -319,9 +319,10 @@ test_that("the border fitting still runs when a bar is drawn over the squares", 
   gs <- drawn_rects(squares_layer(rnorm(2000, 50, 10), bars = "outline"))
   expect_length(gs, 2)
   expect_length(gs[[1]]$x, 2000)
-  # an unfired makeContent leaves the untouched 1.42pt stroke
-  expect_length(gs[[1]]$gp$lwd, 1)
-  expect_lt(gs[[1]]$gp$lwd, 0.5 * ggplot2::.pt)
+  # one fitted stroke per square, and every one of them capped below the
+  # request -- an unfired makeContent would leave the untouched 1.42pt stroke
+  expect_length(gs[[1]]$gp$lwd, 2000)
+  expect_lt(max(gs[[1]]$gp$lwd), 0.5 * ggplot2::.pt)
   expect_equal(unique(gs[[2]]$gp$lwd), 0.5 * ggplot2::.pt)
 })
 
