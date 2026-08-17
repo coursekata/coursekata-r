@@ -32,6 +32,18 @@
   more than 75 observations into sub-columns so the squares stayed countable, and squares
   now stay countable at any size without being asked. Passing one of the old names now
   does nothing, the same as any other name the layer does not recognize.
+- A squareplot can be drawn on a transformed count axis, with
+  `%>% gf_refine(coord_transform(y = "sqrt"))`. Each square still spans exactly one
+  count, so the squares are drawn shorter the higher up the stack they sit --
+  which is the point: the distortion is what shows that the unit changes as the
+  scale climbs. The borders between squares are fitted per square rather than once
+  for the layer, so the compressed ones at the top are not swallowed by their own
+  outlines. A `scale_y_*()` transformation is still refused, because a scale
+  transforms the counts before the squares are built and the squares would be
+  drawn in one space and labelled in another; the refusal now names the
+  `coord_transform()` spelling instead of saying a transformed axis is impossible.
+  A discrete y scale is still refused, and now says why: there is no count for a
+  square to be one of.
 - A squareplot's bins are a histogram's bins, argument for argument: `bins`,
   `binwidth`, `center`, `boundary`, `closed`, `breaks` and `pad` all mean exactly
   what they mean on `gf_histogram()`, because a squareplot now bins through the same

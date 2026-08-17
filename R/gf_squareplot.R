@@ -52,7 +52,21 @@ scale_y_count <- function() {
   )
 }
 
-#' Refuse a y scale that destroys unit-count squares
+#' Refuse a y scale a square cannot be one count tall on
+#'
+#' A square is one count tall, so the count axis has to be something a count is
+#' a position on. A discrete y is not: its values are categories, and there is
+#' no count for a square to be one of.
+#'
+#' A transformed y is a different matter, and the distinction is where the
+#' transformation is applied rather than whether one is allowed. A scale
+#' transform runs over the data before the bins are counted, so the stack the
+#' geom builds afterwards is written in the transformed space and lands beside
+#' its own axis labels. A coord transform runs at draw time over squares that
+#' are already correct, which is what a reader means by a transformed count
+#' axis: the squares thin as they climb, showing the unit changing as the scale
+#' rises. So the scale spelling is redirected to the coord spelling rather than
+#' refused as impossible.
 #'
 #' @param scale A y-position scale.
 #' @param call The environment used for error reporting.
@@ -64,12 +78,32 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
   # With no explicit y scale, layout has no y object yet at Stat time; ggplot2
   # will install its identity-continuous default after the Stat produces y.
   if (is.null(scale)) return(invisible(NULL))
-  transform <- scale$get_transformation()
-  if (scale$is_discrete() || is.null(transform) || !identical(transform$name, "identity")) {
+  if (scale$is_discrete()) {
     abort(c(
-      "`gf_squareplot()` needs an identity continuous y scale",
-      "*" = "each square is exactly one count tall, which a transformed or discrete y axis cannot preserve",
-      "*" = "remove the y scale or use an identity continuous y scale"
+      "`gf_squareplot()` needs a continuous count axis",
+      "*" = paste(
+        "each square is exactly one count tall, and a discrete y axis has no",
+        "count to be one of"
+      ),
+      "*" = "remove the discrete y scale"
+    ), call = call)
+  }
+  transform <- scale$get_transformation()
+  if (is.null(transform) || !identical(transform$name, "identity")) {
+    named <- !is.null(transform)
+    what <- if (named) glue('a "{transform$name}" transformation') else "a transformation"
+    instead <- if (named) transform$name else "sqrt"
+    abort(c(
+      glue("`gf_squareplot()` cannot count squares on a y scale that applies {what}"),
+      "*" = paste(
+        "a scale transforms the counts before the squares are built, so the",
+        "squares would be drawn in one space and labelled in another"
+      ),
+      "*" = glue(
+        "to draw the same distortion at render, transform the coordinate ",
+        'instead: `%>% gf_refine(coord_transform(y = "{instead}"))`'
+      ),
+      "*" = "each square still spans one count, so the stack thins as it climbs"
     ), call = call)
   }
   invisible(NULL)
