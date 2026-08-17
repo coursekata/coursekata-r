@@ -64,12 +64,10 @@ square_vertices <- function(data, x_range, y_range, aspect) {
 #' `compute_layer` is overridden to a pass-through, the same shape
 #' [ggplot2::StatIdentity] uses, so an observation with an `NA` on it (a
 #' predictor the model dropped) survives the stat instead of being removed
-#' before `PositionResid` runs. `PositionResid` anchors its replayed jitter
-#' on row count and order, and the point layer's own stat never drops rows
-#' either -- the geom drops them after the position has run. Losing a row
-#' here first would hand the position fewer rows than the point layer saw
-#' for the same observations, so the replayed jitter draws a different
-#' sequence and the segment lands away from its point.
+#' before the position runs. The residual's jitter is a function of the seed
+#' and the rows it is handed, exactly as the point layer's is, so losing a row
+#' here would hand it a different sequence of draws and the segment would land
+#' away from its point.
 #'
 #' @format A [ggplot2::Stat] object.
 #'
@@ -83,35 +81,84 @@ StatResid <- ggplot2::ggproto(
   compute_panel = function(data, scales, ...) data
 )
 
-#' Move a residual with the point it belongs to
+#' Jitter a residual's observed end the way its point was jittered
 #'
-#' A position offsets one row at a time and treats every x column alike, which
-#' is wrong twice over here: four corners of one square would get four
-#' offsets, and the fitted end of a residual would be dragged off the model it
-#' is measured against. So run the source layer's own position over one anchor
-#' row per observation and move only the observed end by what it returns.
+#' A residual has to start where its point is drawn, and its point may have been
+#' jittered. The grammar's answer to two layers agreeing is a seed: two layers
+#' that each declare `position_jitter(width, height, seed)` land on identical
+#' offsets without knowing about each other, because the offsets are a function
+#' of the seed and the rows. So the residual declares its own jitter rather than
+#' capturing the points layer's position and replaying it.
 #'
+#' It cannot be `position_jitter()` itself, because that transforms every
+#' positional aesthetic and `yend` is a prediction: moving it would take the
+#' fitted end off the model the residual is measured against. This applies the
+#' same two draws, in the same order, to `x` and `y` alone -- which is what
+#' makes the offsets identical to the points layer's rather than merely similar.
+#'
+#' @format A [ggplot2::Position] object.
+#'
+#' @seealso [gf_resid()], which pairs this position with the plot's own jitter.
 #' @noRd
-PositionResid <- ggplot2::ggproto(
-  "PositionResid", ggplot2::Position,
-  source = NULL,
-  setup_params = function(self, data) list(source = self$source),
+PositionResidJitter <- ggplot2::ggproto(
+  "PositionResidJitter", ggplot2::Position,
+  width = NULL, height = NULL, seed = NA,
+  # mirrors position_jitter()'s own defaults, so an unspecified width or height
+  # resolves to the same number for both layers
+  setup_params = function(self, data) {
+    list(
+      width = self$width %||% (ggplot2::resolution(data$x, zero = FALSE) * 0.4),
+      height = self$height %||% (ggplot2::resolution(data$y, zero = FALSE) * 0.4),
+      seed = self$seed
+    )
+  },
   compute_layer = function(self, data, params, layout) {
-    source <- params$source
-    if (is.null(source)) {
-      return(data)
-    }
-    anchor <- data[c("x", "y", "PANEL", "group")]
-    moved <- source$compute_layer(anchor, source$setup_params(anchor), layout)
-    data$x <- moved$x
-    data$y <- moved$y
-    data
+    with_jitter_seed(params$seed, {
+      if (params$width > 0) data$x <- jitter(data$x, amount = params$width)
+      if (params$height > 0) data$y <- jitter(data$y, amount = params$height)
+      data
+    })
   }
 )
 
 #' @noRd
-position_resid <- function(source = NULL) {
-  ggplot2::ggproto(NULL, PositionResid, source = source)
+position_resid_jitter <- function(width = NULL, height = NULL, seed = NA) {
+  ggplot2::ggproto(NULL, PositionResidJitter, width = width, height = height, seed = seed)
+}
+
+#' The position a residual has to be drawn with, and the plot to draw it on
+#'
+#' An unseeded jitter draws different offsets on every render, so nothing can
+#' attach to it -- not by replay and not by declaration. The residual therefore
+#' pins it, on the plot it returns rather than on the caller's: adding a
+#' residual to a jittered plot gives back a plot whose jitter is fixed, which is
+#' what makes the segment land on the point in the first place.
+#'
+#' @param plot The plot the residual is being drawn on.
+#'
+#' @return A list with `plot` and `position`.
+#'
+#' @noRd
+resid_jitter <- function(plot) {
+  plain <- list(plot = plot, position = "identity")
+  if (length(plot$layers) == 0) {
+    return(plain)
+  }
+  pos <- plot$layers[[1]]$position
+  if (!inherits(pos, "PositionJitter")) {
+    return(plain)
+  }
+
+  seed <- pos$seed
+  if (!isTRUE(is.finite(seed))) {
+    seed <- sample.int(.Machine$integer.max, 1L)
+    plot$layers[[1]] <- layer_with_position(
+      plot$layers[[1]],
+      ggplot2::position_jitter(width = pos$width, height = pos$height, seed = seed)
+    )
+  }
+
+  list(plot = plot, position = position_resid_jitter(pos$width, pos$height, seed))
 }
 
 #' Draw a residual as a segment from a prediction to an observation
@@ -185,16 +232,6 @@ GeomSquareResid <- ggplot2::ggproto(
   }
 )
 
-#' The position the observations are already drawn with
-#'
-#' @noRd
-source_position <- function(plot) {
-  if (length(plot$layers) == 0) {
-    return(NULL)
-  }
-  position <- plot$layers[[1]]$position
-  if (inherits(position, "PositionIdentity")) NULL else position
-}
 
 #' What the model predicts for every row the plot holds
 #'

@@ -87,9 +87,13 @@ gf_square_resid_fun <- ggformula::layer_factory(
       # first inside it, which is where the bespoke function fired it
       lifecycle::signal_stage("experimental", "gf_square_resid_fun()")
 
-      # freeze, and assign back: the generated body ends `p <- object + new_layer`,
-      # and `source_position()` below must read the seeded copy (see `gf_resid()`)
-      object <- coursekata:::freeze_jitter(if (missing(object)) NULL else object)
+      # The residual has to start where its point is drawn, and the point may be
+      # jittered. Read that jitter and declare the same one on this layer rather
+      # than replaying the plot's: two layers sharing a seed land identically.
+      # An unseeded jitter has no offsets to share, so it is pinned here -- on
+      # the plot this returns, never on the one the caller still holds.
+      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
+      object <- jitter$plot
 
       # One call, so the order the refusals fire in lives in one place: not a
       # plot, no function, no x/y on the plot, then the prediction. There is no
@@ -109,7 +113,7 @@ gf_square_resid_fun <- ggformula::layer_factory(
       # rather than leave the caller a way to swap them (see `gf_resid()`)
       geom <- coursekata::GeomSquareResid
       stat <- coursekata::StatResid
-      position <- coursekata:::position_resid(coursekata:::source_position(object))
+      position <- jitter$position
 
       # here rather than at the factory: it needs this call's mapping, and a
       # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's

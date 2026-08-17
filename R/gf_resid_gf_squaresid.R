@@ -108,12 +108,13 @@ gf_resid <- ggformula::layer_factory(
     # model with no plot -- to `resid_spec()`'s refusal rather than letting
     # ggformula build a new empty plot around the layer.
     if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      # Freeze first, and assign back: the generated body ends with
-      # `p <- object + new_layer`, so this is the plot the caller gets, and
-      # `source_position()` below has to read the SEEDED copy. `freeze_jitter()`
-      # installs a new ggproto in place of the unseeded one, so a position taken
-      # before this line replays a jitter the points were never drawn with.
-      object <- coursekata:::freeze_jitter(if (missing(object)) NULL else object)
+      # The residual has to start where its point is drawn, and the point may be
+      # jittered. Read that jitter and declare the same one on this layer rather
+      # than replaying the plot's: two layers sharing a seed land identically.
+      # An unseeded jitter has no offsets to share, so it is pinned here -- on
+      # the plot this returns, never on the one the caller still holds.
+      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
+      object <- jitter$plot
 
       # One call, so the order the refusals fire in lives in one place: not a
       # plot, no model, no x/y on the plot, then the prediction, then the axis
@@ -137,7 +138,7 @@ gf_resid <- ggformula::layer_factory(
       # returns a ggproto unchanged, which is how `gf_model()` sets its geom.
       geom <- coursekata::GeomResid
       stat <- coursekata::StatResid
-      position <- coursekata:::position_resid(coursekata:::source_position(object))
+      position <- jitter$position
 
       # set here rather than at the factory, both because the layer function
       # needs the mapping this call computed and because a factory-level
@@ -269,9 +270,13 @@ gf_square_resid <- ggformula::layer_factory(
       # bespoke function fired it.
       lifecycle::signal_stage("experimental", "gf_square_resid()")
 
-      # freeze, and assign back: the generated body ends `p <- object + new_layer`,
-      # and `source_position()` below must read the seeded copy (see `gf_resid()`)
-      object <- coursekata:::freeze_jitter(if (missing(object)) NULL else object)
+      # The residual has to start where its point is drawn, and the point may be
+      # jittered. Read that jitter and declare the same one on this layer rather
+      # than replaying the plot's: two layers sharing a seed land identically.
+      # An unseeded jitter has no offsets to share, so it is pinned here -- on
+      # the plot this returns, never on the one the caller still holds.
+      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
+      object <- jitter$plot
 
       # One call, so the order the refusals fire in lives in one place: not a
       # plot, no model, no x/y on the plot, then the prediction, then the axis
@@ -290,7 +295,7 @@ gf_square_resid <- ggformula::layer_factory(
       # rather than leave the caller a way to swap them (see `gf_resid()`)
       geom <- coursekata::GeomSquareResid
       stat <- coursekata::StatResid
-      position <- coursekata:::position_resid(coursekata:::source_position(object))
+      position <- jitter$position
 
       # here rather than at the factory: it needs this call's mapping, and a
       # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's
@@ -352,7 +357,8 @@ gf_squaresid <- ggformula::layer_factory(
     if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
       lifecycle::signal_stage("experimental", "gf_squaresid()")
 
-      object <- coursekata:::freeze_jitter(if (missing(object)) NULL else object)
+      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
+      object <- jitter$plot
 
       resid <- coursekata:::resid_spec(
         object, if (missing(model)) NULL else model, "gf_squaresid"
@@ -365,7 +371,7 @@ gf_squaresid <- ggformula::layer_factory(
 
       geom <- coursekata::GeomSquareResid
       stat <- coursekata::StatResid
-      position <- coursekata:::position_resid(coursekata:::source_position(object))
+      position <- jitter$position
 
       layer_fun <- coursekata:::resid_layer_fun("square_resid", resid$aesthetics)
     }

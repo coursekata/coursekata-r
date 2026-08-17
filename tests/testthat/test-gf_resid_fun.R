@@ -153,7 +153,9 @@ test_that("a residual draws with its own geom, stat and position whatever is ask
 
   expect_s3_class(layer$geom, "GeomResid")
   expect_s3_class(layer$stat, "StatResid")
-  expect_s3_class(layer$position, "PositionResid")
+  # an unjittered plot needs no offset, so the layer declares identity;
+  # what matters is that the caller's `position =` did not reach it
+  expect_s3_class(layer$position, "PositionIdentity")
   expect_true(isTRUE(layer$inherit.aes))
 })
 
@@ -249,10 +251,9 @@ test_that("an unusable name is answered the way the family the caller wrote answ
   )
 })
 test_that("a residual stays on the point it belongs to when the plot jitters", {
-  # `freeze_jitter()` seeds the plot's own position before the layer copies it,
-  # so the residual replays the jitter the points were actually drawn with; a
-  # position taken from the unseeded plot draws a different sequence and every
-  # segment lands away from its point
+  # the residual declares the same jitter the points layer carries, seed and all,
+  # so both layers compute the same offsets independently. Nothing is replayed:
+  # an offset is a function of the seed and the rows, and both layers have both
   set.seed(7)
   p <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .2) %>%
     gf_resid_fun(function(x) 60)

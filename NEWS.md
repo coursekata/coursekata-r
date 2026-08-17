@@ -1,5 +1,14 @@
 # coursekata (development version)
 
+- A residual drawn over a jittered plot lands on the jittered points, on a plot with
+  any number of layers. The residual now declares the same jittered position the points
+  carry -- two layers sharing a seed compute the same offsets independently -- rather
+  than reaching back into the plot to seed and replay the points layer's own position.
+  The old approach quietly stopped working under ggplot2 4, where the copy it made lost
+  its width and offset nothing, so `gf_jitter() %>% gf_model() %>% gf_resid()` drew every
+  point on its group's centre. Adding a residual to an unseeded jitter now returns a plot
+  whose jitter is fixed, so a second overlay lands on the same dots; the plot you passed
+  in is left as it was.
 - A named argument that is not a parameter of the layer is now discarded without a
   word, at the call and at the draw. That is how every `gf_` function behaves --
   `ggformula` builds the layer with parameter checking off -- and `gf_model()`,

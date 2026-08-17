@@ -17,43 +17,51 @@ to_cols <- function(strings, n_cols = 2, space_between = "       ") {
   cols <- purrr::map(seq_len(n_cols), ~ strings[seq_len(items_per_col) + items_per_col * (.x - 1)])
   paste(purrr::reduce(cols, ~ paste0(.x, space_between, .y)), collapse = "\n")
 }
-
-#' Pin every unseeded jitter layer to a fixed seed
+#' Copy a layer, giving it a different position
 #'
-#' `position_jitter()` defaults to `seed = NA`, which re-rolls the jitter on
-#' every `ggplot_build()`. Functions that anchor overlays to the jittered
-#' positions (`gf_resid()`, `gf_square_resid()`) used to bracket their build
-#' with `sample()`/`set.seed()` so the *next* render would redraw the same
-#' jitter -- but that bracket breaks when the plot is built more than once,
-#' is last-writer-wins when several such functions are chained, and resets
-#' the user's RNG stream.
+#' A ggplot2 layer is a ggproto object, which is an environment, so assigning to
+#' a layer's `position` field in place writes into the layer the caller still
+#' holds: a function that reads a plot in order to draw over it would leave the
+#' caller's own plot changed. Copying the layer's bindings into a fresh
+#' environment and replacing the whole layer leaves the original alone.
 #'
-#' Instead, give each unseeded `PositionJitter` layer a seeded copy of its
-#' position. ggproto objects are environments, so the seed sticks to the layer
-#' itself and every subsequent build reproduces the same jitter -- whichever
-#' function builds it, however many times. No-op for layers that already have
-#' a seed (user-set or frozen by an earlier call in the chain) and for
-#' non-jitter plots. Never calls `set.seed()`.
+#' @param layer A ggplot2 layer.
+#' @param position The position for the copy.
 #'
-#' Copy rather than seed in place: `geom_jitter()` and `position = "jitter"`
-#' share ggplot2's namespace-level `PositionJitter` object.
-#'
-#' @param plot A ggplot object.
-#'
-#' @return The plot, with any unseeded jitter layers pinned to a fixed seed.
+#' @return A copy of `layer`, drawn with `position`.
 #'
 #' @noRd
-freeze_jitter <- function(plot) {
-  for (i in seq_along(plot$layers)) {
-    pos <- plot$layers[[i]]$position
-    if (inherits(pos, "PositionJitter") && !isTRUE(is.finite(pos$seed))) {
-      plot$layers[[i]]$position <- ggplot2::ggproto(
-        NULL, pos,
-        seed = sample.int(.Machine$integer.max, 1L)
-      )
-    }
+layer_with_position <- function(layer, position) {
+  copy <- as.environment(as.list.environment(layer, all.names = TRUE))
+  parent.env(copy) <- parent.env(layer)
+  class(copy) <- class(layer)
+  copy$position <- position
+  copy
+}
+
+#' Run an expression against a fixed random seed, then put the stream back
+#'
+#' `withr` is only a test dependency, and this is the whole of what a position
+#' needs from it.
+#'
+#' @param seed A seed, or `NA` to run `expr` untouched.
+#' @param expr The expression to evaluate.
+#'
+#' @return `expr`'s value.
+#'
+#' @noRd
+with_jitter_seed <- function(seed, expr) {
+  if (!isTRUE(is.finite(seed))) {
+    return(expr)
   }
-  plot
+  if (exists(".Random.seed", .GlobalEnv, inherits = FALSE)) {
+    old <- get(".Random.seed", .GlobalEnv, inherits = FALSE)
+    on.exit(assign(".Random.seed", old, envir = .GlobalEnv), add = TRUE)
+  } else {
+    on.exit(suppressWarnings(rm(".Random.seed", envir = .GlobalEnv)), add = TRUE)
+  }
+  set.seed(seed)
+  expr
 }
 
 #' Join items into a comma-separated string for error messages
