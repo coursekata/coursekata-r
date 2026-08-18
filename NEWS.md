@@ -13,11 +13,14 @@
   word, at the call and at the draw. That is how every `gf_` function behaves --
   `ggformula` builds the layer with parameter checking off -- and `gf_model()`,
   `gf_sd_ruler()`, `gf_squareplot()` and the five residual functions are ordinary
-  `gf_` functions now, so they behave that way too. That includes the names that
-  moved out of their own signatures: a name this package used to take is not
-  special, and is ignored like any other name the layer does not recognize. Where
-  each one went is on the function's reference page, which is where a reader looks
-  for it. A genuine misspelling is the same story: `gf_squareplot(~Thumb, data = Fingers,
+  `gf_` functions now, so they behave that way too. The exception is the six
+  arguments `gf_squareplot()` itself used to take -- `show_mean`, `show_dgp`,
+  `xrange`, `xbreaks`, `mincount` and `auto_subdivide` -- each of which is refused
+  by name and told what draws it now. Left to fall through, a notebook written
+  against the old signature would keep running while the mark it asked for was
+  simply absent, which is worth answering. The list is bounded to the arguments the
+  function actually had and does not grow; ggplot2 keeps `size` on the line geoms
+  for the same reason. A genuine misspelling is the ordinary story: `gf_squareplot(~Thumb, data = Fingers,
   binwidht = 5)` draws a plot that ignores it, while a correctly spelled
   neighbour on the same call is applied. If a parameter appears to do nothing,
   check its spelling first; `ggplot2::ggplot_build(p)$data[[1]]` shows what the

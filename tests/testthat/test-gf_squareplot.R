@@ -422,15 +422,26 @@ test_that("the maximum lands in the last bin instead of one of its own past the 
   expect_equal(sum(bins$count), sum(!is.na(Fingers$Thumb)))
 })
 
-test_that("a name that left the signature is discarded, not given a rule of its own", {
-  # xrange, xbreaks, mincount, show_mean, show_dgp and auto_subdivide were all
-  # arguments once. They are names the layer does not recognise now, and
-  # ggformula discards one of those without a word -- the same as any
-  # misspelling, and the same as every other gf_ function. The replacements are
-  # documented; they are not enforced here
-  expect_no_error(gf_squareplot(~x, data = squares, xrange = c(0, 6)))
-  expect_no_error(gf_squareplot(~x, data = squares, mincount = 10))
-  expect_no_error(gf_squareplot(~x, data = squares, auto_subdivide = TRUE))
+test_that("a name that left the signature is refused, and says what draws it now", {
+  # These six were arguments once. Left to fall through they would be discarded
+  # without a word, so a notebook written against the old signature would keep
+  # running and quietly draw something else -- the mean it asked for simply
+  # absent. Each is named, with what replaces it
+  expect_error(gf_squareplot(~x, data = squares, show_mean = TRUE), "show_mean\\(\\)")
+  expect_error(gf_squareplot(~x, data = squares, show_dgp = TRUE), "show_dgp\\(\\)")
+  expect_error(gf_squareplot(~x, data = squares, xrange = c(0, 6)), "gf_lims")
+  expect_error(gf_squareplot(~x, data = squares, xbreaks = 1:5), "scale_x_continuous")
+  expect_error(gf_squareplot(~x, data = squares, mincount = 10), "expand_limits")
+  expect_error(gf_squareplot(~x, data = squares, auto_subdivide = TRUE), "countable")
+
+  # every retired name is listed, so one call reporting several names them all
+  err <- expect_error(gf_squareplot(~x, data = squares, mincount = 10, xrange = c(0, 6)))
+  expect_match(conditionMessage(err), "mincount")
+  expect_match(conditionMessage(err), "xrange")
+
+  # the bound is the list itself: a name this function never had stays a
+  # misspelling, discarded in silence the way every other gf_ function does
+  expect_no_error(gf_squareplot(~x, data = squares, wibble = 10))
   expect_no_error(gf_point(x ~ x, data = squares, mincount = 10))
 })
 

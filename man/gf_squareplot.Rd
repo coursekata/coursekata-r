@@ -118,7 +118,10 @@ laid over bars land inside them.
 
 Everything that is not the squares is a layer or a scale: \verb{\%>\% show_mean()},
 \verb{\%>\% show_dgp()}, \verb{\%>\% gf_lims(x = )},
-\verb{\%>\% gf_refine(ggplot2::expand_limits(y = ))}.
+\verb{\%>\% gf_refine(ggplot2::expand_limits(y = ))}. Each of these was an argument
+here once, and passing the old name is refused with the replacement named, so
+a call written against the old signature says what to write rather than
+drawing a plot with the mark missing.
 }
 \examples{
 # each observation is a countable square
