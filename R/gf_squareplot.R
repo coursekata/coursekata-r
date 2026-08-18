@@ -230,6 +230,26 @@ squareplot_layer <- function(object) {
   }
 }
 
+#' The arguments this function used to take, and what draws each one now
+#'
+#' None of these is a formal any more, so ggformula would discard them the way it
+#' discards any name it does not recognize -- without a word. A notebook written
+#' against the old signature would keep running and quietly draw something else,
+#' which is the one mistake worth answering by name.
+#'
+#' Naming them is bounded: this list is the arguments the function actually had,
+#' and it does not grow. ggplot2 does the same for `size` on the line geoms.
+#'
+#' @noRd
+squareplot_retired <- c(
+  show_mean = "is now `%>% show_mean()`",
+  show_dgp = "is now `%>% show_dgp()`",
+  xrange = "is now `%>% gf_lims(x = )`",
+  xbreaks = "is now `%>% gf_refine(ggplot2::scale_x_continuous(breaks = ))`",
+  mincount = "is now `%>% gf_refine(ggplot2::expand_limits(y = ))`",
+  auto_subdivide = "is no longer needed: the squares stay countable at any size"
+)
+
 #' Refuse at call time what the layer would discard in silence
 #'
 #' Runs inside `layer_factory()`'s `pre`, which is evaluated before the help gate,
@@ -239,12 +259,28 @@ squareplot_layer <- function(object) {
 #'   formula arrives as `object` when it is passed positionally, which is how all
 #'   but a handful of calls spell it.
 #' @param na.rm The `na.rm` extra.
+#' @param dots The names supplied through `...`, for spotting a retired argument.
 #' @param call The calling environment, for error reporting.
 #'
 #' @return Invisible `NULL`, or an abort.
 #'
 #' @noRd
-squareplot_check <- function(object, gformula, na.rm, call = caller_env()) {
+squareplot_check <- function(object, gformula, na.rm, dots = character(),
+                             call = caller_env()) {
+  retired <- intersect(names(squareplot_retired), dots)
+  if (length(retired) > 0) {
+    abort(
+      c(
+        glue("`gf_squareplot()` no longer takes {toString(sprintf('`%s`', retired))}"),
+        set_names(
+          glue("`{retired}` {squareplot_retired[retired]}"),
+          rep("*", length(retired))
+        )
+      ),
+      call = call
+    )
+  }
+
   if (!isTRUE(na.rm)) {
     abort(
       c(
@@ -316,7 +352,10 @@ squareplot_check <- function(object, gformula, na.rm, call = caller_env()) {
 #'
 #' Everything that is not the squares is a layer or a scale: `%>% show_mean()`,
 #' `%>% show_dgp()`, `%>% gf_lims(x = )`,
-#' `%>% gf_refine(ggplot2::expand_limits(y = ))`.
+#' `%>% gf_refine(ggplot2::expand_limits(y = ))`. Each of these was an argument
+#' here once, and passing the old name is refused with the replacement named, so
+#' a call written against the old signature says what to write rather than
+#' drawing a plot with the mark missing.
 #'
 #' @param object A ggplot object, a data frame, or a formula. When a plot, the
 #'   squares are added to it.
@@ -437,7 +476,7 @@ gf_squareplot <- ggformula::layer_factory(
   layer_fun = ggplot2::layer,
   # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
   pre = {
-    coursekata:::squareplot_check(object, gformula, na.rm)
+    coursekata:::squareplot_check(object, gformula, na.rm, dots = ...names())
     layer_fun <- coursekata:::squareplot_layer(object)
   }
 )
