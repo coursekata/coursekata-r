@@ -78,7 +78,7 @@ gf_histogram(~b1, data = sdob1_boot, fill = ~ middle(b1, .95), bins = 100)
 `show_dgp()` frames it with the data generating process: the population
 model on the top axis, the sample estimate on the bottom, and a marker at the
 null hypothesis. Both overlays take a plot and give one back, so the same
-frame goes on the histogram two chunks earlier just as readily.
+frame goes just as readily on a `gf_histogram()` of the same shuffles.
 
 With only ten shuffles the mean of the distribution can land well away from the
 null.

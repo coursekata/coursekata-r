@@ -405,7 +405,7 @@ squareplot_check <- function(object, gformula, na.rm, dots = character(),
 #' gf_squareplot(~Thumb, data = Fingers, bars = "outline")
 #'
 #' # the bins are a histogram's bins, so squares laid over bars land inside them --
-#' # name the grid on both layers, because a layer never reads its neighbour's
+#' # name the grid on both layers, because a layer never reads its neighbor's
 #' gf_histogram(~Thumb, data = Fingers, bins = 8) %>% gf_squareplot(bins = 8)
 #'
 #' # customize fill color, binwidth, and axis limits
