@@ -15,30 +15,30 @@ status](https://github.com/coursekata/coursekata-r/workflows/R-CMD-check/badge.s
 
 ## Overview
 
-*CourseKata Statistics and Data Science*, is an innovative interactive
-online textbook for teaching introductory statistics and data science in
+*CourseKata Statistics and Data Science* is an interactive online
+textbook for teaching introductory statistics and data science in
 colleges, universities, and high schools. Part of CourseKata’s *Better
-Book* Project, we are leveraging research and student data to guide
-continuous improvement of online learning resources. The **coursekata**
-package is designed to make it easy to install and load the packages,
-functions, and data used in the book and supplementary materials.
+Book* Project, we use research and student data to keep improving online
+learning resources.
 
 Learn more about CourseKata and its services and materials at
 [CourseKata.org](https://www.coursekata.org/).
 
-This package makes it easy to install and load all packages and
-functions used in CourseKata courses. It additionally provides a handful
-of helper functions and augments some generic functions to provide
-cohesion between the network of packages. This package was inspired by
-the [tidyverse](https://tidyverse.tidyverse.org) meta-package.
+The **coursekata** package makes it easy to install and load the
+packages, functions, and data used in CourseKata courses and
+supplementary materials. It additionally provides a handful of helper
+functions and augments some generic functions to provide cohesion
+between the network of packages. This package was inspired by the
+[tidyverse](https://tidyverse.tidyverse.org) meta-package.
 
 ## Try it in your browser
 
 You can try coursekata before installing anything: the [live
-demo](https://coursekata.github.io/coursekata-r/lite/lab/index.html?path=getting-started.ipynb) runs R and the
-coursekata package entirely in your browser (no installation required,
-powered by [JupyterLite](https://jupyterlite.readthedocs.io/)). It opens
-a getting-started notebook that walks through loading the package,
+demo](https://coursekata.github.io/coursekata-r/lite/lab/index.html?path=getting-started.ipynb)
+runs R and the coursekata package entirely in your browser (no
+installation required, powered by
+[JupyterLite](https://jupyterlite.readthedocs.io/)). It opens a
+getting-started notebook that walks through loading the package,
 exploring course data sets, and fitting and visualizing models.
 
 ## Installation
@@ -95,8 +95,8 @@ library(coursekata)
 - [Metrics](https://cran.r-project.org/package=Metrics), for model
   evaluation.
 
-In addition to useful functions, a great deal of data sets are used by
-instructors who teach the course. This package installs these:
+In addition to useful functions, many data sets are used by instructors
+who teach the course. This package installs these:
 
 - [fivethirtyeight](https://cran.r-project.org/package=fivethirtyeight)
 - [Lock5withR](https://cran.r-project.org/package=Lock5withR)

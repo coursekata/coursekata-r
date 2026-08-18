@@ -6,7 +6,7 @@
   than reaching back into the plot to seed and replay the points layer's own position.
   The old approach quietly stopped working under ggplot2 4, where the copy it made lost
   its width and offset nothing, so `gf_jitter() %>% gf_model() %>% gf_resid()` drew every
-  point on its group's centre. Adding a residual to an unseeded jitter now returns a plot
+  point on its group's center. Adding a residual to an unseeded jitter now returns a plot
   whose jitter is fixed, so a second overlay lands on the same dots; the plot you passed
   in is left as it was.
 - A named argument that is not a parameter of the layer is now discarded without a
@@ -22,7 +22,7 @@
   function actually had and does not grow; ggplot2 keeps `size` on the line geoms
   for the same reason. A genuine misspelling is the ordinary story: `gf_squareplot(~Thumb, data = Fingers,
   binwidht = 5)` draws a plot that ignores it, while a correctly spelled
-  neighbour on the same call is applied. If a parameter appears to do nothing,
+  neighbor on the same call is applied. If a parameter appears to do nothing,
   check its spelling first; `ggplot2::ggplot_build(p)$data[[1]]` shows what the
   layer actually received.
 - `gf_squareplot()` is now a real ggformula layer. It carries the data it was given
@@ -42,8 +42,8 @@
   and `show_dgp` are `%>% show_mean()` and `%>% show_dgp()`. `auto_subdivide` is gone
   because what it did is now what happens anyway: it was the opt-in that split a bin of
   more than 75 observations into sub-columns so the squares stayed countable, and squares
-  now stay countable at any size without being asked. Passing one of the old names now
-  does nothing, the same as any other name the layer does not recognize.
+  now stay countable at any size without being asked. Passing one of the old names is
+  refused, with the replacement named.
 - A squareplot can be drawn on a transformed count axis, with
   `%>% gf_refine(coord_transform(y = "sqrt"))`. Each square still spans exactly one
   count, so the squares are drawn shorter the higher up the stack they sit --
@@ -52,7 +52,7 @@
   for the layer, so the compressed ones at the top are not swallowed by their own
   outlines. A `scale_y_*()` transformation is still refused, because a scale
   transforms the counts before the squares are built and the squares would be
-  drawn in one space and labelled in another; the refusal now names the
+  drawn in one space and labeled in another; the refusal now names the
   `coord_transform()` spelling instead of saying a transformed axis is impossible.
   A discrete y scale is still refused, and now says why: there is no count for a
   square to be one of.
@@ -69,7 +69,7 @@
   x now gets one column per level, centered on its own tick, the way `gf_bar()`
   positions its bars, instead of a column of level numbers sitting half a step past
   the labels they belong to. A factor with more than 51 levels no longer merges
-  neighbouring levels into shared columns. A binning argument passed alongside a
+  neighboring levels into shared columns. A binning argument passed alongside a
   discrete x -- `binwidth`, `bins`, `center`, `boundary`, `closed`, `breaks`, `pad` --
   now warns that it has no effect, rather than being silently discarded.
 - `color` colors the bar on a squareplot, which is the only thing it ever affected,
@@ -80,7 +80,7 @@
   own; a real ggformula layer never triggers that warning, so `gf_squareplot()` now
   prints like any other plot.
 - A factor keeps its levels on a squareplot's x axis, so a level nothing landed in
-  still holds its place instead of being closed over by its neighbours -- which also
+  still holds its place instead of being closed over by its neighbors -- which also
   moved the columns that were drawn, not just the ticks.
 - When squares are added to an existing plot, its x scale and any identity-continuous
   y scale are preserved. A transformed or discrete y scale is refused because a square
@@ -191,7 +191,7 @@
 - Fix `gf_model()` failing with `'from' must be a finite number` when a predictor on an axis has any missing values. The grid of values the model is drawn over was spanned between the predictor's smallest and largest value without excluding the gaps, so a single missing observation made both ends undefined and nothing was drawn at all -- including for a model `lm()` had fit perfectly well on the rows that were complete.
 - `gf_model()` now errors when an aesthetic is mapped to a variable that is not one of the model's predictors, instead of silently dropping the mapping. A mapping the model could not honor used to just vanish from the plot without a word, which is a hard thing to debug in a notebook.
 - Expand reference examples for the model visualization and distribution functions with textbook-style, pedagogy-focused examples.
-- `gf_squareplot()` now names the variable it could not use. A misspelled column, a data-first pipe, a character column and a date column all reported the same ``` `x` must be numeric. ```, and a formula holding an expression such as `~log(Thumb)` silently plotted the untransformed variable and labelled the axis with it. `na.rm = FALSE` now says it is unsupported instead of failing inside `range()` or shipping a rectangle at `NA`. A two-sided formula such as `gf_squareplot(y ~ x)` used to silently plot `x` and discard `y` with no error; it now says the formula must be one-sided.
+- `gf_squareplot()` now names the variable it could not use. A misspelled column, a data-first pipe, a character column and a date column all reported the same ``` `x` must be numeric. ```, and a formula holding an expression such as `~log(Thumb)` silently plotted the untransformed variable and labeled the axis with it. `na.rm = FALSE` now says it is unsupported instead of failing inside `range()` or shipping a rectangle at `NA`. A two-sided formula such as `gf_squareplot(y ~ x)` used to silently plot `x` and discard `y` with no error; it now says the formula must be one-sided.
 - `gf_squareplot()` keeps drawing countable squares on large samples. Above 75 observations in a bin it used to replace every square with a solid bar, so the 2000-observation example in its own documentation drew 27 bars and not one countable square. The separator between squares is now fitted to the squares -- at 2000 observations a square is about 1.2 pt tall while the old separator was 1.4 pt wide, so each square erased itself. A `linewidth` set explicitly on the layer is still honored, now with a warning when the border is wide enough to hide the observations behind it.
 - New `StatSquareplot` and `GeomSquareplot` exports. `gf_squareplot()` now draws through a real ggplot2 stat and geom instead of assembling rectangles itself, and both are exported so you can put countable squares into a plot you are building yourself -- including with a mapped `fill`, which stacks its groups within each bin rather than drawing them on top of one another.
 - `show_cutoffs()` now reads its fill aesthetic the way R reads any call. `fill = ~middle(Thumb)` was told it needed at least two arguments even though `prop` is documented to default to .95; named arguments in any other order, such as `~middle(prop = .9, x = Thumb)` or `~middle(Thumb, greedy = FALSE, prop = .9)`, were still read by position and failed on whatever landed in the third slot; and `~coursekata::middle(Thumb, .95)` crashed on a length-3 coercion rather than being recognized as `middle()`. The call is matched against the real function's formals now, so naming arguments, reordering them, leaving them at their documented defaults, and qualifying the call with `coursekata::` all behave as they do everywhere else in R. `greedy` is honored too, having previously been ignored.
