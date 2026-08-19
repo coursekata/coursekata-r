@@ -99,9 +99,11 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
         "a scale transforms the counts before the squares are built, so the",
         "squares would be drawn in one space and labelled in another"
       ),
+      # the coord is spelled coord_trans() before ggplot2 4.0; naming the one
+      # the reader does not have sends them somewhere they cannot go
       "*" = glue(
         "to draw the same distortion at render, transform the coordinate ",
-        'instead: `%>% gf_refine(coord_transform(y = "{instead}"))`'
+        'instead: `%>% gf_refine({coord_transform_name()}(y = "{instead}"))`'
       ),
       "*" = "each square still spans one count, so the stack thins as it climbs"
     ), call = call)

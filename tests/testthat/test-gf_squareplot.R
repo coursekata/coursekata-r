@@ -107,11 +107,11 @@ test_that("caller-owned scales win, and incompatible count axes are refused", {
   # redirected to the coord spelling rather than refused as impossible
   expect_error(
     (gf_histogram(~x, data = squares) + ggplot2::scale_y_sqrt()) %>% gf_squareplot(),
-    'coord_transform\\(y = "sqrt"\\)'
+    glue::glue('{coursekata:::coord_transform_name()}\\(y = "sqrt"\\)')
   )
   expect_error(
     ggplot2::ggplot_build(gf_squareplot(~x, data = squares) + ggplot2::scale_y_sqrt()),
-    'coord_transform\\(y = "sqrt"\\)'
+    glue::glue('{coursekata:::coord_transform_name()}\\(y = "sqrt"\\)')
   )
   # a discrete y keeps its refusal, and says why rather than naming a scale type
   expect_error(
@@ -350,8 +350,11 @@ test_that("the histogram's own binning arguments reach the stat", {
   p <- gf_squareplot(~x, data = squares, binwidth = 2, boundary = 0)
   expect_equal(sort(unique(built_of(p)$data[[1]]$xmin)), c(0, 2, 4))
 
+  # bins= reaches stat_bin, and how stat_bin turns a bin count into breaks has
+  # changed between ggplot2 releases. Asserting a literal count tests ggplot2;
+  # asserting the histogram agrees tests the thing this function promises.
   three <- gf_squareplot(~x, data = squares, bins = 3)
-  expect_equal(nrow(squareplot_bins(three)), 3)
+  expect_equal(squareplot_bins(three), histogram_bins(gf_histogram(~x, data = squares, bins = 3)))
 
   breaks <- c(0, 3, 6)
   by_breaks <- gf_squareplot(~x, data = squares, breaks = breaks)
@@ -472,7 +475,7 @@ test_that("a coord transform distorts the squares instead of being refused", {
   # reader that the unit changes as the scale climbs
   d <- data.frame(x = c(rep(1, 16), rep(2, 4)))
   p <- gf_squareplot(~x, data = d, binwidth = 1) %>%
-    gf_refine(ggplot2::coord_transform(y = "sqrt"))
+    gf_refine(coursekata:::coord_transform_compat(y = "sqrt"))
 
   expect_no_error(built <- ggplot2::ggplot_build(p))
   # every square still spans exactly one count before the coord draws it
@@ -508,7 +511,7 @@ test_that("a border is fitted to the square it borders, not to the first one", {
   set.seed(24)
   d <- data.frame(x = rnorm(400, 50, 10))
   drawn <- rect_grobs(
-    gf_squareplot(~x, data = d) %>% gf_refine(ggplot2::coord_transform(y = "sqrt"))
+    gf_squareplot(~x, data = d) %>% gf_refine(coursekata:::coord_transform_compat(y = "sqrt"))
   )[[1]]
 
   expect_gt(length(unique(round(drawn$gp$lwd, 3))), 1)
