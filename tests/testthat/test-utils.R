@@ -48,3 +48,27 @@ test_that("a plot with no jitter needs no offset", {
   expect_identical(out$plot, plot)
   expect_identical(out$position, "identity")
 })
+
+test_that("with_random_seed_restored leaves the caller's stream where it found it", {
+  set.seed(42)
+  a <- runif(3)
+  set.seed(42)
+  with_random_seed_restored(runif(10))
+  b <- runif(3)
+
+  # MUTATION: dropping the on.exit() restore, which silently moves a reader's
+  # sampling distribution when they pipe gf_model() onto a plot.
+  expect_equal(a, b)
+})
+
+test_that("with_random_seed_restored leaves no seed behind when it found none", {
+  # MUTATION: restoring with assign() unconditionally, even with nothing to
+  # restore -- that would plant a stream in a session that never had one.
+  if (exists(".Random.seed", .GlobalEnv, inherits = FALSE)) {
+    rm(".Random.seed", envir = .GlobalEnv)
+  }
+
+  with_random_seed_restored(runif(1))
+
+  expect_false(exists(".Random.seed", .GlobalEnv, inherits = FALSE))
+})

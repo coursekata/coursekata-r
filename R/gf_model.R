@@ -140,16 +140,25 @@ gf_model <- ggformula::layer_factory(
 
 #' Translate a model into the pieces a ggformula layer is built from
 #'
-#' THE INVARIANT: of the two positional aesthetics `x` and `y`, this never maps
-#' the one the plot is using to carry the model's outcome. The plot has already
-#' put the outcome on an axis; the model layer leaves that aesthetic free and
-#' inherits it. That is the only reason a flipped plot draws correctly, and
-#' there is no orientation logic anywhere at draw time to make it correct any
-#' other way. `xend`/`yend` and the intercepts are terminal companions that
-#' ggplot2 cannot inherit, so they are named outright; `x` and `y` are not.
+#' THE INVARIANT: of the two positional aesthetics `x` and `y`, this always
+#' names the one the plot is using to carry the model's outcome -- with a value
+#' `model_plan()` computed at call time, never with the plot's own expression --
+#' and inherits the other. An inherited outcome expression is re-evaluated
+#' against the prediction grid at build time, which is right for a plain
+#' transformation such as `sqrt()` -- `tests/testthat/test-model-plan.R:488`
+#' ("a plot that transforms the outcome's axis draws the prediction there") is
+#' the test that stops anyone collapsing that branch to always drawing the raw
+#' prediction -- and catastrophic for `shuffle()`, which draws the right values
+#' in a random order. `xend`/`yend` and the intercepts are terminal companions
+#' ggplot2 cannot inherit, so they are named outright as before; `x` and `y` are
+#' not, except that whichever of the two carries the outcome is now named too.
 #'
 #' @param object The plot the layer is being added to.
-#' @param model A model fit by `lm()` or `aov()`, or the formula for one.
+#' @param model A model fit by `lm()` or `aov()`, or the formula for one. An
+#'   outcome axis written as neither a plain permutation nor a plain
+#'   transformation of the model's outcome -- `shuffle(Thumb) + 1`,
+#'   `sqrt(shuffle(Thumb))` -- draws the transformed permutation: nobody writes
+#'   these, so naming the behavior is cheaper than guarding it.
 #' @param args Named list of user arguments, from `...`.
 #' @param call The calling environment, for error reporting.
 #'

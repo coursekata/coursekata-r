@@ -302,5 +302,24 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
   grid <- expand.grid(if (length(params)) params else list(dummy = 1))
   grid[mspec$outcome] <- stats::predict(mspec$fit, newdata = grid)
 
+  # The formula names what to fit; the plot names what to show. An inherited
+  # outcome expression is re-evaluated against this grid, which is right for
+  # sqrt() and catastrophic for shuffle(): geom_line then joins the correct
+  # predictions in a random order. Evaluate it here, once, and travel as a
+  # plain column of the layer's own grid.
+  if (kind %in% c("line", "segment")) {
+    outcome_quo <- spec$resolve_aes(names(outcome_axis))$quo
+    prediction <- grid[[mspec$outcome]]
+    drawn <- if (is.name(quo_get_expr(outcome_quo))) {
+      prediction
+    } else {
+      probe <- with_random_seed_restored(eval_tidy(outcome_quo, grid))
+      # a permutation is the one thing that leaves sort() unchanged
+      if (identical(sort(probe), sort(prediction))) prediction else probe
+    }
+    grid$.model_outcome <- drawn
+    args[[names(outcome_axis)]] <- ~.model_outcome
+  }
+
   list(kind = kind, args = args, grid = grid, tag = "model")
 }
