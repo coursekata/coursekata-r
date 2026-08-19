@@ -201,7 +201,9 @@ model_layer_spec <- function(object, model, args = list(), call = caller_env()) 
   # inherit it, so it has to be mapped by the plot rather than by a layer
   # underneath it; an intercept states its position outright and does not care
   inherits_outcome <- plan$kind %in% c("line", "segment")
-  plot_level <- purrr::map_chr(object$mapping, as_label)
+  # the reader's own spelling, not the pinned quosure's -- a pinned plot's
+  # `mapping` reads `.coursekata_pin_y`, which is not what the reader wrote
+  plot_level <- spec$labels[names(object$mapping)]
   if (inherits_outcome && mspec$outcome %in% label_columns(plot_level) == FALSE) {
     abort(
       c(

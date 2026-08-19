@@ -144,7 +144,10 @@ squareplot_scale_plan <- function(object) {
 #' @noRd
 squareplot_x_values <- function(mapping, data, object) {
   plot <- inherits(object, c("gg", "ggplot"))
-  x <- mapping$x %||% (if (plot) object$mapping$x)
+  # the pinned quosure when the plot carries one, so a pinned `shuffle(Thumb)`
+  # counts the values it already drew rather than a fresh shuffle; the axis
+  # title is a separate concern and stays on plot_spec()'s `labels`
+  x <- mapping$x %||% (if (plot) plot_spec(object)$mapping$x)
   values_from <- data %||% (if (plot) object$data)
   if (is.null(x) || is.null(values_from)) {
     return(NULL)

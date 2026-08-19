@@ -113,7 +113,7 @@ PositionResidJitter <- ggplot2::ggproto(
     )
   },
   compute_layer = function(self, data, params, layout) {
-    with_jitter_seed(params$seed, {
+    with_fixed_seed(params$seed, {
       if (params$width > 0) data$x <- jitter(data$x, amount = params$width)
       if (params$height > 0) data$y <- jitter(data$y, amount = params$height)
       data
@@ -297,7 +297,8 @@ resid_mapping <- function(spec, end) {
   # state the axes rather than inherit them: a plot built with ggplot2 directly
   # carries them on its first layer, where there is nothing to inherit from,
   # and the squares take the geom's own fill and colour so they cannot inherit
-  # at all
+  # at all. spec$mapping is the pinned quosures -- this draws what the plot
+  # draws, so leave it be; anything read here has to evaluate, not print.
   mapping[c("x", "y")] <- spec$mapping[c("x", "y")]
   mapping
 }
@@ -321,7 +322,10 @@ resid_mapping <- function(spec, end) {
 check_resid_axes <- function(spec, call = caller_env()) {
   absent <- c("x", "y")[purrr::map_lgl(c("x", "y"), ~ is.null(spec$mapping[[.x]]))]
   if (length(absent) > 0) {
-    mapped <- purrr::imap_chr(spec$mapping, function(quo, aes) glue("{aes} = {as_label(quo)}"))
+    # the reader's own spelling -- spec$mapping's quosures are pinned, and
+    # printing `.coursekata_pin_y` at a reader is exactly the refusal this
+    # guards against
+    mapped <- purrr::imap_chr(spec$labels, function(label, aes) glue("{aes} = {label}"))
     abort(
       c(
         "A residual needs both an x and a y on the plot",
@@ -552,7 +556,9 @@ resid_layer_fun <- function(tag, aesthetics) {
 #'
 #' The x quosure evaluated in the plot's own data, so a plotted expression
 #' (`~log(Height)`) is measured as the expression and a discrete x arrives as the
-#' factor it is drawn as. `resid_fun_spec()` is its only caller.
+#' factor it is drawn as. `resid_fun_spec()` is its only caller. `spec$mapping`
+#' is the pinned quosure -- correct as written, this has to evaluate to the
+#' values the plot draws, not to what the reader wrote.
 #'
 #' @noRd
 plot_x_values <- function(spec) eval_tidy(spec$mapping$x, spec$data)

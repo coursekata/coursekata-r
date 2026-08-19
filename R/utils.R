@@ -17,27 +17,31 @@ to_cols <- function(strings, n_cols = 2, space_between = "       ") {
   cols <- purrr::map(seq_len(n_cols), ~ strings[seq_len(items_per_col) + items_per_col * (.x - 1)])
   paste(purrr::reduce(cols, ~ paste0(.x, space_between, .y)), collapse = "\n")
 }
-#' Copy a layer, giving it a different position
+#' Copy a layer, replacing named fields
 #'
 #' A ggplot2 layer is a ggproto object, which is an environment, so assigning to
-#' a layer's `position` field in place writes into the layer the caller still
-#' holds: a function that reads a plot in order to draw over it would leave the
-#' caller's own plot changed. Copying the layer's bindings into a fresh
-#' environment and replacing the whole layer leaves the original alone.
+#' a layer's field in place writes into the layer the caller still holds: a
+#' function that reads a plot in order to draw over it would leave the caller's
+#' own plot changed. Copying the bindings into a fresh environment and replacing
+#' the whole layer leaves the original alone.
 #'
-#' @param layer A ggplot2 layer.
-#' @param position The position for the copy.
-#'
-#' @return A copy of `layer`, drawn with `position`.
+#' `attributes()`, not `class()`: `as.list.environment()` carries the bindings
+#' and nothing else, so restoring only the class silently drops
+#' `attr(layer, "coursekata_layer")` and `layer_index()` starts returning NA for
+#' a layer this package put there itself.
 #'
 #' @noRd
-layer_with_position <- function(layer, position) {
+layer_with <- function(layer, ...) {
   copy <- as.environment(as.list.environment(layer, all.names = TRUE))
   parent.env(copy) <- parent.env(layer)
-  class(copy) <- class(layer)
-  copy$position <- position
+  attributes(copy) <- attributes(layer)
+  fields <- list(...)
+  for (name in names(fields)) copy[[name]] <- fields[[name]]
   copy
 }
+
+#' @noRd
+layer_with_position <- function(layer, position) layer_with(layer, position = position)
 
 #' Run an expression and put the caller's random stream back where it was
 #'
@@ -58,10 +62,16 @@ with_random_seed_restored <- function(expr) {
 
 #' Run an expression against a fixed random seed, then put the stream back
 #'
-#' `withr` is only a test dependency, and this is the whole of what a position
-#' needs from it. The save/restore half lives in `with_random_seed_restored()`,
-#' one place, because two callers need it: a position pinning a jitter seed and
-#' `model_plan()`'s call-time probe of an outcome expression.
+#' `withr` is only a test dependency, and this is the whole of what its callers
+#' need from it. The save/restore half lives in `with_random_seed_restored()`,
+#' one place, because that half is also wanted on its own: `model_plan()`'s
+#' call-time probe of an outcome expression spends a draw it must not charge
+#' the reader for, but has no seed to fix.
+#'
+#' The two callers that do fix one want the same thing from it -- two separate
+#' evaluations of one random expression producing one draw. A residual's jitter
+#' has to match its points layer's; a pin evaluated against both a plot's data
+#' and a layer's own copy of it has to land the same permutation on each.
 #'
 #' @param seed A seed, or `NA` to run `expr` untouched.
 #' @param expr The expression to evaluate.
@@ -69,7 +79,7 @@ with_random_seed_restored <- function(expr) {
 #' @return `expr`'s value.
 #'
 #' @noRd
-with_jitter_seed <- function(seed, expr) {
+with_fixed_seed <- function(seed, expr) {
   if (!isTRUE(is.finite(seed))) {
     expr
   } else {

@@ -4,12 +4,23 @@
 #' ggplot2's object shape breaks one function with direct tests rather than
 #' every caller.
 #'
+#' A pin (`R/plot-pin.R`) rewrites a mapped aesthetic's quosure to a fixed
+#' column while remembering what it replaced, so a pinned aesthetic's label
+#' and its quosure diverge: `labels` reports the reader's own spelling (what
+#' a message should say) and `mapping`/`resolve_aes()` report the pinned
+#' quosure (what a build should evaluate).
+#'
 #' @param p A ggplot object.
 #'
-#' @return A list with `mapping`, `data`, `variables`, `aesthetics`, `facets`,
-#'   `axes` and `resolve_aes` (looks up an aesthetic's quosure and source
-#'   data). Which axis carries a model's outcome is not here -- that belongs
-#'   to the plan.
+#' @return A list with `mapping` (the pinned quosures, so anything that
+#'   evaluates gets the values the plot draws), `data` (the pinned plot's
+#'   data), `labels` (a named character vector, the reader's spelling of
+#'   every mapped aesthetic -- a pinned aesthetic's original label where one
+#'   is recorded, `as_label()` of the mapped quosure otherwise), `variables`,
+#'   `aesthetics` and `axes` (all derived from `labels`), `facets`, `pins`
+#'   (the recorded originals, from `plot_pins()`) and `resolve_aes` (looks
+#'   up an aesthetic's quosure and source data). Which axis carries a
+#'   model's outcome is not here -- that belongs to the plan.
 #'
 #' @noRd
 plot_spec <- function(p) {
@@ -25,9 +36,14 @@ plot_spec <- function(p) {
   data <- p$data
   if (!is.data.frame(data) && is.data.frame(layer$data)) data <- layer$data
 
+  pins <- plot_pins(p)
+  labels <- purrr::imap_chr(mapping, function(quo, a) {
+    if (!is.null(pins[[a]])) as_label(pins[[a]]) else as_label(quo)
+  })
+
   aes_names <- sort(setdiff(names(mapping), c("x", "y")))
   facets <- p$facet$vars()
-  variables <- sort(c(purrr::map_chr(mapping, as_label), facet = facets))
+  variables <- sort(c(labels, facet = facets))
   axes <- variables[names(variables) %in% aes_names == FALSE & variables %in% facets == FALSE]
 
   resolve_aes <- function(aes) {
@@ -44,10 +60,12 @@ plot_spec <- function(p) {
   list(
     mapping = mapping,
     data = data,
+    labels = labels,
     variables = variables,
     aesthetics = variables[aes_names],
     facets = facets,
     axes = axes,
+    pins = pins,
     resolve_aes = resolve_aes
   )
 }
