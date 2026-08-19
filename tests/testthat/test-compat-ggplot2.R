@@ -43,3 +43,25 @@ test_that("the refusal quotes the coord this ggplot2 exports", {
   err <- expect_error(ggplot2::ggplot_build(p))
   expect_true(grepl(coord_transform_name(), conditionMessage(err), fixed = TRUE))
 })
+
+test_that("the residual's jitter offers a hook for either release, and picks one", {
+  # MUTATION: implementing only one of the two hooks. `PositionResidJitter` has
+  # to land on the same offsets as the points layer, and ggplot2 moved where
+  # that work happens: 3.5.2 implements `compute_layer` and jitters the whole
+  # layer in one sequence, 4.0 implements `compute_panel` and re-seeds per
+  # panel. Defining only one leaves whichever release wants the other falling
+  # through to `Position`, which jitters nothing at all.
+  #
+  # What each hook actually computes is asserted by the faceted alignment test
+  # in test-gf_resid_fun.R, which runs on both releases in CI. This one only
+  # holds the shape, because only one release is installed at a time.
+  expect_true(all(c("compute_layer", "compute_panel") %in% names(PositionResidJitter)))
+
+  # and the choice tracks the object rather than a version number, so a release
+  # that moves it again is followed without an edit
+  expect_identical(
+    jitter_is_per_panel(),
+    "compute_panel" %in% names(ggplot2::PositionJitter)
+  )
+  expect_length(jitter_is_per_panel(), 1L)
+})
