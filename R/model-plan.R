@@ -11,7 +11,7 @@ model_spec <- function(plot_data, model, call = caller_env()) {
   data <- if (inherits(model, "lm")) model$model else plot_data
 
   # lm() coerces a non-numeric outcome to double and dies with NA/NaN/Inf in 'y',
-  # so the outcome has to be checked before the formula rung fits anything
+  # so the outcome has to be checked before lm() ever runs
   named <- if (is.null(f_lhs(formula))) NULL else as_label(f_lhs(formula))
   if (!inherits(model, "lm") && !is.null(named) && named %in% names(data)) {
     check_numeric_outcome(named, data[[named]], call)
@@ -308,6 +308,14 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
         levels(factor(column_data))
       }
     } else if (column %in% axis_columns) {
+      # the observed range, and never the plot's axis. A model's line is a claim
+      # about where its predictions are warranted, and inside the data every
+      # point interpolated has observations bracketing it. Outside there are
+      # none, and only a theory or a physical constraint can license the claim
+      # -- neither of which a plot can find out by measuring itself. Whatever
+      # widened the axis (a `gf_lims()`, a `gf_b()` intercept dot at zero) is
+      # not evidence about what the model does out there.
+      #
       # a predictor with a missing value gives range() an NA endpoint, and the
       # prediction grid seq() builds from it aborts before anything is drawn
       rng <- range(column_data, na.rm = TRUE)

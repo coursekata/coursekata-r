@@ -446,13 +446,13 @@ check_decomposable <- function(model, fn, call = caller_env()) {
 
 #' Refuse a plot that does not draw both of the axes a residual spans
 #'
-#' Lives apart from the two spec functions because both need it and both have to
+#' Lives apart from the spec functions because each one needs it and each has to
 #' fire it at the same moment: after the plot has been read, and before anything
 #' is predicted, so that a plot with no y is reported as a plot rather than as a
 #' model that could not be predicted or a function that could not be called. One
-#' guard, one message, two callers -- `resid_spec()` and `resid_fun_spec()`.
-#' `call` is threaded through so the refusal names the function the reader wrote
-#' rather than the helper it landed in.
+#' guard, one message, three callers -- `resid_spec()`, `resid_fun_spec()` and
+#' `reduce_spec()`. `call` is threaded through so the refusal names the function
+#' the reader wrote rather than the helper it landed in.
 #'
 #' @param spec A `plot_spec()`.
 #' @param call The calling environment, for error reporting.
@@ -481,10 +481,10 @@ check_resid_axes <- function(spec, call = caller_env()) {
 
 #' Refuse anything but a plot to layer a residual onto
 #'
-#' The first refusal both spec functions make, and the only line of the two that
-#' is word for word the same, so it lives here rather than twice. `fn` is the
-#' name the caller wrote: a helper naming itself would name a function the reader
-#' never called.
+#' The first refusal all three spec functions make, and the only line of the
+#' three that is word for word the same, so it lives here rather than three
+#' times over. `fn` is the name the caller wrote: a helper naming itself would
+#' name a function the reader never called.
 #'
 #' @param object The plot the layer is being added to.
 #' @param fn The name to refuse in, e.g. `"gf_resid"`.
@@ -642,12 +642,11 @@ resid_fun_spec <- function(object, fun, fn = "gf_resid_fun", call = caller_env()
 #'
 #' The grand mean is the mean of `model`'s own model frame's first column --
 #' the outcome the model itself was fit on -- rather than `mean(fitted(model))`.
-#' The two agree
-#' for any model with an intercept, which is every model this package ever
-#' hands back, but only one of them is still the empty model's prediction if
-#' that ever changes, and only one of them is correct for a model fit on data
-#' narrower than the plot's own (a dropped-row model, or a model fit on a
-#' sample the plot was not built from).
+#' The two agree for any model with an intercept, which is every model this
+#' package ever hands back, but only one of them is still the empty model's
+#' prediction if that ever changes, and only one of them is correct for a model
+#' fit on data narrower than the plot's own (a dropped-row model, or a model fit
+#' on a sample the plot was not built from).
 #'
 #' @param object The plot the layer is being added to.
 #' @param model A model fit by `lm()` or `aov()`.
@@ -746,7 +745,7 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
 #'
 #' @return A function with the formals `layer_factory()` expects. It must name
 #'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
-#'   all three by `create_formals()` and fails with a missing geom.
+#'   all four by `create_formals()` and fails with a missing geom.
 #'
 #' @noRd
 resid_layer_fun <- function(tag, aesthetics) {

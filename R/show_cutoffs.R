@@ -24,7 +24,7 @@
 #' @param plot A ggplot of one distribution -- a histogram, bar chart, density,
 #'   dotplot, or [gf_squareplot()].
 #' @param part A distribution part, e.g. `middle(Thumb, .95)`. Optional: without
-#'   it, the part is read off the plot's fill aesthetic, exactly as before.
+#'   it, the part is read off the plot's fill aesthetic.
 #' @param color Marker/line color. Default `"#1e3a8a"`.
 #' @param size Marker size. Default `4`.
 #' @param labels Whether to annotate the cutoffs. Default `FALSE`.

@@ -11,7 +11,7 @@ test_that("the version predicate answers, rather than always agreeing or refusin
 
 test_that("the version predicate reads the installed ggplot2, not a constant", {
   # its own version is the one boundary where TRUE and FALSE must both be reachable
-  # from neighbouring inputs; a constant cannot satisfy both
+  # from neighboring inputs; a constant cannot satisfy both
   here <- as.character(utils::packageVersion("ggplot2"))
   expect_true(ggplot2_at_least(here))
   expect_false(ggplot2_at_least(paste0(as.integer(sub("[.].*", "", here)) + 1L, ".0.0")))

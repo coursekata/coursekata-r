@@ -59,7 +59,7 @@ places the whole grid; give one or the other, not both.}
 
 \item{closed}{Which end of a bin holds a value that lands exactly on it,
 \code{"right"} or \code{"left"}. For whole-number data, \code{boundary = 0.5} puts every
-value in the column it is labelled with, whichever end is closed.}
+value in the column it is labeled with, whichever end is closed.}
 
 \item{breaks}{The bin edges themselves, which need not be evenly spaced.}
 

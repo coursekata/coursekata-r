@@ -124,7 +124,7 @@ test_that("it refuses a model whose outcome is not on an axis", {
 })
 
 test_that("the missing-variables error wins when the outcome is also off-axis", {
-  # Pins abort order: a plot can simultaneously omit a model term AND leave
+  # Pins the abort order: a plot can simultaneously omit a model term AND leave
   # the outcome off-axis. Which check runs first decides which message a
   # student sees, so that order is frozen here rather than left to chance.
   p <- gf_point(heart_rate ~ resp_rate, color = ~later_anxiety, data = er)
@@ -185,7 +185,7 @@ test_that("the group mark keeps its default width unless the user sets one", {
 })
 
 test_that("it refuses an aesthetic mapped to something the model does not use", {
-  # Deliberate behaviour change: previously dropped in silence, now an error.
+  # Deliberate behavior change: previously dropped in silence, now an error.
   p <- gf_point(later_anxiety ~ base_anxiety, data = er)
   expect_error(
     plan_for(p, lm(later_anxiety ~ base_anxiety, data = er), color = ~condition),
@@ -240,6 +240,37 @@ test_that("it names the supported base plots when nothing on the plot is mapped"
     plan_for(p, lm(later_anxiety ~ base_anxiety, data = er)),
     "gf_model\\(\\) supports"
   )
+})
+
+test_that("a grid stops at the data, whatever else widened the axis", {
+  # MUTATION: sizing the grid from the plot's trained scale instead of from the
+  # observations. A model's line is a claim about where its predictions are
+  # warranted: inside the data every interpolated point has observations
+  # bracketing it, and outside there are none. Nothing a plot can measure about
+  # itself is evidence either way, so neither an explicit `gf_lims()` nor the
+  # `b0` dot `gf_b()` puts at zero may lengthen it.
+  model <- lm(later_anxiety ~ base_anxiety, data = er)
+  observed <- range(er$base_anxiety)
+  base <- gf_point(later_anxiety ~ base_anxiety, data = er)
+
+  widened <- base %>% gf_lims(x = c(observed[[1]] - 20, observed[[2]] + 20))
+  expect_equal(range(plan_for(widened, model)$grid$base_anxiety), observed)
+
+  annotated <- base %>% gf_b(model)
+  expect_equal(range(plan_for(annotated, model)$grid$base_anxiety), observed)
+})
+
+test_that("a narrowed scale clips the line rather than shortening the grid", {
+  # MUTATION: reading the scale at all. Clipping what runs off the panel is the
+  # scale's job; a grid that pre-clipped would leave nothing for it to clip.
+  model <- lm(later_anxiety ~ base_anxiety, data = er)
+  observed <- range(er$base_anxiety)
+  narrowed <- suppressWarnings(
+    gf_point(later_anxiety ~ base_anxiety, data = er) %>%
+      gf_lims(x = c(observed[[1]] + 5, observed[[2]] - 5))
+  )
+
+  expect_equal(range(plan_for(narrowed, model)$grid$base_anxiety), observed)
 })
 
 test_that("a layer-level mapping is read when the plot itself maps nothing", {

@@ -101,8 +101,8 @@ gf_jitter(body_mass_kg ~ gentoo, data = penguins_20, width = .1) \%>\%
   gf_model(gentoo_model) \%>\%
   gf_reduce(gentoo_model, color = "blue")
 
-# residual (firebrick) and reduction (blue) together decompose the fit's
-# distance from the grand mean
+# residual (firebrick) and reduction (blue) together decompose each
+# observation's distance from the grand mean
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) \%>\%
   gf_model(flipper_model) \%>\%
   gf_resid(flipper_model, color = "firebrick") \%>\%

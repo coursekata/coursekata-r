@@ -101,8 +101,8 @@ test_that("a deterministic mapping is pinned to exactly the numbers it already d
 })
 
 test_that("a symbol mapping and an after_stat() mapping are left alone", {
-  # MUTATION: dropping rule 1's guards, which pins the function `stats::density`
-  # as if it were data
+  # MUTATION: dropping the symbol and after_stat() guards, which pins the
+  # function `stats::density` as if it were data
   p1 <- gf_point(Thumb ~ Height, data = Fingers)
   expect_equal(pin_plot_values(p1)$pins, list())
 
@@ -113,8 +113,8 @@ test_that("a symbol mapping and an after_stat() mapping are left alone", {
 })
 
 test_that("a layer carrying derived data is pinned too", {
-  # MUTATION: rule 4 reverted to "only layers whose data is identical to the
-  # plot's", which leaves a layer carrying its own derived data half-pinned
+  # MUTATION: reverting to "only layers whose data is identical to the plot's",
+  # which leaves a layer carrying its own derived data half-pinned
   base <- ggplot2::ggplot(Fingers, ggplot2::aes(Height, shuffle(Thumb)))
   base <- base + ggplot2::geom_point(mapping = base$mapping)
   extra <- Fingers
@@ -142,7 +142,7 @@ test_that("a second drawer of the same aesthetic is reported, not silently pinne
 })
 
 test_that("pinning twice keeps the reader's words", {
-  # MUTATION: rule 7 dropped -- a second, no-op pin forgets the originally
+  # MUTATION: idempotence dropped -- a second, no-op pin forgets the originally
   # recorded quosure instead of carrying it forward untouched
   p <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers)
   q1 <- pin_plot_values(p)$plot

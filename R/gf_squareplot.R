@@ -97,7 +97,7 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
       glue("`gf_squareplot()` cannot count squares on a y scale that applies {what}"),
       "*" = paste(
         "a scale transforms the counts before the squares are built, so the",
-        "squares would be drawn in one space and labelled in another"
+        "squares would be drawn in one space and labeled in another"
       ),
       # the coord is spelled coord_trans() before ggplot2 4.0; naming the one
       # the reader does not have sends them somewhere they cannot go
@@ -382,7 +382,7 @@ squareplot_check <- function(object, gformula, na.rm, dots = character(),
 #'   places the whole grid; give one or the other, not both.
 #' @param closed Which end of a bin holds a value that lands exactly on it,
 #'   `"right"` or `"left"`. For whole-number data, `boundary = 0.5` puts every
-#'   value in the column it is labelled with, whichever end is closed.
+#'   value in the column it is labeled with, whichever end is closed.
 #' @param breaks The bin edges themselves, which need not be evenly spaced.
 #' @param bars Display style: `"none"` (squares only), `"outline"` (squares inside
 #'   the bar they add up to) or `"solid"` (that bar alone).

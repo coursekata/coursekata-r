@@ -113,18 +113,18 @@ with it: a model of the variable the plot puts on x squares the horizontal
 distance. Its side is scaled to stay square on the page rather than in data
 units.
 
-\code{aspect} belongs to all three square layers or to none of them.
-"blue = red + green" -- the squared reduction plus the squared residual
-equaling the squared total -- is a claim about areas on the page, and it
-only holds while \code{\link[=gf_square_resid]{gf_square_resid()}}, \code{\link[=gf_square_reduce]{gf_square_reduce()}} and any squared
-total drawn alongside them all read the same \code{aspect}.
+\code{aspect} belongs to all three square layers or to none of them. The squared
+reduction plus the squared residual equaling the squared total is a claim
+about areas on the page, and it only holds while \code{\link[=gf_square_resid]{gf_square_resid()}},
+\code{\link[=gf_square_reduce]{gf_square_reduce()}} and any squared total drawn alongside them all read the
+same \code{aspect}.
 }
 \examples{
 set.seed(1)
 penguins_20 <- sample(penguins, 20)
 
-# the three colors of one decomposition: residual (firebrick), reduction
-# (blue) and their squares, all reading the same aspect so the areas mean
+# two squares of one decomposition: the squared residual (firebrick) and the
+# squared reduction (blue), both reading the same aspect so the areas mean
 # what they say
 flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins_20)
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) \%>\%

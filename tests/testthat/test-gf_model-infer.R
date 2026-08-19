@@ -159,8 +159,8 @@ test_that("the caller's own plot is untouched by the pin gf_model() records on i
   q <- p %>% gf_model()
 
   # the bug this guards against lives in p$layers[[i]], a ggproto environment
-  # -- p$data and p$mapping are copy-on-modify and cannot show it, which is
-  # exactly why v1's version of this test passed while the caller was mutated
+  # -- p$data and p$mapping are copy-on-modify and cannot show it, so a test
+  # that checked those instead would pass while the caller was still mutated
   expect_false(".coursekata_pin_y" %in% names(p$layers[[1]]$data))
   expect_equal(rlang::as_label(p$layers[[1]]$mapping$y), "shuffle(Thumb)")
   expect_false(isTRUE(all.equal(
@@ -283,6 +283,38 @@ test_that("after_stat() mappings are read as unmapped, not as the value they com
   # about the density function itself
   expect_equal(nrow(b), 1L)
   expect_equal(b$xintercept, mean(Fingers$Thumb))
+})
+
+test_that("an inferred line stops at the data, whatever else widened the axis", {
+  # MUTATION: `fullrange = TRUE` as the stated default, or leaving the
+  # parameter unstated so nothing records that this is a choice.
+  model <- lm(Thumb ~ Height, data = Fingers)
+  observed <- range(Fingers$Height)
+  base <- gf_point(Thumb ~ Height, data = Fingers)
+
+  expect_equal(range(built(base %>% gf_lims(x = c(40, 100)) %>% gf_model())$x), observed)
+  expect_equal(range(built(base %>% gf_b(model) %>% gf_model())$x), observed)
+})
+
+test_that("naming the model does not change how far its line is drawn", {
+  # MUTATION: one path sizing its grid from the plot's axis while the other
+  # sizes it from the data. The two build their grids by completely different
+  # routes -- a stat handed the panel's scale as it draws, and a grid computed
+  # when the call is made -- so nothing but a test holds them to one answer.
+  # It was `gf_b()` that first pulled them apart: it widens the axis, and for a
+  # while only one of the two lines stretched to follow.
+  model <- lm(Thumb ~ Height, data = Fingers)
+  base <- gf_point(Thumb ~ Height, data = Fingers)
+  widenings <- list(
+    plain = function(p) p,
+    b = function(p) gf_b(p, model),
+    lims = function(p) gf_lims(p, x = c(40, 100))
+  )
+
+  for (widen in widenings) {
+    p <- widen(base)
+    expect_equal(range(built(p %>% gf_model())$x), range(built(p %>% gf_model(model))$x))
+  }
 })
 
 test_that("`se = TRUE` draws the band, not just the numbers for one", {

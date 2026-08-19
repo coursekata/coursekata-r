@@ -1,5 +1,109 @@
 # coursekata (development version)
 
+- New `gf_b()`, with `gf_coef()` as the alias readers who know `coef()` will look for. It
+  annotates a fitted model's coefficients on the plot they describe: a continuous predictor
+  gets a rise-over-run triangle, with the rise labeled for the run it spans (`b[1]` when that
+  run is 1, `10 %*% b[1]` when it is 10) and a hollow dot at `(0, b0)`; a categorical
+  predictor gets a reference line at the b0 group's mean and one labeled arrow to each of the
+  other groups; the empty model gets the b0 line alone.
+  Where `gf_model()` draws the fit, `gf_b()` draws the numbers that describe it. Every mark
+  is placed from the model's coefficients rather than from any drawn point, so jitter never
+  moves an arrow, and every mark is a separately named layer, so a script can find one
+  without counting layers. `show_b0 = TRUE`, the default, expands the predictor's own axis to
+  include 0 on a continuous model, because a picture of b0 that does not show the predictor
+  at 0 is not a picture of b0. With no model, `gf_b()` reads the model the plot implies and
+  fits it at the call; on a faceted plot that is refused, because one set of arrows drawn
+  over a per-panel line would describe a fit no panel actually has.
+  Three shapes of model are refused rather than drawn, because every mark is placed from the
+  coefficients rather than from the points and so nothing about drawing one would look
+  wrong. A model whose predictor the plot does not draw: `lm(Thumb ~ Sex)` over a plot of
+  five race groups, or `lm(Thumb ~ log(Height))` over a raw `Height` axis, where the
+  triangle lands at 4.23 on an axis running 59 to 76.5. A model with no intercept, which has
+  no b0 for the marks to be measured from. And a categorical predictor coded any way but
+  treatment -- `contr.sum`, `contr.helmert`, an ordered factor's `contr.poly` -- where
+  coefficient k is not group k's difference from a reference group, which is the only thing
+  an arrow can mean. Choosing a different reference level is still fine: the plot orders its
+  groups by the same factor the model coded.
+- New `gf_reduce()` and `gf_square_reduce()`, the latter also spelled `gf_squareduce()`: the
+  third side of the sum-of-squares
+  decomposition. They draw the distance a model's fit moves each prediction away from the
+  grand mean, so the reduction and the residual -- and their squares -- put SS Model and
+  SS Error on one picture as lengths and as areas. Like a residual, a reduction runs along
+  whichever axis the plot puts the model's outcome on, and starts on the x each point is
+  actually drawn at, jitter included. The grand mean is the model's own, taken from the rows
+  it was fit on rather than off the plot's data, so on a faceted plot every panel is
+  measured against the same line and each panel draws a piece of one decomposition rather
+  than a decomposition of its own. `aspect` belongs to every square layer on a plot or to
+  none of them: "the reduction square plus the residual square is the whole square" is a
+  claim about areas on the page, and it holds only while they all read the same one. A fit
+  without an intercept, or one fit with weights, is refused: the areas only add up because
+  an unweighted intercept leaves the residuals orthogonal to the grand mean, and without
+  that a reader counting squares is counting an arithmetic that does not hold. Measured on
+  `lm(Thumb ~ Height - 1)`, error plus reduction comes to 11700.01 against a total of
+  11880.21. `gf_resid()` still measures either fit, needing no such identity.
+- `gf_model()` called with no model draws the model the plot implies. A numeric predictor
+  draws the regression line, a categorical predictor draws one mark at each group's mean,
+  and a plot of an outcome alone draws the grand mean. `ggformula::gf_lm()` draws nothing at
+  all on a categorical x, and `gf_model()` itself would only ever draw a model you had
+  named. The inferred model is fit per panel, which is the distinction worth knowing: a
+  faceted `gf_point(body_mass_kg ~ flipper_length_m | species) %>% gf_model()` fits each
+  species its own line, where naming a model above would repeat that one whole-data fit in
+  every panel. On the regression shape, `...` reaches the fitting vocabulary `gf_lm()` uses:
+  `se = TRUE` draws the confidence band, `n =` sets the prediction grid's length,
+  `method.args =` is `gf_lm()`'s `lm.args =`, and `formula = y ~ poly(x, 2)` fits a curve.
+  A model's line runs across the data it was fit on and stops there, however wide the axis
+  around it gets. Inside that range every point the line interpolates has observations on
+  both sides of it; outside there are none, and saying the pattern continues needs a theory
+  or a physical constraint behind it rather than a plot that happens to have room. So a
+  `gf_lims()`, or the `b0` dot `gf_b()` places at zero, leaves the line where it was.
+- An inferred model is fit on the values the plot drew. A mapping such as `shuffle(Thumb)`
+  names a different permutation every time it is evaluated, and independently in every layer
+  that carries it, so there is no seed to declare and nothing for a freshly fit model to
+  agree with. A `gf_model()` call with no model therefore pins the drawn values onto the
+  plot it returns -- the same bargain `gf_resid()` already makes for jitter. The plot you
+  passed in is untouched, and the returned plot still reads in your own words: its axis
+  titles, its refusals and its messages name `shuffle(Thumb)`, not the fixed column standing
+  in for it.
+- Fix a model drawn over a plot whose outcome mapping permutes the data: it was drawn in
+  scrambled order rather than as a line. On a plot of `shuffle(Thumb) ~ Height`,
+  `gf_model(Thumb ~ Height)` computed the right predictions and then left the outcome
+  aesthetic unmapped, so the layer inherited the plot's own `shuffle(Thumb)` and ggplot2
+  re-evaluated it against the prediction grid at draw time -- a fresh permutation, in whose
+  order `geom_line()` then joined the predictions. The formula names what to fit and the
+  plot names what to show, so the plot's outcome expression is now evaluated once, at the
+  call, and travels as a plain column. A plain transformation such as `sqrt()` still lands
+  on the transformed axis. Neither the fix nor the pinning above moves your random stream:
+  drawing a model over a plot does not cost you a sample.
+- `show_cutoffs()` takes the distribution part directly, as its second argument:
+  `show_cutoffs(p, middle(Thumb, .95))`. That is what every notebook wants to say, and until
+  now the only way to say it was to shade the plot with a matching `fill` first. An explicit
+  part overrides the fill rather than having to agree with it, because marking the 99%
+  cutoffs on a plot shaded for the 95% loses nothing and is a normal thing to want. The
+  argument is read by shape and never by value, so `show_cutoffs(p, "red")` and
+  `col <- "red"; show_cutoffs(p, col)` are refused alike -- a color in a position that does
+  not take one.
+- `show_cutoffs()` refuses two plots it used to mark meaninglessly: one whose first layer
+  does not draw a distribution -- cutoffs describe where a distribution's mass sits, and a
+  scatterplot, boxplot or violin has no mass to cut into -- and, where the part is given
+  explicitly, a part naming a variable other than the one the plot puts on x. The variable
+  is compared by name and never evaluated, so a part naming a column that does not exist is
+  refused by name rather than failing inside `eval_tidy()`.
+- Calling `show_cutoffs()` twice stacks a second, independent set of markers, and nothing
+  about the first call has to change for the second to land correctly. Labels are the one
+  part of that picture that does not stack: both sets are drawn at the same height, so a
+  second `labels = TRUE` call now warns that they will overlap, and draws them anyway -- the
+  plot is still the one you asked for, just harder to read.
+- New `StatCutoff` export: the cutoff rule as a `ggplot2::Stat`, emitting the intercepts to
+  pair with `ggplot2::GeomVline` in a plot you are assembling yourself. It calls the same
+  function `show_cutoffs()` calls, so the two cannot compute a different cutoff for the same
+  distribution part. It computes per panel, which is what a stat does with the rows ggplot2
+  hands it; `show_cutoffs()` keeps marking the whole distribution, because that is what a
+  `middle()` fill shades. Its `func` and `prop` are checked, which the `show_cutoffs()` route
+  got for free by reading a call: unchecked, `func = "bogus"` marked a lower cutoff and
+  `prop = 2` marked the smallest observation as an upper one, both indistinguishable on the
+  page from a real mark. It plans in the data's own space and carries the result back, so a
+  cutoff means the same tail on `scale_x_reverse()` as anywhere else -- a quantile survives a
+  transformation that increases and turns over under one that decreases.
 - A residual drawn over a jittered plot lands on the jittered points, on a plot with
   any number of layers. The residual now declares the same jittered position the points
   carry -- two layers sharing a seed compute the same offsets independently -- rather
@@ -45,15 +149,16 @@
   now stay countable at any size without being asked. Passing one of the old names is
   refused, with the replacement named.
 - A squareplot can be drawn on a transformed count axis, with
-  `%>% gf_refine(coord_transform(y = "sqrt"))`. Each square still spans exactly one
+  `%>% gf_refine(coord_transform(y = "sqrt"))` -- `coord_trans()` on ggplot2 3.5,
+  which is the same coord under its older name. Each square still spans exactly one
   count, so the squares are drawn shorter the higher up the stack they sit --
   which is the point: the distortion is what shows that the unit changes as the
   scale climbs. The borders between squares are fitted per square rather than once
   for the layer, so the compressed ones at the top are not swallowed by their own
   outlines. A `scale_y_*()` transformation is still refused, because a scale
   transforms the counts before the squares are built and the squares would be
-  drawn in one space and labeled in another; the refusal now names the
-  `coord_transform()` spelling instead of saying a transformed axis is impossible.
+  drawn in one space and labeled in another; the refusal now names the coord
+  spelling your ggplot2 exports instead of saying a transformed axis is impossible.
   A discrete y scale is still refused, and now says why: there is no count for a
   square to be one of.
 - A squareplot's bins are a histogram's bins, argument for argument: `bins`,

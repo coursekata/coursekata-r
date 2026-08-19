@@ -13,13 +13,21 @@ picture.
 
 ## The empty model
 
-The empty model predicts the same value — the mean — for every observation. On a
+The empty model predicts the same value, the mean, for every observation. On a
 histogram it is a single vertical line.
 
 ```{r}
 empty_model <- lm(body_mass_kg ~ NULL, data = penguins)
 gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) %>%
   gf_model(empty_model)
+```
+
+A plot already implies a model, so you can leave the argument out and let
+`gf_model()` work out which one. A distribution on its own implies the empty model.
+
+```{r}
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) %>%
+  gf_model()
 ```
 
 ## Group models
@@ -78,7 +86,7 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
 ```
 
 `gf_square_resid()` draws each residual as a square instead of a segment, which
-makes *squared* error visible as area — the quantity least squares is actually
+makes *squared* error visible as area: the quantity least squares is actually
 minimizing.
 
 ```{r}
@@ -95,6 +103,38 @@ empty_20 <- lm(body_mass_kg ~ NULL, data = penguins_20)
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
   gf_model(empty_20) %>%
   gf_square_resid(empty_20, color = "dodgerblue")
+```
+
+## Where the error goes
+
+The blue squares are the error the empty model leaves. The red ones are what is
+left once flipper length is accounted for. The difference between them is the
+part the predictor explains, and `gf_reduce()` draws it: for each penguin, the
+distance from the grand mean to the model's prediction.
+
+```{r}
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
+  gf_model(empty_20) %>%
+  gf_model(sample_model) %>%
+  gf_reduce(sample_model, color = "forestgreen")
+```
+
+Drawn as squares, the three areas complete each other.
+
+```{r}
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
+  gf_model(sample_model) %>%
+  gf_square_resid(empty_20, color = "dodgerblue") %>%
+  gf_square_resid(sample_model, color = "firebrick") %>%
+  gf_square_reduce(sample_model, color = "forestgreen")
+```
+
+Blue is red plus green: the error you started with is the error you are left
+with plus the error the predictor explained. The green share of the blue is PRE,
+the same number `supernova()` puts in a table.
+
+```{r}
+supernova(sample_model)
 ```
 
 ## The standard deviation as a typical residual

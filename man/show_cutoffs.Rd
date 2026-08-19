@@ -11,7 +11,7 @@ show_cutoffs(plot, part, color = "#1e3a8a", size = 4, labels = FALSE)
 dotplot, or \code{\link[=gf_squareplot]{gf_squareplot()}}.}
 
 \item{part}{A distribution part, e.g. \code{middle(Thumb, .95)}. Optional: without
-it, the part is read off the plot's fill aesthetic, exactly as before.}
+it, the part is read off the plot's fill aesthetic.}
 
 \item{color}{Marker/line color. Default \code{"#1e3a8a"}.}
 

@@ -1,4 +1,4 @@
-# D1: THE CLAIM this whole item exists for. MUTATION: any error in the grand
+# THE CLAIM this test exists for. MUTATION: any error in the grand
 # mean, in which end is which, or in the prediction.
 test_that("the squared reduction sums to the model's SS Model", {
   model <- lm(Thumb ~ Height, data = Fingers)
@@ -12,7 +12,7 @@ test_that("the squared reduction sums to the model's SS Model", {
   )
 })
 
-# D2: MUTATION: per-row prediction leaking observed values in rather than the
+# MUTATION: per-row prediction leaking observed values in rather than the
 # per-group fitted mean.
 test_that("a categorical reduction takes one value per group, each a group mean's own distance", {
   model <- lm(Thumb ~ Sex, data = Fingers)
@@ -27,7 +27,7 @@ test_that("a categorical reduction takes one value per group, each a group mean'
   expect_equal(sort(unique(reductions)), sort(as.vector(group_means - grand)))
 })
 
-# D3: THE DECOMPOSITION. MUTATION: a grand mean computed from the plot's rows
+# THE DECOMPOSITION. MUTATION: a grand mean computed from the plot's rows
 # rather than the model's when the two differ -- here, the outcome carries a
 # few NAs that lm() drops from both models' own training data, but that the
 # plot's raw data (spec$data) still carries whole. A grand mean read off
@@ -66,7 +66,7 @@ test_that("resid(empty) minus resid(complex) equals reduce(complex), even with r
   expect_equal(ss_resid_empty - ss_resid_complex, ss_reduce, tolerance = 1e-6)
 })
 
-# D4: x-only jitter. MUTATION: height = NULL (segments float off the mean
+# x-only jitter. MUTATION: height = NULL (segments float off the mean
 # line), a fresh unseeded position, or reversing the x/y draw order.
 test_that("a reduction's x offsets equal the jittered points layer's own", {
   model <- lm(Thumb ~ Sex, data = Fingers)
@@ -80,7 +80,7 @@ test_that("a reduction's x offsets equal the jittered points layer's own", {
   )
 })
 
-# D5: MUTATION: y ever being jittered.
+# MUTATION: y ever being jittered.
 test_that("a reduction's y is never jittered off the grand mean", {
   model <- lm(Thumb ~ Sex, data = Fingers)
   p <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .1, seed = 42)
@@ -121,7 +121,7 @@ test_that("a flipped squared reduction is measured on x, not on the plot's own y
   expect_equal(unique(built$data[[layer_index(q, "square_reduce")]]$x), mean(model$model[[1]]))
 })
 
-# D6: MUTATION: pinning the caller's plot instead of the returned one.
+# MUTATION: pinning the caller's plot instead of the returned one.
 test_that("gf_reduce() pins the jitter on the plot it returns, not the caller's", {
   model <- lm(Thumb ~ Sex, data = Fingers)
   p <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .1)
@@ -133,7 +133,7 @@ test_that("gf_reduce() pins the jitter on the plot it returns, not the caller's"
   expect_true(is.finite(q$layers[[1]]$position$seed))
 })
 
-# D7: square shape. MUTATION: a stat-time expansion -- do NOT assert
+# square shape. MUTATION: a stat-time expansion -- do NOT assert
 # 4 * nrow(data), since square_vertices() runs in draw_panel() and
 # ggplot_build() output is one row per observation.
 test_that("a squared reduction is one row per observation; square_vertices() draws the expansion", {
@@ -155,7 +155,7 @@ test_that("a squared reduction is one row per observation; square_vertices() dra
   }
 })
 
-# D8: absolute side length. MUTATION: aspect applied per row instead of
+# absolute side length. MUTATION: aspect applied per row instead of
 # globally, and the range-ratio scaling dropped. Do NOT assert a ratio of two
 # sides -- both aspect and ratio cancel there.
 test_that("a square's side is the reduction scaled by aspect and the panel's range ratio", {
@@ -179,7 +179,7 @@ test_that("a square's side is the reduction scaled by aspect and the panel's ran
   expect_equal(side, expected)
 })
 
-# D9: MUTATION: the warning missing, or becoming a refusal.
+# MUTATION: the warning missing, or becoming a refusal.
 test_that("the empty model warns rather than refuses, and still returns a plot", {
   empty_model <- lm(Thumb ~ NULL, data = Fingers)
   p <- gf_point(Thumb ~ Height, data = Fingers)
@@ -203,7 +203,7 @@ test_that("the empty model's warning names gf_square_reduce(), not gf_reduce()",
   )
 })
 
-# D10: refusal order. MUTATION: reordering reduce_spec()'s guards -- both
+# refusal order. MUTATION: reordering reduce_spec()'s guards -- both
 # resid_fitted() and resid_end() would refuse too, for the model's variables
 # being entirely absent from the plot's data, so seeing the axes refusal
 # specifically is evidence of order and not just of the check existing.
@@ -223,7 +223,7 @@ test_that("gf_reduce() refuses a missing model after confirming it has a plot", 
   expect_error(gf_reduce(p, NULL), "which model to measure")
 })
 
-# D11: spellings. MUTATION: the gformula rescue in `pre`.
+# spellings. MUTATION: the gformula rescue in `pre`.
 test_that("gf_reduce(p, m), gf_reduce(p, model = m) and piped all build identical layers", {
   model <- lm(Thumb ~ Height, data = Fingers)
   p <- gf_point(Thumb ~ Height, data = Fingers)
@@ -240,7 +240,7 @@ test_that("gf_reduce(p, m), gf_reduce(p, model = m) and piped all build identica
   expect_equal(built_positional, built_piped)
 })
 
-# D12: facets. MUTATION: a per-panel grand mean sneaking in.
+# facets. MUTATION: a per-panel grand mean sneaking in.
 test_that("every panel's reduction segments share one grand mean", {
   model <- lm(later_anxiety ~ base_anxiety, data = er)
   p <- gf_point(later_anxiety ~ base_anxiety, data = er) %>%
@@ -252,7 +252,7 @@ test_that("every panel's reduction segments share one grand mean", {
   expect_equal(unique(built$y), mean(model$model[[1]]))
 })
 
-# D13: MUTATION: the `pre` gate.
+# MUTATION: the `pre` gate.
 test_that("a bare call prints the layer's own help instead of drawing", {
   expect_message(bare <- gf_reduce(), "does not require a formula")
   expect_null(bare)

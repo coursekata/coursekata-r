@@ -180,9 +180,10 @@ test_that("arrow position and label follow coef() order, not sort(levels())", {
 })
 
 test_that("an inferred gf_b() reads the same decision gf_model()'s inference reads", {
-  # MUTATION: the outcome/predictor/kind decision drifting between A and C --
-  # a second copy of the inference living in R/gf_b.R. gf_b() fits its own
-  # lm() by design; what must not drift is which variables and which shape.
+  # MUTATION: the outcome/predictor/kind decision drifting between gf_model()
+  # and gf_b() -- a second copy of the inference living in R/gf_b.R. gf_b()
+  # fits its own lm() by design; what must not drift is which variables and
+  # which shape.
   set.seed(31)
   q <- gf_jitter(shuffle(Height) ~ Sex, data = Fingers, width = .1) %>% gf_b()
 
@@ -199,8 +200,7 @@ test_that("an inferred gf_b() reads the same decision gf_model()'s inference rea
 
 test_that("an inferred gf_model() and an inferred gf_b() agree about the same plot", {
   # MUTATION: the two features disagreeing about the same implied model --
-  # the collaborator's notebook cell 16 checks this by eye ("segments and
-  # arrows should align")
+  # previously checked only by eye ("segments and arrows should align")
   set.seed(32)
   p <- gf_jitter(shuffle(Height) ~ Sex, data = Fingers, width = .1) %>%
     gf_model() %>%
@@ -278,7 +278,7 @@ test_that("a bare call prints help naming the function the caller wrote", {
 test_that("a formula where a fitted model belongs is refused, not silently fit", {
   # MUTATION: gf_b() quietly fitting a formula itself, which would fit a
   # different model than the one the caller's own lm() call intended (and
-  # duplicate item A's fitting path)
+  # duplicate gf_model()'s fitting path)
   p <- gf_point(Thumb ~ Height, data = Fingers)
   expect_error(gf_b(p, Thumb ~ Height), "not a fit")
 })

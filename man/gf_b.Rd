@@ -85,10 +85,18 @@ appearance with \code{color}, \code{label_color}, \code{label_size}, \code{arrow
 heterogeneous geoms with no single params bag to receive it.}
 
 \item{model}{The model to annotate: a fit from \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}, with
-one predictor at most. A formula is refused -- \code{gf_b()}'s whole output is
-a set of labelled numbers, and there is no fit to read them from. May be
-given positionally or as \verb{model =}. Omitted, the model the plot implies
-is fit and annotated instead.}
+one predictor at most, and that predictor spelled the way the plot's own
+axis spells it -- \code{log(Height)} and \code{Height} are the same column but not
+the same axis, and b1 is a rise per unit of whichever one the model was
+fit on. It needs an intercept, because every mark here is measured from
+b0; a categorical predictor needs treatment coding, because every arrow is
+drawn as one group's difference from the reference group and no other
+coding's coefficients are that. Each of those is refused rather than
+drawn, because each would otherwise produce a picture that looks right. A
+formula is refused too -- \code{gf_b()}'s whole output is a set of labeled
+numbers, and there is no fit to read them from. May be given positionally
+or as \verb{model =}. Omitted, the model the plot implies is fit and annotated
+instead.}
 
 \item{color, label_color}{The arrows/lines and the label text. \code{colour} and
 \code{label_colour} are accepted too. Each is a single value, not a mapping --
@@ -98,9 +106,10 @@ rows of data to map an aesthetic over; \code{color = ~variable} is refused.}
 \item{label_size, arrow_linewidth, b0_linewidth, b0_size}{Sizes for the labels,
 the arrows, the b0 line and the b0 dot.}
 
-\item{show_b0}{Draw the \code{b0} line/dot and its label, and expand the x axis
-to include 0 on a continuous model. \code{TRUE} by default; a later
-\code{gf_lims(x = )} overrides the expansion and can push the b0 dot off the
+\item{show_b0}{Draw the \code{b0} line/dot and its label, and expand the
+PREDICTOR's axis to include 0 on a continuous model -- x on most plots, y
+on one that puts the outcome on x. \code{TRUE} by default; a later \code{gf_lims()}
+on that axis overrides the expansion and can push the b0 dot off the
 page.}
 
 \item{run, run_x}{The run a continuous model's rise is measured over, and
@@ -135,9 +144,9 @@ A ggplot object with the model's coefficients annotated on it.
 \description{
 Draws the intercept and slope (or group differences) of a fitted model as
 arrows and labels directly on the plot they describe: a rise-over-run
-triangle for a continuous predictor, one arrow per group for a categorical
-one. Where \code{\link[=gf_model]{gf_model()}} draws the fit itself, \code{gf_b()} draws the numbers
-that describe it.
+triangle for a continuous predictor, an arrow to each non-reference group for
+a categorical one. Where \code{\link[=gf_model]{gf_model()}} draws the fit itself, \code{gf_b()} draws
+the numbers that describe it.
 
 \code{gf_coef()} is a fully supported alias of \code{gf_b()}. The package already
 exports \code{b()}, \code{b0()}, \code{b1()} as its vocabulary for coefficients, and a
@@ -151,11 +160,11 @@ under that name.
 label under the run segment (over it, for a negative rise), and a hollow
 dot at \verb{(0, b0)} with a b0 label.
 
-\strong{A categorical predictor} (\code{k} levels): one horizontal reference line at
-\code{b0} (the reference level's mean), and for each \code{k >= 2} a segment from
-\code{b0} to \code{b0 + b_k} with an arrow head, labelled (plotmath) b0, b1, … Level
-order is read off \code{coef(model)}, so a releveled factor still labels the
-arrow that matches its coefficient.
+\strong{A categorical predictor}: one horizontal reference line at \code{b0} (the
+reference level's mean), and for each level after it a segment from \code{b0} to
+\code{b0} plus that level's coefficient, with an arrow head, labeled (plotmath)
+b1, b2, … Level order is read off \code{coef(model)}, so a releveled factor still
+labels the arrow that matches its coefficient.
 
 \strong{No predictor} (the empty model): the \code{b0} line and its label, nothing
 else.
@@ -177,10 +186,13 @@ drawn over it would describe a fit no panel actually has.
 Every mark is placed from the model's coefficients and from level indices,
 never from a drawn point's position, so jitter never moves an arrow.
 
-\code{show_b0 = TRUE} (the default) expands the x axis to include 0 on a
-continuous model, because b0 is the value at \code{x = 0} and a picture of it
-that does not show \code{x = 0} is not a picture of b0. Calling \code{gf_lims(x = )}
-afterward overrides that expansion and can push the b0 dot off the page.
+\code{show_b0 = TRUE} (the default) expands the PREDICTOR's axis to include 0 on
+a continuous model, because b0 is the prediction where the predictor is 0
+and a picture of it that does not show that point is not a picture of b0.
+Usually that is x; on a plot that puts the outcome on x it is y, and the
+expansion follows the predictor rather than the letter. Calling \code{gf_lims()}
+on that axis afterward overrides the expansion and can push the b0 dot off
+the page.
 }
 
 \examples{
