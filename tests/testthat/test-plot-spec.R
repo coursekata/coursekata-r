@@ -119,3 +119,34 @@ test_that("plot_spec reports no axes when nothing anywhere is mapped", {
 
   expect_length(plot_spec(p)$axes, 0)
 })
+
+test_that("a pinned plot reports the reader's words and the drawn values", {
+  # MUTATION: the label/quosure split written backwards in either direction --
+  # labels[[a]] built from the pinned quosure prints `.coursekata_pin_y` at
+  # readers; mapping$y built from the pin's original re-shuffles on every build
+  set.seed(1)
+  p <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers)
+  q <- pin_plot_values(p)$plot
+  spec <- plot_spec(q)
+
+  expect_equal(spec$axes[["y"]], "shuffle(Thumb)")
+  expect_equal(spec$labels[["y"]], "shuffle(Thumb)")
+  expect_equal(rlang::as_label(spec$mapping$y), ".coursekata_pin_y")
+  expect_equal(
+    rlang::eval_tidy(spec$resolve_aes("y")$quo, spec$data),
+    q$data$.coursekata_pin_y
+  )
+})
+
+test_that("an unpinned plot reports exactly what it reported before", {
+  # MUTATION: the pin machinery leaking into the common path -- pins reported
+  # as non-empty, or labels/variables/axes computed differently, for a plot
+  # that was never pinned in the first place
+  p <- gf_point(Thumb ~ Height, data = Fingers)
+  spec <- plot_spec(p)
+
+  expect_equal(spec$pins, list())
+  expect_equal(spec$labels, c(x = "Height", y = "Thumb"))
+  expect_equal(spec$variables, c(x = "Height", y = "Thumb"))
+  expect_equal(spec$axes, c(x = "Height", y = "Thumb"))
+})

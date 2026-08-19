@@ -39,8 +39,16 @@ check_ruler_where <- function(where, call = caller_env()) {
 #'
 #' @noRd
 sd_ruler_inherited <- function(object) {
-  mapping <- plot_spec(object)$mapping
-  recovered <- setdiff(intersect(c("x", "y"), names(mapping)), names(object$mapping))
+  spec <- plot_spec(object)
+  mapping <- spec$mapping
+  # "the plot itself names an aesthetic" has to mean the same thing on both
+  # sides of this comparison: `mapping`'s names are pin-aware (a promoted pin
+  # is written straight into `object$mapping`, per `pin_plot_values()`), so
+  # `object$mapping`'s names, read directly, already agree -- go through
+  # `spec$pins` anyway rather than reach past `plot_spec()` into the raw
+  # object, so the two can never drift apart again
+  own <- union(names(object$mapping), names(spec$pins))
+  recovered <- setdiff(intersect(c("x", "y"), names(mapping)), own)
   if (length(recovered) == 0 || is.null(mapping$x)) {
     return(NULL)
   }
