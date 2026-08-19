@@ -14,13 +14,23 @@ bins_for <- function(x, ...) {
   params <- StatSquareplot$setup_params(data.frame(x = x), list(...))
   do.call(
     StatSquareplot$compute_group,
-    c(list(data = data.frame(x = x), scales = NULL), params)
+    c(list(data = data.frame(x = x), scales = trained_scales(data.frame(x = x))), params)
   )
 }
 
 squares_bins <- function(p) {
   built <- ggplot2::ggplot_build(p)$data[[1]]
   built[!duplicated(built$xmin), ]
+}
+
+# StatBin reads the x scale's dimension() while binning, so a stat called
+# outside a plot needs a scale trained on the data rather than a NULL standing
+# in for one. ggplot2 4.0 tolerates the NULL and 3.5.2 does not; a trained scale
+# is what the real draw passes and gives both versions the same bins.
+trained_scales <- function(data, aes = "x") {
+  scale <- ggplot2::scale_x_continuous()
+  scale$train(data[[aes]])
+  stats::setNames(list(scale), aes)
 }
 
 test_that("the stat does no binning of its own", {
@@ -34,10 +44,10 @@ test_that("given the same parameters the stat returns stat_bin's own bins", {
   data <- data.frame(x = c(1, 1, 4, 4))
   params <- list(binwidth = 1, boundary = 0.5)
   ours_params <- StatSquareplot$setup_params(data, params)
-  ours <- do.call(StatSquareplot$compute_group, c(list(data = data, scales = NULL), ours_params))
+  ours <- do.call(StatSquareplot$compute_group, c(list(data = data, scales = trained_scales(data)), ours_params))
   theirs_params <- ggplot2::StatBin$setup_params(data, params)
   theirs <- do.call(
-    ggplot2::StatBin$compute_group, c(list(data = data, scales = NULL), theirs_params)
+    ggplot2::StatBin$compute_group, c(list(data = data, scales = trained_scales(data)), theirs_params)
   )
   expect_identical(ours, theirs)
   expect_equal(ours$count, c(2, 0, 0, 2))

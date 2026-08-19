@@ -15,44 +15,85 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
 
-    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    timeout-minutes: 45
+
+    # a row may name itself; `r` is the name when it does not. Two rows run
+    # `release` and only one of them pins a floor, so they cannot share a name.
+    name: ${{ matrix.config.os }} (${{ matrix.config.label || matrix.config.r }})
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - { os: macos-latest, r: "release", lc-ctype: "en_US.UTF-8" }
-          - { os: ubuntu-latest, r: "oldrel-1", lc-ctype: "C.UTF-8" }
-          - { os: ubuntu-latest, r: "release", lc-ctype: "C.UTF-8" }
-          - { os: ubuntu-latest, r: "devel", http-user-agent: "release", lc-ctype: "C.UTF-8" }
-          - { os: windows-latest, r: "oldrel-1", lc-ctype: "German_Germany.utf8" }
-          - { os: windows-latest, r: "release", lc-ctype: "German_Germany.utf8" }
+          - os: macos-latest
+            r: release
+            lc-ctype: en_US.UTF-8
+
+          - os: ubuntu-latest
+            r: devel
+            http-user-agent: release
+            lc-ctype: C.UTF-8
+
+          - os: ubuntu-latest
+            r: release
+            lc-ctype: C.UTF-8
+
+          - os: ubuntu-latest
+            r: oldrel-1
+            lc-ctype: C.UTF-8
+
+          # DESCRIPTION's R floor. No pins: a pinned package is a DIRECT ref, so
+          # pak resolves its Suggests -- and ggplot2 suggests Hmisc, which now
+          # needs R >= 4.2.0. Pinned here, the row failed to resolve for a
+          # reason that had nothing to do with either floor.
+          - os: ubuntu-latest
+            r: "4.1"
+            lc-ctype: C.UTF-8
+
+          # The floor the browser environment resolves, on the R it runs it on.
+          # xeus-r pins r-base 4.5.x, so this pair has never been paired with
+          # R 4.1 anywhere a student can reach; testing them together asserted a
+          # combination that exists nowhere.
+          - os: ubuntu-latest
+            r: release
+            label: dependency floor
+            lc-ctype: C.UTF-8
+            pin:
+              - ggplot2@3.5.2
+              - ggformula@0.12.2
+
+          - os: windows-latest
+            r: release
+            lc-ctype: German_Germany.utf8
+
+          - os: windows-latest
+            r: oldrel-1
+            lc-ctype: German_Germany.utf8
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
 
     steps:
-      # https://github.com/actions/checkout
       - uses: actions/checkout@v7
 
-      # https://github.com/r-lib/actions/tree/v2/setup-pandoc
       - uses: r-lib/actions/setup-pandoc@v2
 
-      # https://github.com/r-lib/actions/tree/v2/setup-r
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.config.r }}
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      # https://github.com/r-lib/actions/tree/v2/setup-r-dependencies
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::rcmdcheck
+          # The action splits this on whitespace or commas, so a row with no pins
+          # contributes a blank line and nothing else.
+          extra-packages: |
+            any::rcmdcheck
+            ${{ join(matrix.config.pin, ' ') }}
           needs: check
 
-      # https://github.com/r-lib/actions/tree/v2/check-r-package
       - uses: r-lib/actions/check-r-package@v2
         env:
           LC_CTYPE: ${{ matrix.config.lc-ctype }}
@@ -60,11 +101,7 @@ jobs:
           upload-snapshots: true
           args: 'c("--no-manual", "--as-cran")'
 
-  # One stable status check to require on main. The matrix jobs are named after
-  # their platform, so requiring them directly would need the protection rule
-  # hand-edited every time the matrix moves. `always()` is load-bearing: without
-  # it this job is skipped when a matrix job fails, and a skipped required check
-  # blocks a pull request forever instead of failing it.
+  # stable status check to require on main
   check:
     if: always()
     needs: R-CMD-check
