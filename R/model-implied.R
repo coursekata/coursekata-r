@@ -36,6 +36,7 @@
 #'
 #' @param object A plot already known to be a plot -- refusing a non-plot
 #'   first argument is the caller's job, not this function's.
+#' @param fn The name to refuse in, e.g. `"gf_model"` or `"gf_b"`.
 #' @param call The calling environment, for error reporting.
 #'
 #' @return A list with:
@@ -50,7 +51,7 @@
 #'   `facets`    the plot's facet variables
 #'
 #' @noRd
-implied_model <- function(object, call = caller_env()) {
+implied_model <- function(object, fn = "gf_model", call = caller_env()) {
   pinned <- pin_plot_values(object)
   spec <- plot_spec(pinned$plot)
 
@@ -75,23 +76,7 @@ implied_model <- function(object, call = caller_env()) {
 
   mapped <- names(drawn)
   if (length(mapped) == 0) {
-    abort(
-      c(
-        paste0(
-          "gf_model() supports plots built with gf_point(), gf_jitter(), gf_boxplot(), ",
-          "gf_violin() and gf_histogram()"
-        ),
-        paste0(
-          "the plot given maps neither x nor y to a variable, so there is no axis to place a ",
-          "model on"
-        ),
-        paste0(
-          "if you need another plot type, open an issue at ",
-          "https://github.com/coursekata/coursekata-r/issues"
-        )
-      ),
-      call = call
-    )
+    check_model_axes(list(axes = list()), fn = fn, call = call)
   }
 
   if (length(mapped) == 1) {
