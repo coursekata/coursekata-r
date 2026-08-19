@@ -96,9 +96,18 @@ StatResid <- ggplot2::ggproto(
 #' same two draws, in the same order, to `x` and `y` alone -- which is what
 #' makes the offsets identical to the points layer's rather than merely similar.
 #'
-#' `x` is drawn before `y` HERE, and in [ggplot2::PositionJitter] itself, and
-#' that ordering is a CONTRACT rather than an implementation detail this file
-#' happens to share. `jitter()` advances R's RNG stream by one draw per call, so
+#' Two things about how the points layer spends the stream are a CONTRACT here
+#' rather than implementation details this file happens to share.
+#'
+#' The FIRST is where the seed is set. [ggplot2::PositionJitter] defines
+#' `compute_panel`, not `compute_layer`, so ggplot2's own parent splits the
+#' layer by panel and re-seeds inside each one. This does the same. Jittering
+#' the whole layer in one sequence agrees with the points layer only while the
+#' plot has one panel; facet it and every segment lands on some other
+#' observation's offset.
+#'
+#' The SECOND is that `x` is drawn before `y`, here and in
+#' [ggplot2::PositionJitter] itself. `jitter()` advances R's RNG stream by one draw per call, so
 #' a residual layer that wants its `x` offsets to equal the points layer's has
 #' to call `jitter(x, ...)` first and consume the same slice of the stream the
 #' points layer consumed first. Drawing `y` unconditionally instead of guarding
@@ -132,16 +141,45 @@ PositionResidJitter <- ggplot2::ggproto(
       outcome = self$outcome
     )
   },
+  # WHICHEVER HOOK UPSTREAM USES, because the points layer's offsets are not
+  # ours to choose and the two have to agree. On ggplot2 3.5.2
+  # [ggplot2::PositionJitter] implements `compute_layer` and spends one
+  # sequence over the whole layer; on 4.0 it implements `compute_panel`, so
+  # ggplot2's own parent splits by panel and re-seeds inside each one. Pick the
+  # wrong one and a faceted plot detaches every segment from its point --
+  # measured on five panels, every segment displaced by up to the full jitter
+  # width, while the unfaceted case stays exact either way.
   compute_layer = function(self, data, params, layout) {
-    with_fixed_seed(params$seed, {
-      held <- if (!is.null(params$outcome)) data[[params$outcome]]
-      if (params$width > 0) data$x <- jitter(data$x, amount = params$width)
-      if (params$height > 0) data$y <- jitter(data$y, amount = params$height)
-      if (!is.null(params$outcome)) data[[params$outcome]] <- held
-      data
-    })
-  }
+    if (jitter_is_per_panel()) {
+      # hand it back to Position, which splits by panel and calls the method below
+      ggplot2::ggproto_parent(ggplot2::Position, self)$compute_layer(data, params, layout)
+    } else {
+      jitter_holding(data, params)
+    }
+  },
+  compute_panel = function(data, params, scales) jitter_holding(data, params)
 )
+
+#' Jitter `x` and `y`, then put the outcome axis back where it was
+#'
+#' The body both of `PositionResidJitter`'s hooks share, so the offsets cannot
+#' differ between the two paths -- see that object for why there are two.
+#'
+#' @param data A layer's data, whole or one panel's worth.
+#' @param params The position's resolved params.
+#'
+#' @return `data`, with the jittered axes moved.
+#'
+#' @noRd
+jitter_holding <- function(data, params) {
+  with_fixed_seed(params$seed, {
+    held <- if (!is.null(params$outcome)) data[[params$outcome]]
+    if (params$width > 0) data$x <- jitter(data$x, amount = params$width)
+    if (params$height > 0) data$y <- jitter(data$y, amount = params$height)
+    if (!is.null(params$outcome)) data[[params$outcome]] <- held
+    data
+  })
+}
 
 #' @noRd
 position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcome = NULL) {

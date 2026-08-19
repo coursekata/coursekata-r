@@ -275,6 +275,26 @@ test_that("a residual stays on the point it belongs to when the plot jitters", {
   expect_equal(as.numeric(segments$y1), as.numeric(points$y))
 })
 
+test_that("a residual stays on its point when the plot jitters AND facets", {
+  # MUTATION: `compute_layer` instead of `compute_panel` in PositionResidJitter.
+  # ggplot2's own PositionJitter defines `compute_panel`, so its parent splits
+  # the layer and re-seeds per panel; a residual that jitters the whole layer in
+  # one sequence agrees only while there is one panel. Unfaceted alignment (the
+  # test above) passes under the mutation, so this is the one that catches it.
+  set.seed(7)
+  p <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .2) %>%
+    gf_facet_wrap(~RaceEthnic) %>%
+    gf_resid_fun(function(x) 60)
+
+  points <- ggplot2::layer_grob(p, 1)
+  segments <- ggplot2::layer_grob(p, layer_index(p, "resid"))
+
+  expect_length(segments, length(points))
+  for (panel in seq_along(points)) {
+    expect_equal(as.numeric(segments[[panel]]$x0), as.numeric(points[[panel]]$x))
+  }
+})
+
 test_that("what to draw is removed from the layer's parameters, however it was spelled", {
   # `fun` genuinely reaches the layer function in `params` when the caller wrote
   # `fun =` and not when they wrote it positionally, so the two spellings only

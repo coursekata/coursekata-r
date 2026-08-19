@@ -54,3 +54,29 @@ coord_transform_name <- function() {
 coord_transform_compat <- function(...) {
   getExportedValue("ggplot2", coord_transform_name())(...)
 }
+
+#' Does ggplot2's own jitter restart its draws at every panel?
+#'
+#' [ggplot2::PositionJitter] answers this differently in the two releases this
+#' package runs on, and a residual has to answer it the same way its points
+#' layer does or the two land on different offsets. In 3.5.2 the position
+#' implements `compute_layer` and jitters the whole layer in one sequence; in
+#' 4.0 it implements `compute_panel`, so ggplot2's own parent splits the layer
+#' and re-seeds inside each panel. Neither is more correct -- what matters is
+#' that both layers of a plot agree, and the points layer is not ours to
+#' choose.
+#'
+#' Asked of the object rather than of a version number, because the question
+#' is exactly "which hook does upstream implement" and the object can answer
+#' it. `names()` on a ggproto lists what it defines itself, not what it
+#' inherits, so a release that moves the behavior again is followed without an
+#' edit here.
+#'
+#' Called by: `PositionResidJitter`'s `compute_layer` in R/geom-resid.R.
+#'
+#' @return `TRUE` when upstream jitters per panel.
+#'
+#' @noRd
+jitter_is_per_panel <- function() {
+  "compute_panel" %in% names(ggplot2::PositionJitter)
+}
