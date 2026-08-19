@@ -125,27 +125,52 @@ overlay_spec <- function(plot, fn, call = caller_env()) {
 #' handling here, and a panel whose facet value is missing gets its own mean
 #' rather than being silently dropped.
 #'
-#' The stat emits an `xintercept` and nothing else, because a mean is a value on
+#' The stat emits one intercept and nothing else, because a mean is a value on
 #' one variable and the mark for it is a line at that value: [ggplot2::GeomVline]
-#' spans whatever panel it lands in, so there is no vertical extent to compute,
-#' pass in, or keep in step with a transformed count axis. `gf_model()` draws an
-#' intercept the same way and for the same reason.
+#' and [ggplot2::GeomHline] each span whatever panel they land in, so there is no
+#' vertical or horizontal extent to compute, pass in, or keep in step with a
+#' transformed count axis. Which intercept it emits follows `required_aes`
+#' itself -- `"x"` for `show_mean()`'s vertical line, `"y"` for `gf_model()`'s
+#' horizontal one when a plot draws only its outcome -- rather than a separate
+#' param, because `required_aes` cannot vary per layer on a shared ggproto and a
+#' second field would only repeat the same fact `stat_dist_mean()` already
+#' carries once.
 #'
-#' Emitting endpoints instead is what used to require every panel's trained top,
-#' measured off the plot as it stood when `show_mean()` was called -- which meant
-#' faceting afterwards handed this stat a panel that top was never measured for,
-#' and the mean was dropped from it. A line with no endpoints has nothing to
-#' measure and nothing to miss, so that ordering constraint is gone.
+#' Emitting endpoints instead would require every panel's trained top, measured
+#' off the plot as it stood when the stat's caller was invoked -- which would
+#' mean faceting afterwards handed this stat a panel that top was never measured
+#' for, and the mean would be dropped from it. A line with no endpoints has
+#' nothing to measure and nothing to miss, so that ordering constraint never
+#' arises.
 #'
 #' @format A [ggplot2::Stat] object.
 #' @noRd
 StatDistMean <- ggplot2::ggproto(
   "StatDistMean", ggplot2::Stat,
   required_aes = "x",
-  compute_panel = function(data, scales) {
-    data.frame(xintercept = mean(data$x, na.rm = TRUE))
+  compute_panel = function(self, data, scales) {
+    axis <- self$required_aes
+    result <- data.frame(mean(data[[axis]], na.rm = TRUE))
+    names(result) <- paste0(axis, "intercept")
+    result
   }
 )
+
+#' A `StatDistMean` that reads its axis from `required_aes` instead of `"x"`
+#'
+#' The same idiom `position_resid_jitter()` already uses: `required_aes` is
+#' ggproto metadata, not a param, so it cannot vary between two layers sharing
+#' one ggproto object -- an anonymous subclass with the field set at
+#' construction is what lets `gf_model()`'s inferred `hline`/`vline` shapes and
+#' `show_mean()`'s `x`-only one coexist.
+#'
+#' @param axis `"x"` or `"y"`.
+#'
+#' @return A `StatDistMean` ggproto instance whose `required_aes` is `axis`.
+#' @noRd
+stat_dist_mean <- function(axis = "x") {
+  ggplot2::ggproto(NULL, StatDistMean, required_aes = axis)
+}
 
 #' Mark a Distribution's Mean
 #'

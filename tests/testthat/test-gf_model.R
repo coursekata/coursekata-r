@@ -1,10 +1,14 @@
 # Constraints ---------------------------------------------------------------------------------
 
-# Answered: no, and deliberately not. gf_model() draws a claim you made, and naming the claim
-# is the feature -- it is the thing gf_lm() cannot do. The only model a default could infer
-# from the axes is lm(y ~ x), which is exactly what gf_lm() already draws, so a default would
-# have nothing of its own to be. What the model may be has widened instead: either a model
-# already fit, or the formula for one, fit against the data the plot was built from.
+# Answered: yes, with no model gf_model() draws the model the plot implies -- see
+# test-gf_model-infer.R. The premise that used to sit here was wrong on two counts. gf_lm()
+# draws nothing at all on a categorical x, so "the only model a default could infer is
+# lm(y ~ x)" was never true once a categorical predictor is on the table; the group marks it
+# has no answer for are exactly what an inferred default has of its own to be. And on an
+# expression mapping (shuffle(Thumb), log(Height)) the model has to be fit on the values the
+# plot actually drew rather than on a fresh evaluation of the expression -- a fresh shuffle
+# agrees with the picture on nothing. What the named-model path may be is unchanged: either a
+# model already fit, or the formula for one, fit against the data the plot was built from.
 test_that("it needs to be layered onto a plot", {
   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_error()
@@ -252,33 +256,34 @@ test_that("a shuffled outcome axis does not scramble the model drawn over it", {
 })
 
 test_that("a shuffled outcome does not scramble a categorical model's marks", {
-  # MUTATION: the segment branch of the same fix being skipped, which draws the
-  # two marks at permuted values instead of the real group means.
+  # MUTATION: the segment branch of the same fix being skipped, which draws
+  # the marks at permuted values instead of the real group means. Sorting the
+  # drawn y values would still pass a mutant that keeps every mark's
+  # magnitude but lands it on the wrong group, so this orders by x (the
+  # group position ggplot2 assigns in factor-level order) and compares
+  # against tapply()'s means in that same order instead.
   set.seed(1)
-  p <- gf_jitter(shuffle(Thumb) ~ Sex, data = Fingers, width = .1) %>%
-    gf_model(lm(Thumb ~ Sex, data = Fingers))
+  p <- gf_jitter(shuffle(Thumb) ~ RaceEthnic, data = Fingers, width = .1) %>%
+    gf_model(lm(Thumb ~ RaceEthnic, data = Fingers))
   drawn <- ggplot2::ggplot_build(p)$data[[layer_index(p, "model")]]
+  means <- unname(as.vector(tapply(Fingers$Thumb, Fingers$RaceEthnic, mean)))
 
-  expect_equal(
-    sort(drawn$y),
-    sort(unname(as.vector(tapply(Fingers$Thumb, Fingers$Sex, mean)))),
-    tolerance = 1e-5
-  )
+  expect_equal(drawn$y[order(drawn$x)], means, tolerance = 1e-5)
 })
 
 test_that("a shuffled outcome does not scramble a flipped categorical model's marks", {
   # MUTATION: the outcome_axis == "x" branch writing the drawn value to the wrong
   # args slot, so a flipped plot's marks are never renamed and inherit the shuffle.
+  # Ordering by y (the group position) rather than sorting the drawn values
+  # catches a mutant that keeps every mark's magnitude but assigns it to the
+  # wrong group.
   set.seed(1)
-  p <- gf_boxplot(Sex ~ shuffle(Thumb), data = Fingers) %>%
-    gf_model(lm(Thumb ~ Sex, data = Fingers))
+  p <- gf_boxplot(RaceEthnic ~ shuffle(Thumb), data = Fingers) %>%
+    gf_model(lm(Thumb ~ RaceEthnic, data = Fingers))
   drawn <- ggplot2::ggplot_build(p)$data[[layer_index(p, "model")]]
+  means <- unname(as.vector(tapply(Fingers$Thumb, Fingers$RaceEthnic, mean)))
 
-  expect_equal(
-    sort(drawn$x),
-    sort(unname(as.vector(tapply(Fingers$Thumb, Fingers$Sex, mean)))),
-    tolerance = 1e-5
-  )
+  expect_equal(drawn$x[order(drawn$y)], means, tolerance = 1e-5)
 })
 
 # Orientation ------------------------------------------------------------------------------------
@@ -351,15 +356,6 @@ test_that("every guard fires at the call, not at the draw", {
       gf_model(lm(later_anxiety ~ condition + provider, data = er)),
     "multiple variables mapped"
   )
-})
-
-test_that("a plot with no model is told what a model looks like", {
-  p <- gf_point(later_anxiety ~ base_anxiety, data = er)
-
-  expect_error(p %>% gf_model(), "which model to draw")
-  # both spellings are named, because both work
-  expect_error(p %>% gf_model(), "lm\\(")
-  expect_error(p %>% gf_model(), "~")
 })
 
 test_that("a one-sided formula is refused rather than guessed at", {

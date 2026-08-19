@@ -155,6 +155,29 @@ test_that("pinning twice keeps the reader's words", {
   expect_false(".coursekata_pin_.coursekata_pin_y" %in% names(q2$data))
 })
 
+test_that("a reader's own axis title survives the pin", {
+  # MUTATION: writing plot$labels unconditionally, which replaces the words
+  # the reader chose with the deparsed mapping (`.coursekata_pin_y`, once the
+  # mapping is rewritten, rather than the mapping's own spelling)
+  set.seed(1)
+  p <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers, ylab = "Shuffled thumb (mm)")
+  q <- pin_plot_values(p)$plot
+
+  expect_equal(q$labels$y, "Shuffled thumb (mm)")
+  # messages and inference still name the mapping, not the pin column
+  expect_equal(plot_spec(q)$labels[["y"]], "shuffle(Thumb)")
+})
+
+test_that("an unlabeled axis title never shows the pin column's own name", {
+  # MUTATION: the fallback itself printing `.coursekata_pin_y` (the rewritten
+  # mapping's spelling) instead of the ORIGINAL mapping's spelling
+  set.seed(1)
+  p <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers)
+  q <- pin_plot_values(p)$plot
+
+  expect_false(grepl("coursekata_pin", ggplot2::get_labs(q)$y))
+})
+
 test_that("pinning leaves the caller's random stream where it found it", {
   # MUTATION: dropping `with_random_seed_restored()`, which would change a
   # student's sampling distribution depending on whether they piped a model on

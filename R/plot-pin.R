@@ -29,10 +29,13 @@ has_build_time_call <- function(expr) {
 #' A mapping such as `shuffle(Thumb)` names a different permutation on every
 #' render, and independently in every layer that carries it -- there is no
 #' seed to declare and no function of the plot's inputs an inferred model
-#' could agree with it on. This reads what one evaluation of such a mapping
-#' actually drew and rewrites the plot, and every layer that shares the
-#' mapping, to point at that fixed vector instead. A model fit from the
-#' returned plot's data is then fit on exactly what the returned plot draws.
+#' could agree with it on. This rewrites the plot, and every layer that
+#' shares the mapping, to point at a fixed column instead. Only a `waiver()`
+#' layer draws the plot's own data, so only it can share the plot-level
+#' evaluation; a layer carrying its own data frame gets its own evaluation of
+#' the same expression, against its own rows, so a pinned layer still draws
+#' exactly the rows it always did. A model fit from the returned plot's data
+#' is then fit on exactly what the returned plot draws.
 #'
 #' The plot handed in is never modified. A ggplot2 layer is a ggproto object --
 #' an environment -- so writing into a layer's own `mapping` field in place
@@ -62,6 +65,12 @@ has_build_time_call <- function(expr) {
 #' aesthetic untouched, and its recorded original preserved: a second
 #' `gf_model()` in one pipe must not record `.coursekata_pin_y` as the mapping
 #' it is pinning from.
+#'
+#' A reader-supplied axis title (`ylab =`, `labs()`) is preserved rather than
+#' overwritten with the pinned mapping's spelling: ggplot2 leaves `$labels`
+#' empty when the reader never set one, so the pin's own spelling is written
+#' only into that empty slot. `plot_spec(plot)$labels` still reports the
+#' original mapping's spelling either way.
 #'
 #' @param plot A ggplot object.
 #' @param aes Character vector of positional aesthetics to consider.
@@ -122,26 +131,61 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
 
     for (i in seq_along(plot$layers)) {
       layer <- plot$layers[[i]]
-      layer_mapping_a <- layer$mapping[[a]]
-      if (is.null(layer_mapping_a)) {
-        next # inherits the plot's mapping, which is rewritten below
-      }
-      if (!identical(layer_mapping_a, original)) {
-        # a drawer of `a` with an expression of its own -- the pin cannot
-        # reach it, and the caller decides what that means (rule 8)
-        unreached <- union(unreached, a)
+      if (!is.null(attr(layer, "coursekata_layer"))) {
+        # a layer this package added draws its own computed grid, not the
+        # plot's observations: neither pinning nor `unreached` applies, and
+        # its row count need not match the plot's
         next
       }
 
-      new_mapping <- layer$mapping
-      new_mapping[[a]] <- pinned_quo
+      layer_mapping_a <- layer$mapping[[a]]
+      inherits_mapping <- is.null(layer_mapping_a)
+      if (!inherits_mapping) {
+        layer_expr <- if (is_quosure(layer_mapping_a)) {
+          quo_get_expr(layer_mapping_a)
+        } else {
+          layer_mapping_a
+        }
+        if (!identical(layer_expr, expr)) {
+          # rule 8: a drawer of `a` with an expression different from the
+          # plot's -- the pin cannot reach it, and the caller decides what
+          # that means
+          unreached <- union(unreached, a)
+          next
+        }
+      }
+
+      if (inherits_mapping && !isTRUE(layer$inherit.aes)) {
+        # the plot's mapping never reaches this layer at all
+        next
+      }
+
       if (is.data.frame(layer$data)) {
+        # this layer draws its own rows -- whether it stated the mapping or
+        # inherits it, the plot-level `v` was drawn from the plot's data and
+        # is the wrong length (and, for a random mapping, the wrong draw)
+        # for this frame. Evaluate the SAME expression again, against THIS
+        # layer's own data, so the pin lands on exactly the rows the layer
+        # already draws.
+        lv <- try(with_fixed_seed(seed, eval_tidy(original, layer$data)), silent = TRUE)
+        if (inherits(lv, "try-error") || !length(lv) %in% c(1L, nrow(layer$data))) {
+          unreached <- union(unreached, a)
+          next
+        }
         new_data <- layer$data
-        new_data[[col]] <- v
-        plot$layers[[i]] <- layer_with(layer, mapping = new_mapping, data = new_data)
-      } else {
+        new_data[[col]] <- lv
+        if (inherits_mapping) {
+          plot$layers[[i]] <- layer_with(layer, data = new_data)
+        } else {
+          new_mapping <- layer$mapping
+          new_mapping[[a]] <- pinned_quo
+          plot$layers[[i]] <- layer_with(layer, mapping = new_mapping, data = new_data)
+        }
+      } else if (!inherits_mapping) {
         # a waiver() layer draws the plot's data; swapping only the mapping
         # is enough because the plot-level write below supplies the column
+        new_mapping <- layer$mapping
+        new_mapping[[a]] <- pinned_quo
         plot$layers[[i]] <- layer_with(layer, mapping = new_mapping)
       }
     }
@@ -151,7 +195,15 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
     }
 
     plot$mapping[[a]] <- pinned_quo
-    plot$labels[[a]] <- as_label(expr)
+    # the pin's spelling is a fallback, not an override: ggplot2 derives an
+    # axis title from the mapping, which after the rewrite would read
+    # `.coursekata_pin_y`. A label already on the plot is one the reader set
+    # (`ylab =`, `labs()`); ggplot2 leaves `$labels` empty otherwise, so
+    # writing only into the empty slot keeps the reader's words and still
+    # never shows the pin column.
+    if (is.null(plot$labels[[a]])) {
+      plot$labels[[a]] <- as_label(expr)
+    }
     pins[[a]] <- original
   })
 

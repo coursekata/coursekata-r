@@ -35,7 +35,24 @@ computed from the data the plot was built from.}
 
 \item{...}{Additional arguments. Typically these are (a) ggplot2 aesthetics to be set with
 \code{attribute = value}, (b) ggplot2 aesthetics to be mapped with \code{attribute = ~ expression}, or
-(c) attributes of the layer as a whole, which are set with \code{attribute = value}.}
+(c) attributes of the layer as a whole, which are set with \code{attribute = value}.
+
+With no \code{model}, and a plot whose implied shape is a regression line, \code{...} also reaches the
+fitting
+vocabulary \code{\link[ggformula:gf_lm]{ggformula::gf_lm()}} uses: \code{se = TRUE} draws the confidence band \code{gf_lm()} calls
+\code{interval = "confidence"}, \verb{n =} sets the prediction grid's length, and \verb{method.args =} is
+\code{gf_lm()}'s \verb{lm.args =}. \code{formula = y ~ poly(x, 2)} fits a curve, written with the literal
+tokens \code{x} and \code{y} rather than the plot's own variable names -- a one-sided \code{formula = ~x}
+would instead be read as a mapping, so it is not this.
+
+\code{\link[ggplot2:stat_smooth]{ggplot2::stat_smooth()}}'s \code{fullrange = TRUE} reaches it too, and draws the line past the
+data. Whether that is honest is yours to decide and not something this function will decide
+for you: inside the range the model was fit on, every point the line interpolates has
+observations on both sides of it, and outside there are none. Extending it says the pattern
+keeps holding where nothing was measured, which needs a theory or a physical constraint
+behind it. Nothing about the plot's own axis is such a reason, which is why a wider axis --
+from \code{gf_lims()}, or from the \code{b0} dot \code{gf_b()} puts at zero -- does not lengthen the line
+on its own.}
 
 \item{model}{The model to draw. Either a model already fit by \code{\link[=lm]{lm()}} or
 \code{\link[=aov]{aov()}}, or the formula for one -- such as \code{body_mass_kg ~ species} --
@@ -43,30 +60,44 @@ which is fit against the data the plot was built from. The empty model is
 written \code{body_mass_kg ~ NULL}. The outcome must be named: a one-sided
 formula such as \code{~species} names predictors and no claim, so there would be
 nothing to draw that you had not described. May be given positionally or as
-\verb{model =}.}
+\verb{model =}. Omitted, the model the plot implies is drawn instead: a
+regression line for a numeric predictor, one group mean per level for a
+categorical one, and the grand mean when the plot draws only an outcome.
+\code{gf_model(model)} draws the ONE model you named in every panel of a faceted
+plot; \code{gf_model()} draws EACH panel's own implied model -- a faceted
+\code{gf_point(body_mass_kg ~ flipper_length_m | species) \%>\% gf_model()} fits a
+different line per species, where naming \code{flipper_model} above would repeat
+one whole-data fit in every panel.}
 
 \item{xlab, ylab, title, subtitle, caption}{Labels for the plot.}
 
 \item{geom}{Not set by the caller. The geometry is derived from the model.}
 
-\item{stat, position}{Reach the layer as given, but \code{gf_model()} already computed
-the model's predictions before the layer is built, so changing these
-recomputes something else on top of that prediction grid (\code{stat = "smooth"}
-re-smooths it, for example) rather than changing how the model's own claim is
-drawn. Leave them at their defaults.}
+\item{stat, position}{With a named \code{model}, reach the layer as given, but \code{gf_model()} already
+computed the model's predictions before the layer is built, so changing these recomputes
+something else on top of that prediction grid (\code{stat = "smooth"} re-smooths it, for example)
+rather than changing how the model's own claim is drawn -- leave them at their defaults. With
+no \code{model}, the inferred shape chooses its own stat (a regression line's is
+\code{\link[ggplot2:stat_smooth]{ggplot2::stat_smooth()}}) and these are not read at all.}
 
 \item{show.legend}{Whether this layer contributes to the legend.}
 
 \item{show.help}{Print the layer's own help instead of drawing.}
 
-\item{inherit}{Not set by the caller. Whether the layer inherits the plot's
-aesthetics is derived per model shape: an intercept states its own
-position, everything else inherits the axis the plot put the outcome on.}
+\item{inherit}{Not set by the caller. Whether the layer inherits the plot's aesthetics is
+derived per model shape: with a named \code{model}, an intercept states its own position and
+everything else inherits the axis the plot put the outcome on; with no \code{model}, the layer
+always states its own x and y rather than inheriting them, which is what keeps a plot with
+\code{color = ~species} drawing one line rather than one per color.}
 
 \item{environment}{The environment mappings are resolved in.}
 }
 \value{
-a gg object (a plot layer) that can be added to a plot.
+A ggplot object with the model added. With no \code{model}, and a plot
+whose positional mapping is an expression rather than a bare variable (\code{shuffle(body_mass_kg)},
+\code{log(flipper_length_m)}), the RETURNED plot is pinned to the values it drew when \code{gf_model()}
+was called -- its data gains a fixed column and its mapping names it, while its axis titles
+and everything else about how it reads keep your own words. The plot passed IN is untouched.
 }
 \description{
 When teaching about regression it can be useful to visualize the data as a point plot with the
@@ -134,4 +165,17 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins) \%>\%
 # the empty model, written as a formula
 gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) \%>\%
   gf_model(body_mass_kg ~ NULL)
+
+# with no model, gf_model() draws the model the plot implies: a numeric
+# predictor draws the regression line gf_lm() would fit
+gf_point(body_mass_kg ~ flipper_length_m, data = penguins) \%>\%
+  gf_model()
+
+# a categorical predictor draws one mark at each group's mean
+gf_jitter(body_mass_kg ~ species, data = penguins, width = .1) \%>\%
+  gf_model()
+
+# a plot that draws only its outcome implies the grand mean
+gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) \%>\%
+  gf_model()
 }
