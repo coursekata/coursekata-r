@@ -30,8 +30,8 @@ capture_conditions <- function(expr) {
 }
 
 test_that("every consumer survives a pinned plot and none of them says .coursekata_pin_", {
-  # MUTATION: routing labels through the pinned quosures (BL-4) -- the
-  # refusal that prints an internal column name at a reader. Every call below
+  # MUTATION: routing labels through the pinned quosures, which is what makes a
+  # refusal print an internal column name at a reader. Every call below
   # is expected to succeed; a mutation that makes one of them abort on an
   # internal name would both add ".coursekata_pin_" text to `all_texts` and
   # turn one of the `expect_s3_class()` checks below into a failure on NULL.
@@ -57,8 +57,9 @@ test_that("every consumer survives a pinned plot and none of them says .courseka
     gf_model = capture_conditions(gf_model(xy_pinned, m)),
     gf_resid = capture_conditions(gf_model(xy_pinned, m) %>% gf_resid(m)),
     gf_square_resid = capture_conditions(gf_model(xy_pinned, m) %>% gf_square_resid(m)),
-    # TODO(unit D): add gf_reduce = capture_conditions(gf_model(xy_pinned, m) %>%
-    # gf_reduce(m)) once resid_jitter()/reduce_spec() land pin awareness.
+    gf_reduce = capture_conditions(gf_model(xy_pinned, m) %>% gf_reduce(m)),
+    gf_square_reduce = capture_conditions(gf_model(xy_pinned, m) %>%
+      gf_square_reduce(m)),
     gf_sd_ruler = capture_conditions(gf_sd_ruler(xy_pinned)),
     show_mean = capture_conditions(show_mean(x_pinned)),
     show_cutoffs = capture_conditions(show_cutoffs(x_pinned)),
@@ -79,8 +80,8 @@ test_that("every consumer survives a pinned plot and none of them says .courseka
 test_that("an explicit gf_model() still works on a pinned plot", {
   # MUTATION: step 2 (R/gf_model.R:195's `plot_level` reading `spec$labels`
   # rather than the plot's raw mapping) skipped -- this is the exact call
-  # BL-4 reproduced: gf_model() abort()ing "`Thumb` is mapped by a layer
-  # rather than by the plot" for an outcome pinned under `shuffle()`
+  # the failure this reproduces: gf_model() aborting "`Thumb` is mapped by a
+  # layer rather than by the plot" for an outcome pinned under `shuffle()`
   set.seed(1)
   base <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers)
   pinned <- pin_plot_values(base)$plot
@@ -93,4 +94,21 @@ test_that("an explicit gf_model() still works on a pinned plot", {
   line <- built$data[[layer_index(q, "model")]]
   predicted <- predict(m, newdata = data.frame(Height = line$x))
   expect_equal(line$y, unname(predicted))
+})
+
+test_that("an overlay on a pinned plot marks the value the plot drew", {
+  # The pin exists so a later layer reads the drawn values. Checking only that a
+  # ggplot came back, and that no internal name leaked, leaves the number itself
+  # unguarded -- shifting the drawn mean by any amount passed both of those.
+  #
+  # log() is deterministic, so the expected value is computed here from the data
+  # rather than by calling the code under test.
+  x_plot <- gf_histogram(~ log(Thumb), data = Fingers, binwidth = .05)
+  x_pinned <- pin_plot_values(x_plot)$plot
+
+  built <- ggplot2::ggplot_build(show_mean(x_pinned))
+  is_rule <- vapply(built$data, function(d) "xintercept" %in% names(d), logical(1))
+  marked <- built$data[[which(is_rule)]]$xintercept
+
+  expect_equal(marked, mean(log(Fingers$Thumb)))
 })
