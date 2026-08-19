@@ -96,34 +96,58 @@ StatResid <- ggplot2::ggproto(
 #' same two draws, in the same order, to `x` and `y` alone -- which is what
 #' makes the offsets identical to the points layer's rather than merely similar.
 #'
+#' `x` is drawn before `y` HERE, and in [ggplot2::PositionJitter] itself, and
+#' that ordering is a CONTRACT rather than an implementation detail this file
+#' happens to share. `jitter()` advances R's RNG stream by one draw per call, so
+#' a residual layer that wants its `x` offsets to equal the points layer's has
+#' to call `jitter(x, ...)` first and consume the same slice of the stream the
+#' points layer consumed first. Drawing `y` unconditionally instead of guarding
+#' it with `if (height > 0)`, or reordering the two draws, would silently move
+#' the `x` offsets off the points layer's.
+#'
+#' A reduction's segments start at the grand mean, a single repeated number,
+#' so there is nothing for the OUTCOME axis to gain from jittering -- but which
+#' physical axis that is depends on the plot's orientation, and both draws
+#' still have to happen, in the points layer's own order, for the OTHER axis's
+#' offsets to match. `outcome` names the aesthetic (`"x"` or `"y"`) to hold
+#' still: both draws run as usual and the held axis is restored to its
+#' pre-jitter values afterward, rather than skipping one draw outright, so the
+#' surviving axis's offsets are identical to the points layer's whichever axis
+#' that is.
+#'
 #' @format A [ggplot2::Position] object.
 #'
 #' @seealso [gf_resid()], which pairs this position with the plot's own jitter.
 #' @noRd
 PositionResidJitter <- ggplot2::ggproto(
   "PositionResidJitter", ggplot2::Position,
-  width = NULL, height = NULL, seed = NA,
+  width = NULL, height = NULL, seed = NA, outcome = NULL,
   # mirrors position_jitter()'s own defaults, so an unspecified width or height
   # resolves to the same number for both layers
   setup_params = function(self, data) {
     list(
       width = self$width %||% (ggplot2::resolution(data$x, zero = FALSE) * 0.4),
       height = self$height %||% (ggplot2::resolution(data$y, zero = FALSE) * 0.4),
-      seed = self$seed
+      seed = self$seed,
+      outcome = self$outcome
     )
   },
   compute_layer = function(self, data, params, layout) {
     with_fixed_seed(params$seed, {
+      held <- if (!is.null(params$outcome)) data[[params$outcome]]
       if (params$width > 0) data$x <- jitter(data$x, amount = params$width)
       if (params$height > 0) data$y <- jitter(data$y, amount = params$height)
+      if (!is.null(params$outcome)) data[[params$outcome]] <- held
       data
     })
   }
 )
 
 #' @noRd
-position_resid_jitter <- function(width = NULL, height = NULL, seed = NA) {
-  ggplot2::ggproto(NULL, PositionResidJitter, width = width, height = height, seed = seed)
+position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcome = NULL) {
+  ggplot2::ggproto(
+    NULL, PositionResidJitter, width = width, height = height, seed = seed, outcome = outcome
+  )
 }
 
 #' The position a residual has to be drawn with, and the plot to draw it on
@@ -135,11 +159,15 @@ position_resid_jitter <- function(width = NULL, height = NULL, seed = NA) {
 #' what makes the segment land on the point in the first place.
 #'
 #' @param plot The plot the residual is being drawn on.
+#' @param outcome The aesthetic (`"x"` or `"y"`) to hold at its pre-jitter
+#'   value, or `NULL` to jitter both -- see `PositionResidJitter`'s own docs
+#'   for why holding rather than skipping a draw is what keeps the other
+#'   axis's offsets identical to the points layer's.
 #'
 #' @return A list with `plot` and `position`.
 #'
 #' @noRd
-resid_jitter <- function(plot) {
+resid_jitter <- function(plot, outcome = NULL) {
   plain <- list(plot = plot, position = "identity")
   if (length(plot$layers) == 0) {
     return(plain)
@@ -158,7 +186,10 @@ resid_jitter <- function(plot) {
     )
   }
 
-  list(plot = plot, position = position_resid_jitter(pos$width, pos$height, seed))
+  list(
+    plot = plot,
+    position = position_resid_jitter(pos$width, pos$height, seed, outcome = outcome)
+  )
 }
 
 #' Draw a residual as a segment from a prediction to an observation
@@ -290,8 +321,15 @@ resid_end <- function(spec, model, call = caller_env()) {
   if (identical(outcome_axis, "x")) "xend" else "yend"
 }
 
+#' @param from `NULL` for today's behavior: both axes are the plot's own
+#'   quosures. A column name to replace the positional aesthetic on the
+#'   outcome's axis with a `.data`-pronoun read of that column instead --
+#'   what `reduce_spec()` uses to start a reduction's segments at `.grand`
+#'   rather than at the plot's own observed values, while the other axis
+#'   still reads what the plot reads.
+#'
 #' @noRd
-resid_mapping <- function(spec, end) {
+resid_mapping <- function(spec, end, from = NULL) {
   mapping <- ggplot2::aes(yend = .data$.fitted)
   names(mapping) <- end
   # state the axes rather than inherit them: a plot built with ggplot2 directly
@@ -300,7 +338,72 @@ resid_mapping <- function(spec, end) {
   # at all. spec$mapping is the pinned quosures -- this draws what the plot
   # draws, so leave it be; anything read here has to evaluate, not print.
   mapping[c("x", "y")] <- spec$mapping[c("x", "y")]
+  if (!is.null(from)) {
+    # the outcome's axis is the one `end` names the terminal companion of
+    # ("yend" -> "y", "xend" -> "x"); the other axis is left alone
+    axis <- sub("end$", "", end)
+    mapping[[axis]] <- rlang::quo(.data[[from]])
+  }
   mapping
+}
+
+#' Refuse a fit whose squares would not add up
+#'
+#' The whole claim of a reduction is an identity: the error the empty model
+#' leaves, the error this model leaves, and the distance between the two
+#' predictions are three areas that add up. A reader is being shown PRE as a
+#' ratio of areas they can count, so an area that does not belong to the
+#' identity is not a rough picture of the right idea -- it is a picture that
+#' teaches an arithmetic that does not hold.
+#'
+#' The identity needs `sum((y - fitted) * (fitted - grand))` to vanish, which
+#' ordinary least squares gives for free BECAUSE it fits an intercept: the
+#' residuals come out orthogonal to a constant, so they are orthogonal to the
+#' grand mean. Two fits break it. Without an intercept there is no such
+#' guarantee -- measured on `lm(Thumb ~ Height - 1, data = Fingers)`, the two
+#' parts come to 11700.01 against a total of 11880.21, so about 180 of the
+#' total belongs to neither square. With weights the residuals are orthogonal
+#' in the weighted inner product instead, while the squares on the page are
+#' plain areas; measured, the parts overshoot the total by about 11.
+#'
+#' A refusal rather than a warning, and rather than a weighted baseline: this
+#' package's reductions are drawn to be counted, and there is no reading of a
+#' drawn square that is right for a fit whose own arithmetic is different.
+#'
+#' @param model A model fit by `lm()` or `aov()`.
+#' @param fn The name to refuse in, e.g. `"gf_reduce"`.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return `model`, invisibly.
+#'
+#' @noRd
+check_decomposable <- function(model, fn, call = caller_env()) {
+  no_intercept <- identical(as.integer(attr(stats::terms(model), "intercept")), 0L)
+  weighted <- length(model$weights) > 0
+
+  if (!no_intercept && !weighted) {
+    return(invisible(model))
+  }
+
+  abort(
+    c(
+      glue("`{fn}()` draws a reduction that this model's own arithmetic does not support"),
+      x = if (no_intercept) {
+        "this model was fit without an intercept"
+      } else {
+        "this model was fit with weights"
+      },
+      "*" = paste(
+        "total, error and reduction only add up to each other when a model's residuals",
+        "are orthogonal to the grand mean, and it is the intercept that guarantees that"
+      ),
+      i = paste(
+        if (no_intercept) "fit the model with its intercept" else "fit the model unweighted",
+        "or measure it with `gf_resid()`, which needs no such identity"
+      )
+    ),
+    call = call
+  )
 }
 
 #' Refuse a plot that does not draw both of the axes a residual spans
@@ -480,6 +583,81 @@ resid_fun_spec <- function(object, fun, fn = "gf_resid_fun", call = caller_env()
   # stated, not derived: a function of x predicts y, so there is no outcome to
   # look for and `resid_end()` never runs here
   resid_pieces(spec, fitted, "yend")
+}
+
+#' Translate a plot and a model into the pieces a reduction layer is built from
+#'
+#' A SIBLING of `resid_spec()`, not a mode of it, because the two measure
+#' different distances. A residual runs from an observation to a prediction; a
+#' reduction runs from one model's prediction to another's -- the empty
+#' model's, always -- and the observation itself never enters the picture
+#' except to say where along the other axis the segment sits. That is why the
+#' segment's start is `.grand`, a single number repeated down every row,
+#' rather than anything read off `spec$data`.
+#'
+#' It shares `check_resid_plot()`, `plot_spec()`, `check_resid_axes()`,
+#' `resid_fitted()` and `resid_end()` with `resid_spec()`, called in that exact
+#' order, because the refusals a reader sees have to fire in the same sequence
+#' whichever of the two functions found the problem: not a plot, then no model,
+#' then no x/y on the plot, then the prediction, then the axis the outcome is
+#' on.
+#'
+#' The grand mean is the mean of `model`'s own model frame's first column --
+#' the outcome the model itself was fit on -- rather than `mean(fitted(model))`.
+#' The two agree
+#' for any model with an intercept, which is every model this package ever
+#' hands back, but only one of them is still the empty model's prediction if
+#' that ever changes, and only one of them is correct for a model fit on data
+#' narrower than the plot's own (a dropped-row model, or a model fit on a
+#' sample the plot was not built from).
+#'
+#' @param object The plot the layer is being added to.
+#' @param model A model fit by `lm()` or `aov()`.
+#' @param fn The name to refuse in, e.g. `"gf_reduce"`.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return A list with `data` (the plot's own data plus `.fitted` and
+#'   `.grand`) and `aesthetics`.
+#'
+#' @noRd
+reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
+  check_resid_plot(object, fn, call = call)
+  if (is.null(model)) {
+    abort(
+      c(
+        glue("`{fn}()` needs to be told which model to measure the reduction of"),
+        i = glue("a model you already fit: `{fn}(lm(Thumb ~ Height, data = Fingers))`")
+      ),
+      call = call
+    )
+  }
+  spec <- plot_spec(object)
+  check_resid_axes(spec, call = call)
+  fitted <- resid_fitted(model, spec$data, call = call)
+  end <- resid_end(spec, model, call = call)
+
+  check_decomposable(model, fn, call = call)
+
+  # the empty model has no predictors, so model$model (the frame it was fit
+  # on) holds only the outcome column
+  if (ncol(model$model) <= 1) {
+    warn(
+      c(
+        glue("`{fn}()` was given the empty model, so every reduction is zero"),
+        "*" = "the empty model IS the grand mean; there is nothing for it to reduce",
+        "*" = "pass the model whose predictor you want to see the work of"
+      ),
+      class = "coursekata_reduce_empty"
+    )
+  }
+
+  # the empty model's prediction: the mean of the outcome the model was fit on,
+  # not `mean(fitted(model))` -- see the note above
+  grand <- mean(model$model[[1]])
+  data <- spec$data
+  data$.fitted <- fitted
+  data$.grand <- grand
+  list(data = data, aesthetics = resid_mapping(spec, end, from = ".grand"))
 }
 
 #' Build the layer that draws residuals, the way `layer_factory()` asks for one

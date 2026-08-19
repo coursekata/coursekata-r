@@ -83,3 +83,23 @@ test_that("it un-maps dynamic aesthetics from underlying layers that are not in 
   expect_length(traces, 3)
   for (trace in traces[-1]) expect_equal(trace$y, traces[[1]]$y)
 })
+
+test_that("the three-color decomposition: reduction plus residual squares to the same page", {
+  # the only genuinely visual claim here -- "blue = red + green" is about areas
+  # on the page, which D1/D3 in test-gf_reduce.R already carry the arithmetic
+  # for; this snapshot is what confirms the squares still read as one picture
+  set.seed(1)
+  # R 4.5 added datasets::penguins, whose columns are named differently; qualify
+  # the package's own rather than risk a later worker/file resolving the other
+  # one -- see test-gf_model-formula.R's top-of-file guard for the same trap
+  penguins_20 <- mosaic::sample(coursekata::penguins, 20)
+  model <- lm(body_mass_kg ~ flipper_length_m, data = penguins_20)
+
+  suppressMessages(
+    gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
+      gf_model(model) %>%
+      gf_square_resid(model, color = "firebrick") %>%
+      gf_square_reduce(model, color = "blue")
+  ) %>%
+    expect_doppelganger("reduce and resid squares decompose the model")
+})
