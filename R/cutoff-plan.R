@@ -1,38 +1,73 @@
-#' Read the facts out of a distribution-part fill aesthetic
+#' The distribution parts a cutoff can be planned from
 #'
-#' Matches the fill call against the real function's formals, so a caller may
-#' name arguments, reorder them, rely on documented defaults, or qualify the
-#' call with `coursekata::`.
+#' One list, two readers. `cutoff_spec()` matches a fill mapping or a
+#' `show_cutoffs()` argument against it by reading the call's function name;
+#' `StatCutoff` is handed the name outright, as a string, by anyone writing a
+#' layer by hand. Naming them in one place is what keeps a part added to the
+#' package from reaching one route and not the other.
 #'
-#' @param fill The result of `plot_spec(p)$resolve_aes("fill")`, or `NULL`.
-#' @param call The calling environment, for error reporting.
-#'
-#' @return A list with `func`, `prop` and `greedy`. `greedy` is `NA` for
-#'   `outer()`, which has no such formal, and `cutoff_plan()` reads that as
-#'   `TRUE`.
+#' @return A character vector of function names.
 #'
 #' @noRd
-cutoff_spec <- function(fill, call = caller_env()) {
-  valid <- c("middle", "tails", "upper", "lower", "outer")
+cutoff_functions <- function() {
+  c("middle", "tails", "upper", "lower", "outer")
+}
+
+#' Read the facts out of a distribution part, wherever it came from
+#'
+#' Matches the call against the real function's formals, so a caller may name
+#' arguments, reorder them, rely on documented defaults, or qualify the call
+#' with `coursekata::`. Serves both `show_cutoffs()`'s two sources for a part:
+#' a plot's fill aesthetic (the default) and its own second argument (an
+#' explicit override). `source` only changes which of those two a refusal
+#' names -- the checks themselves, and the rest of the fields this returns,
+#' are the same either way.
+#'
+#' @param fill A `list(quo =, data =)`: `plot_spec(p)$resolve_aes("fill")`
+#'   for the fill source, or `list(quo = enquo(part), data = spec$data)` for
+#'   the argument source. `NULL` for a plot with no fill mapping at all.
+#' @param source `"fill"` (default) or `"argument"`.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return A list with `func`, `prop`, `greedy` and `var` (the deparsed,
+#'   unevaluated first argument -- the variable the part describes). `greedy`
+#'   is `NA` for `outer()`, which has no such formal, and `cutoff_plan()`
+#'   reads that as `TRUE`.
+#'
+#' @noRd
+cutoff_spec <- function(fill, source = "fill", call = caller_env()) {
+  valid <- cutoff_functions()
 
   expr <- if (is.null(fill)) NULL else quo_get_expr(fill$quo)
-  if (is.null(expr) || !is.call(expr)) {
-    options <- paste(paste0("~", valid, "(...)"), collapse = " or ")
-    abort(
-      c(
-        "Could not find a distribution function in the plot's fill aesthetic",
-        glue("use fill = {options}")
-      ),
-      call = call
-    )
-  }
+  func <- if (is.call(expr)) call_name(expr) else NULL
+  valid_call <- !is.null(func) && func %in% valid
 
-  func <- call_name(expr)
-  if (is.null(func) || func %in% valid == FALSE) {
+  if (!valid_call) {
+    if (identical(source, "argument")) {
+      abort(
+        c(
+          "`show_cutoffs()` takes a distribution part as its second argument",
+          "x" = glue("found `{deparse1(expr)}`"),
+          "i" = "one of `middle()`, `tails()`, `outer()`, `upper()`, `lower()`",
+          "i" = 'to set the color, name it: `color = "red"`'
+        ),
+        call = call
+      )
+    }
+    if (is.null(expr) || !is.call(expr)) {
+      options <- paste(paste0("~", valid, "(...)"), collapse = " or ")
+      abort(
+        c(
+          "Could not find a distribution function in the plot's fill aesthetic",
+          glue("use fill = {options}")
+        ),
+        call = call
+      )
+    }
     abort(
       c(
         glue("Expected fill to use {collapse(valid)}"),
-        glue("found: {deparse(expr)}")
+        glue("found: {deparse1(expr)}")
       ),
       call = call
     )
@@ -49,12 +84,16 @@ cutoff_spec <- function(fill, call = caller_env()) {
 
   if (!is.numeric(prop) || length(prop) != 1 || is.na(prop) || prop <= 0 || prop >= 1) {
     abort(
-      glue("`prop` must be a single number between 0 and 1, not {deparse(prop)}"),
+      glue("`prop` must be a single number between 0 and 1, not {deparse1(prop)}"),
       call = call
     )
   }
 
-  list(func = func, prop = prop, greedy = greedy)
+  # never evaluated -- an explicit part may name a variable that does not exist
+  # anywhere evaluable, and the only use for this is to print it in a refusal
+  var <- deparse1(call_args(matched)$x)
+
+  list(func = func, prop = prop, greedy = greedy, var = var)
 }
 
 #' Decide where a distribution's cutoff markers belong

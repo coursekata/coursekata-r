@@ -1,35 +1,64 @@
-#' Add Cutoff Markers to a Histogram
+#' Add Cutoff Markers to a Distribution
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' Adds downward-pointing triangle markers at the empirical quantile cutoffs on
-#' a histogram that uses a distribution part function (`middle()`, `tails()`,
-#' `upper()`, `lower()`, or `outer()`) in its fill aesthetic.
+#' Adds downward-pointing triangle markers at the empirical quantile cutoffs of a
+#' distribution part -- `middle()`, `tails()`, `upper()`, `lower()`, or `outer()`.
+#' By default the part is read off the plot's fill aesthetic, e.g.
+#' `fill = ~middle(Thumb, .95)`. Passing `part` overrides that reading: it marks
+#' whatever part is named there instead, and the fill (if any) is ignored --
+#' marking the 99% cutoffs on a plot shaded for the 95% is a deliberate, lossless
+#' override, not a mismatch.
 #'
-#' @param plot A ggplot histogram with `fill` mapped to a distribution part
-#'   function, e.g., `fill = ~middle(Thumb, .95)`.
+#' Calling `show_cutoffs()` more than once on the same plot stacks a second,
+#' independent set of markers on top of the first; nothing about the plot or the
+#' first call needs to change for the second one to land correctly. A second
+#' `labels = TRUE` call, though, draws its labels at the same height as the
+#' first's and the two overlap -- `show_cutoffs()` warns about that and draws
+#' anyway, because the picture is still the one asked for, just harder to read.
+#'
+#' `show_cutoffs()` refuses a plot whose first layer does not draw a distribution
+#' (a scatterplot, for instance) and, when `part` is given explicitly, a `part`
+#' that names a variable other than the one the plot puts on x.
+#'
+#' @param plot A ggplot of one distribution -- a histogram, bar chart, density,
+#'   dotplot, or [gf_squareplot()].
+#' @param part A distribution part, e.g. `middle(Thumb, .95)`. Optional: without
+#'   it, the part is read off the plot's fill aesthetic, exactly as before.
 #' @param color Marker/line color. Default `"#1e3a8a"`.
 #' @param size Marker size. Default `4`.
 #' @param labels Whether to annotate the cutoffs. Default `FALSE`.
 #'
 #' @return A ggplot object with cutoff markers and optional labels.
 #'
+#' @seealso [StatCutoff], a `ggplot2::Stat` that computes the same rule per
+#'   panel, for building a marker into a plot with `ggplot2::layer()` directly.
+#'
 #' @export
 #' @examples
 #' gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) %>%
 #'   show_cutoffs(labels = TRUE)
-show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
+#'
+#' # an explicit part overrides the fill instead of requiring it to match
+#' gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) %>%
+#'   show_cutoffs(middle(Thumb, .99))
+show_cutoffs <- function(plot, part, color = "#1e3a8a", size = 4, labels = FALSE) {
   lifecycle::signal_stage("experimental", "show_cutoffs()")
 
   spec <- plot_spec(plot)
-  cspec <- cutoff_spec(spec$resolve_aes("fill"))
+  has_part <- !missing(part)
+  part_quo <- if (has_part) enquo(part) else NULL
+
+  source <- if (has_part) "argument" else "fill"
+  fill_like <- if (has_part) list(quo = part_quo, data = spec$data) else spec$resolve_aes("fill")
+  cspec <- cutoff_spec(fill_like, source = source)
 
   x <- spec$resolve_aes("x")
   if (is.null(x) || !is_symbol(quo_get_expr(x$quo))) {
     abort(
       c(
         "show_cutoffs() needs the plot's x aesthetic to be a single variable",
-        if (!is.null(x)) glue("found: {deparse(quo_get_expr(x$quo))}"),
+        if (!is.null(x)) glue("found: {deparse1(quo_get_expr(x$quo))}"),
         "compute the variable first, then plot it"
       )
     )
@@ -38,6 +67,19 @@ show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
   if (x_var %in% names(x$data) == FALSE) {
     abort(glue("Can't find `{x_var}` in the plot's data"))
   }
+
+  if (has_part && !identical(cspec$var, x_var)) {
+    part_text <- deparse1(quo_get_expr(part_quo))
+    abort(
+      c(
+        "`show_cutoffs()` marks cutoffs on the plot's x axis",
+        "x" = glue("the plot draws `{x_var}`, and `{part_text}` describes `{cspec$var}`"),
+        "i" = "mark the variable the plot shows, or plot the variable you want marked"
+      )
+    )
+  }
+
+  check_distribution_geom(plot)
 
   plan <- cutoff_plan(cspec, x$data[[x_var]])
 
@@ -52,7 +94,72 @@ show_cutoffs <- function(plot, color = "#1e3a8a", size = 4, labels = FALSE) {
     )
   }
 
+  if (labels && cutoff_labels_already_drawn(plot)) {
+    warn(
+      c(
+        "the plot already carries cutoff labels",
+        "*" = "two sets of labels are drawn at the same height and will overlap",
+        "*" = "label the innermost set only"
+      ),
+      class = "coursekata_cutoff_labels_overlap"
+    )
+  }
+
   render_cutoff_plan(plot, plan, geometry, color, size, labels)
+}
+
+#' Refuse a plot whose first layer does not draw a distribution
+#'
+#' Checked by geom class rather than by stat or by data shape, because that is
+#' the one thing every distribution-shaped layer this package draws agrees on --
+#' including [GeomSquareplot], the package's own, which the fill-detection path
+#' already accepted before this check existed.
+#'
+#' @param plot A ggplot object.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return `NULL`, invisibly. Called for its refusal.
+#'
+#' @noRd
+check_distribution_geom <- function(plot, call = caller_env()) {
+  distributions <- c(
+    "GeomBar", "GeomHistogram", "GeomArea", "GeomDensity", "GeomDotplot", "GeomSquareplot"
+  )
+  geom_classes <- if (length(plot$layers) > 0) class(plot$layers[[1]]$geom) else character(0)
+  if (any(geom_classes %in% distributions)) {
+    return(invisible(NULL))
+  }
+
+  abort(
+    c(
+      "`show_cutoffs()` marks cutoffs on a distribution",
+      "x" = if (length(geom_classes) > 0) {
+        glue("this plot's first layer draws `{geom_classes[[1]]}`")
+      } else {
+        "this plot draws nothing yet"
+      },
+      "i" = paste(
+        "cutoffs describe where a distribution's mass sits; plot it with",
+        "`gf_histogram()`, `gf_density()`, `gf_dotplot()`, `gf_bar()` or `gf_squareplot()` first"
+      )
+    ),
+    call = call
+  )
+}
+
+#' Whether a plot already carries a cutoff label from an earlier call
+#'
+#' Checked by tag rather than by counting `layer_indices()`, because a
+#' one-sided part (`upper()`, `lower()`) only ever adds one side's label and
+#' either side alone is enough to overlap a second call's.
+#'
+#' @param plot A ggplot object.
+#'
+#' @return `TRUE` or `FALSE`.
+#'
+#' @noRd
+cutoff_labels_already_drawn <- function(plot) {
+  !is.na(layer_index(plot, "cutoff_lower_label")) || !is.na(layer_index(plot, "cutoff_upper_label"))
 }
 
 #' Draw a cutoff_plan() as tagged marker layers
@@ -130,9 +237,32 @@ render_cutoff_plan <- function(plot, plan, geometry, color, size, labels) {
     )
   }
 
-  # ggproto() re-evaluates the parent expression later, so the old coord needs its own name
+  unclip_coord(plot)
+}
+
+#' Make a plot's coordinate system draw outside its panel
+#'
+#' Idempotent across stacked calls: a second `show_cutoffs()` call sees the
+#' first call's already-unclipped coord as `plot$coordinates`, and wrapping it
+#' again would grow the ggproto parent chain one level per stacked call with no
+#' visible difference in behavior. The attribute on the wrapped coord is what a
+#' later call recognizes to leave its own wrapping alone.
+#'
+#' @param plot A ggplot object.
+#'
+#' @return `plot`, with its coordinate system unclipped exactly once.
+#'
+#' @noRd
+unclip_coord <- function(plot) {
   coord <- plot$coordinates
-  plot$coordinates <- ggplot2::ggproto(NULL, coord, clip = "off")
+  if (isTRUE(attr(coord, "coursekata_cutoff_unclipped"))) {
+    return(plot)
+  }
+
+  # ggproto() re-evaluates the parent expression later, so the old coord needs its own name
+  unclipped <- ggplot2::ggproto(NULL, coord, clip = "off")
+  attr(unclipped, "coursekata_cutoff_unclipped") <- TRUE
+  plot$coordinates <- unclipped
   plot
 }
 
