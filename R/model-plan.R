@@ -69,16 +69,21 @@ label_columns <- function(labels) {
   unique(unlist(lapply(labels, function(label) all.vars(str2lang(label))), use.names = FALSE))
 }
 
-#' Decide what to draw for a model on a plot
+#' Refuse a plot with no axis to place a model on
+#'
+#' Shared by `model_plan()` (an explicit model) and `implied_model_spec()` (an
+#' inferred one), so a bare `ggplot()` with nothing mapped is refused in the
+#' same words whichever path found it -- there is no axis-shaped difference
+#' between "I don't know what model to draw" and "I don't know what model this
+#' implies" when there is no axis at all.
 #'
 #' @param spec A `plot_spec()` list.
-#' @param mspec A `model_spec()` list.
-#' @param args Named list of user arguments (aesthetics and layer parameters).
+#' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `kind`, `args`, `grid` and `tag`.
+#' @return `spec`, invisibly.
 #'
 #' @noRd
-model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
+check_model_axes <- function(spec, call = caller_env()) {
   if (length(spec$axes) == 0) {
     abort(
       c(
@@ -98,6 +103,20 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
       call = call
     )
   }
+  invisible(spec)
+}
+
+#' Decide what to draw for a model on a plot
+#'
+#' @param spec A `plot_spec()` list.
+#' @param mspec A `model_spec()` list.
+#' @param args Named list of user arguments (aesthetics and layer parameters).
+#'
+#' @return A list with `kind`, `args`, `grid` and `tag`.
+#'
+#' @noRd
+model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
+  check_model_axes(spec, call)
 
   if (!is.null(args$color)) {
     args$colour <- args$color

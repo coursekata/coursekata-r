@@ -25,6 +25,14 @@ test_that("a categorical predictor renders as a mark at each group mean", {
     expect_doppelganger("group mark at each mean")
 })
 
+test_that("an inferred categorical model renders group marks where gf_lm() draws nothing", {
+  # seeded so the points layer's jitter -- unaffected by gf_model(), which
+  # never pins position -- does not make this snapshot flaky
+  gf_jitter(Thumb ~ Sex, data = Fingers, width = .1, seed = 42) %>%
+    gf_model() %>%
+    expect_doppelganger("inferred categorical model")
+})
+
 test_that("a model renders across facets", {
   gf_point(later_anxiety ~ base_anxiety, data = er) %>%
     gf_facet_grid(condition ~ .) %>%

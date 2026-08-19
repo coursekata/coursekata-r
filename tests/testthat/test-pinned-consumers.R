@@ -67,6 +67,9 @@ test_that("every consumer survives a pinned plot and none of them says .courseka
 
   all_texts <- unlist(lapply(results, `[[`, "conditions"))
   expect_no_match(all_texts, ".coursekata_pin_", fixed = TRUE)
+  # §1.1 point 4 also forbids the categorical model's own internal outcome
+  # name reaching a reader
+  expect_no_match(all_texts, ".model_outcome", fixed = TRUE)
 
   for (name in names(results)) {
     expect_true(inherits(results[[name]]$value, "ggplot"), label = paste(name, "value"))
