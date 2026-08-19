@@ -20,8 +20,6 @@ check_ruler_where <- function(where, call = caller_env()) {
   invisible(where)
 }
 
-#' Say where an argument that left the signature went
-#'
 #' Recover the formula from a plot that maps an axis on its first layer
 #'
 #' A layer inherits the plot's mapping, never a sibling layer's, so an axis

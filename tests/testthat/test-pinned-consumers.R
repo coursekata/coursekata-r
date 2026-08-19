@@ -44,7 +44,7 @@ test_that("every consumer survives a pinned plot and none of them says .courseka
   m <- lm(Thumb ~ log(Height), data = Fingers)
 
   # a one-axis plot with a pinned x -- show_mean(), show_cutoffs() and
-  # gf_squareplot() all refuse a plot that maps a y, so they get their own
+  # gf_squareplot() all refuse a plot that maps a y, so they get their own plot
   x_plot <- gf_histogram(
     ~ log(Thumb), data = Fingers, binwidth = .05, fill = ~ middle(log(Thumb), .95)
   )
@@ -68,8 +68,8 @@ test_that("every consumer survives a pinned plot and none of them says .courseka
 
   all_texts <- unlist(lapply(results, `[[`, "conditions"))
   expect_no_match(all_texts, ".coursekata_pin_", fixed = TRUE)
-  # §1.1 point 4 also forbids the categorical model's own internal outcome
-  # name reaching a reader
+  # the categorical model's own internal outcome name must not reach a reader
+  # either
   expect_no_match(all_texts, ".model_outcome", fixed = TRUE)
 
   for (name in names(results)) {
@@ -78,10 +78,10 @@ test_that("every consumer survives a pinned plot and none of them says .courseka
 })
 
 test_that("an explicit gf_model() still works on a pinned plot", {
-  # MUTATION: step 2 (R/gf_model.R:195's `plot_level` reading `spec$labels`
-  # rather than the plot's raw mapping) skipped -- this is the exact call
-  # the failure this reproduces: gf_model() aborting "`Thumb` is mapped by a
-  # layer rather than by the plot" for an outcome pinned under `shuffle()`
+  # MUTATION: `plot_level` reading the plot's raw mapping instead of
+  # `spec$labels` -- this is the exact call that used to make gf_model() abort
+  # "`Thumb` is mapped by a layer rather than by the plot" for an outcome
+  # pinned under `shuffle()`
   set.seed(1)
   base <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers)
   pinned <- pin_plot_values(base)$plot

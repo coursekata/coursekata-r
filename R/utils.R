@@ -1,7 +1,8 @@
 #' Split a character into columns for terminal output
 #'
-#' Split the string into `n` columns, then glue the columns together row-wise with `space_between`,
-#' then glue the rows together with new line characters.
+#' Split the strings into `n_cols` columns, then glue the columns together
+#' row-wise with `space_between`, then glue the rows together with new line
+#' characters.
 #'
 #' @param strings The strings to divide into columns.
 #' @param n_cols The number of columns.

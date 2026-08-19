@@ -238,7 +238,7 @@ show_mean <- function(plot, color = "#E60000", linetype = "longdash", linewidth 
 #' `r lifecycle::badge("experimental")`
 #'
 #' Frames a distribution of estimates with the process that generated them: the
-#' population model on a top axis labelled "Population Parameter (DGP)", the
+#' population model on a top axis labeled "Population Parameter (DGP)", the
 #' sample estimate below the plot, and a marker at the null hypothesis
 #' (\eqn{\beta_1 = 0}) on both -- drawn only when zero is on the axis.
 #'

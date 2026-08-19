@@ -23,7 +23,8 @@ test_that("a categorical predictor implies a group mark, whichever axis it is on
 })
 
 test_that("one axis implies an intercept named for the geom that draws it", {
-  # MUTATION: the inverted geom table -- the exact pair v1 had backwards
+  # MUTATION: swapping vline and hline between the flipped and unflipped
+  # one-axis cases
   m_x <- implied_model(gf_histogram(~Thumb, data = Fingers, binwidth = 5))
   expect_equal(m_x$kind, "vline")
   expect_null(m_x$predictor)
@@ -96,7 +97,7 @@ test_that("an unreachable second drawer is reported, not refused here", {
 })
 
 test_that("a plot's facet variables travel with the decision", {
-  # MUTATION: dropping the facets field that item C's faceted refusal is built on
+  # MUTATION: dropping the facets field that gf_b()'s faceted refusal is built on
   m <- implied_model(gf_point(Thumb ~ Height | Sex, data = Fingers))
 
   expect_equal(m$facets, "Sex")

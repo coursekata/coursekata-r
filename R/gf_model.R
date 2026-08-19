@@ -198,9 +198,9 @@ gf_model <- ggformula::layer_factory(
 #' `model_plan()` computed at call time, never with the plot's own expression --
 #' and inherits the other. An inherited outcome expression is re-evaluated
 #' against the prediction grid at build time, which is right for a plain
-#' transformation such as `sqrt()` -- `tests/testthat/test-model-plan.R:488`
-#' ("a plot that transforms the outcome's axis draws the prediction there") is
-#' the test that stops anyone collapsing that branch to always drawing the raw
+#' transformation such as `sqrt()`. The test named "a plot that transforms the
+#' outcome's axis draws the prediction there" is what stops anyone collapsing
+#' that branch to always drawing the raw
 #' prediction -- and catastrophic for `shuffle()`, which draws the right values
 #' in a random order. `xend`/`yend` and the intercepts are terminal companions
 #' ggplot2 cannot inherit, so they are named outright as before; `x` and `y` are
@@ -300,7 +300,7 @@ model_layer_spec <- function(object, model, args = list(), call = caller_env()) 
 #'
 #' @return A function with the formals `layer_factory()` expects. It must name
 #'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
-#'   all three by `create_formals()` and fails with a missing geom.
+#'   all four by `create_formals()` and fails with a missing geom.
 #'
 #' @noRd
 model_layer_fun <- function(plan_params, tag) {

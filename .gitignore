@@ -31,3 +31,6 @@ jupyterlite/recipe.yaml
 jupyterlite/app/_output/
 jupyterlite/app/.jupyterlite.doit.db
 jupyterlite/app/pixi.lock
+
+# knitr writes here when a vignette is knit outside its own directory
+figure/

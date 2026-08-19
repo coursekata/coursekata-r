@@ -86,8 +86,9 @@ test_that("it un-maps dynamic aesthetics from underlying layers that are not in 
 
 test_that("the three-color decomposition: reduction plus residual squares to the same page", {
   # the only genuinely visual claim here -- "blue = red + green" is about areas
-  # on the page, which D1/D3 in test-gf_reduce.R already carry the arithmetic
-  # for; this snapshot is what confirms the squares still read as one picture
+  # on the page, which the sum-of-squares and decomposition tests in
+  # test-gf_reduce.R already carry the arithmetic for; this snapshot is what
+  # confirms the squares still read as one picture
   set.seed(1)
   # R 4.5 added datasets::penguins, whose columns are named differently; qualify
   # the package's own rather than risk a later worker/file resolving the other

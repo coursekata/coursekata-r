@@ -18,8 +18,9 @@ articles:
   desc: >
     Longer walkthroughs of the workflows the functions are built for.
   contents:
-  - '`articles/sampling-distributions`'
   - '`articles/model-visualization`'
+  - '`articles/coefficients`'
+  - '`articles/sampling-distributions`'
 
 reference:
 - title: Visualizing distributions and variation
@@ -36,16 +37,21 @@ reference:
   - GeomSquareplot
   - middle
   - show_cutoffs
+  - StatCutoff
   - show_mean
   - show_dgp
 
 - title: Visualizing models
   desc: >
-    Layer models, residuals, and squared residuals onto `ggformula` plots.
+    Layer models, their coefficients, residuals, reductions, and squares of
+    both onto `ggformula` plots.
   contents:
+  - gf_b
   - gf_model
+  - gf_reduce
   - gf_resid
   - gf_resid_fun
+  - gf_square_reduce
   - gf_square_resid
   - gf_square_resid_fun
   - StatResid

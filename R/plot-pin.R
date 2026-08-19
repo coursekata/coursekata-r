@@ -107,8 +107,8 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
   # applied to each axis, preserving the very relationship a shuffle exists to
   # destroy.
   with_random_seed_restored(for (a in aes) {
-    # rule 7: idempotent -- a pin already recorded for this aesthetic is left
-    # exactly as it is, original quosure and all
+    # idempotent: a pin already recorded for this aesthetic is left exactly as
+    # it is, original quosure and all
     if (!is.null(pins[[a]])) {
       next
     }
@@ -147,9 +147,8 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
           layer_mapping_a
         }
         if (!identical(layer_expr, expr)) {
-          # rule 8: a drawer of `a` with an expression different from the
-          # plot's -- the pin cannot reach it, and the caller decides what
-          # that means
+          # a drawer of `a` with an expression different from the plot's -- the
+          # pin cannot reach it, and the caller decides what that means
           unreached <- union(unreached, a)
           next
         }

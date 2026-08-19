@@ -1,14 +1,13 @@
 # Constraints ---------------------------------------------------------------------------------
 
 # Answered: yes, with no model gf_model() draws the model the plot implies -- see
-# test-gf_model-infer.R. The premise that used to sit here was wrong on two counts. gf_lm()
-# draws nothing at all on a categorical x, so "the only model a default could infer is
-# lm(y ~ x)" was never true once a categorical predictor is on the table; the group marks it
-# has no answer for are exactly what an inferred default has of its own to be. And on an
-# expression mapping (shuffle(Thumb), log(Height)) the model has to be fit on the values the
-# plot actually drew rather than on a fresh evaluation of the expression -- a fresh shuffle
-# agrees with the picture on nothing. What the named-model path may be is unchanged: either a
-# model already fit, or the formula for one, fit against the data the plot was built from.
+# test-gf_model-infer.R. An inferred default is not gf_lm() under another name. gf_lm() draws
+# nothing at all on a categorical x, and the group marks it has no answer for are exactly what
+# a default has of its own to be. And on an expression mapping (shuffle(Thumb), log(Height))
+# the model has to be fit on the values the plot actually drew rather than on a fresh
+# evaluation of the expression -- a fresh shuffle agrees with the picture on nothing. What the
+# named-model path may be is unchanged: either a model already fit, or the formula for one,
+# fit against the data the plot was built from.
 test_that("it needs to be layered onto a plot", {
   gf_model(lm(later_anxiety ~ NULL, data = er)) %>%
     expect_error()

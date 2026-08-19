@@ -437,7 +437,7 @@ test_that("a name that left the signature is refused, and says what draws it now
   expect_error(gf_squareplot(~x, data = squares, mincount = 10), "expand_limits")
   expect_error(gf_squareplot(~x, data = squares, auto_subdivide = TRUE), "countable")
 
-  # every retired name is listed, so one call reporting several names them all
+  # every retired name is listed, so one call naming several of them reports them all
   err <- expect_error(gf_squareplot(~x, data = squares, mincount = 10, xrange = c(0, 6)))
   expect_match(conditionMessage(err), "mincount")
   expect_match(conditionMessage(err), "xrange")

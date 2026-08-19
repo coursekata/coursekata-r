@@ -38,7 +38,7 @@ aesthetic. `middle()` marks the values we would expect to see often.
 gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95), binwidth = 1)
 ```
 
-`tails()` marks the same cutoffs with the opposite coloring — the 5% most
+`tails()` marks the same cutoffs with the opposite coloring: the 5% most
 extreme values, the ones that would be surprising under the empty model.
 
 ```{r}
@@ -59,6 +59,36 @@ For a directional hypothesis, all of the 5% goes in one tail.
 gf_histogram(~b1, data = sdob1, fill = ~ upper(b1, .05), binwidth = 1)
 gf_histogram(~b1, data = sdob1, fill = ~ lower(b1, .05), binwidth = 1)
 ```
+
+## Marking the cutoffs themselves
+
+Filling a region colors it. `show_cutoffs()` marks where it ends, and it takes
+the region directly, so a plain histogram can have cutoffs without being colored.
+
+```{r}
+gf_histogram(~b1, data = sdob1, binwidth = 1) %>%
+  show_cutoffs(middle(b1, .95))
+```
+
+Because the region is named rather than read off the fill, the marked region and
+the colored one can differ: color the middle 95%, mark where the middle 99%
+ends.
+
+```{r}
+gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95), binwidth = 1) %>%
+  show_cutoffs(middle(b1, .99))
+```
+
+Two calls put two sets on one plot, which is how you see what changing alpha
+costs you.
+
+```{r}
+gf_histogram(~b1, data = sdob1, binwidth = 1) %>%
+  show_cutoffs(middle(b1, .95)) %>%
+  show_cutoffs(middle(b1, .99), color = "firebrick")
+```
+
+The wider pair is harder to fall outside, so a result that clears it is rarer.
 
 ## Bootstrapping instead of shuffling
 

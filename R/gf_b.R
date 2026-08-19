@@ -156,8 +156,7 @@ b_run_x <- function(x_min, x_max, run) {
   fits[[which.max(abs(fits))]]
 }
 
-#' The b0 reference line and its label -- drawn the same way whether the model
-#' has no predictor or a categorical one
+#' The b0 reference line and its label, for a categorical predictor's model
 #'
 #' `show_b0 = FALSE` drops both: a picture of b0 with no line and no label is
 #' not a picture of anything, so there is nothing partial to keep.
@@ -711,9 +710,9 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #'
 #' Draws the intercept and slope (or group differences) of a fitted model as
 #' arrows and labels directly on the plot they describe: a rise-over-run
-#' triangle for a continuous predictor, one arrow per group for a categorical
-#' one. Where [gf_model()] draws the fit itself, `gf_b()` draws the numbers
-#' that describe it.
+#' triangle for a continuous predictor, an arrow to each non-reference group for
+#' a categorical one. Where [gf_model()] draws the fit itself, `gf_b()` draws
+#' the numbers that describe it.
 #'
 #' @details
 #' # What is drawn
@@ -724,11 +723,11 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #' label under the run segment (over it, for a negative rise), and a hollow
 #' dot at `(0, b0)` with a b0 label.
 #'
-#' **A categorical predictor** (`k` levels): one horizontal reference line at
-#' `b0` (the reference level's mean), and for each `k >= 2` a segment from
-#' `b0` to `b0 + b_k` with an arrow head, labelled (plotmath) b0, b1, … Level
-#' order is read off `coef(model)`, so a releveled factor still labels the
-#' arrow that matches its coefficient.
+#' **A categorical predictor**: one horizontal reference line at `b0` (the
+#' reference level's mean), and for each level after it a segment from `b0` to
+#' `b0` plus that level's coefficient, with an arrow head, labeled (plotmath)
+#' b1, b2, … Level order is read off `coef(model)`, so a releveled factor still
+#' labels the arrow that matches its coefficient.
 #'
 #' **No predictor** (the empty model): the `b0` line and its label, nothing
 #' else.
@@ -750,26 +749,38 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #' Every mark is placed from the model's coefficients and from level indices,
 #' never from a drawn point's position, so jitter never moves an arrow.
 #'
-#' `show_b0 = TRUE` (the default) expands the x axis to include 0 on a
-#' continuous model, because b0 is the value at `x = 0` and a picture of it
-#' that does not show `x = 0` is not a picture of b0. Calling `gf_lims(x = )`
-#' afterward overrides that expansion and can push the b0 dot off the page.
+#' `show_b0 = TRUE` (the default) expands the PREDICTOR's axis to include 0 on
+#' a continuous model, because b0 is the prediction where the predictor is 0
+#' and a picture of it that does not show that point is not a picture of b0.
+#' Usually that is x; on a plot that puts the outcome on x it is y, and the
+#' expansion follows the predictor rather than the letter. Calling `gf_lims()`
+#' on that axis afterward overrides the expansion and can push the b0 dot off
+#' the page.
 #'
 #' @param object A plot created with the `ggformula` package.
 #' @param model The model to annotate: a fit from [`lm()`] or [`aov()`], with
-#'   one predictor at most. A formula is refused -- `gf_b()`'s whole output is
-#'   a set of labelled numbers, and there is no fit to read them from. May be
-#'   given positionally or as `model =`. Omitted, the model the plot implies
-#'   is fit and annotated instead.
+#'   one predictor at most, and that predictor spelled the way the plot's own
+#'   axis spells it -- `log(Height)` and `Height` are the same column but not
+#'   the same axis, and b1 is a rise per unit of whichever one the model was
+#'   fit on. It needs an intercept, because every mark here is measured from
+#'   b0; a categorical predictor needs treatment coding, because every arrow is
+#'   drawn as one group's difference from the reference group and no other
+#'   coding's coefficients are that. Each of those is refused rather than
+#'   drawn, because each would otherwise produce a picture that looks right. A
+#'   formula is refused too -- `gf_b()`'s whole output is a set of labeled
+#'   numbers, and there is no fit to read them from. May be given positionally
+#'   or as `model =`. Omitted, the model the plot implies is fit and annotated
+#'   instead.
 #' @param color,label_color The arrows/lines and the label text. `colour` and
 #'   `label_colour` are accepted too. Each is a single value, not a mapping --
 #'   every mark is one row computed from the coefficients, so there are no
 #'   rows of data to map an aesthetic over; `color = ~variable` is refused.
 #' @param label_size,arrow_linewidth,b0_linewidth,b0_size Sizes for the labels,
 #'   the arrows, the b0 line and the b0 dot.
-#' @param show_b0 Draw the `b0` line/dot and its label, and expand the x axis
-#'   to include 0 on a continuous model. `TRUE` by default; a later
-#'   `gf_lims(x = )` overrides the expansion and can push the b0 dot off the
+#' @param show_b0 Draw the `b0` line/dot and its label, and expand the
+#'   PREDICTOR's axis to include 0 on a continuous model -- x on most plots, y
+#'   on one that puts the outcome on x. `TRUE` by default; a later `gf_lims()`
+#'   on that axis overrides the expansion and can push the b0 dot off the
 #'   page.
 #' @param run,run_x The run a continuous model's rise is measured over, and
 #'   the x position the triangle starts at. Both chosen from the data when

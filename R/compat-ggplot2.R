@@ -43,8 +43,8 @@ coord_transform_name <- function() {
 #' Build a coord transformation without caring what it is called
 #'
 #' The counterpart to `coord_transform_name()` for code that has to construct
-#' one rather than name one -- the reference examples and the tests that check a
-#' square survives a distorted axis.
+#' one rather than name one -- used by the tests that check a square survives
+#' a distorted axis.
 #'
 #' @param ... Passed to `coord_transform()` or `coord_trans()`.
 #'

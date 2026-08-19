@@ -16,8 +16,9 @@
 #'   evaluates gets the values the plot draws), `data` (the pinned plot's
 #'   data), `labels` (a named character vector, the reader's spelling of
 #'   every mapped aesthetic -- a pinned aesthetic's original label where one
-#'   is recorded, `as_label()` of the mapped quosure otherwise), `variables`,
-#'   `aesthetics` and `axes` (all derived from `labels`), `facets`, `pins`
+#'   is recorded, `as_label()` of the mapped quosure otherwise), `variables`
+#'   (`labels` merged with `facets`), `aesthetics` and `axes` (both narrowed
+#'   from `variables`), `facets`, `pins`
 #'   (the recorded originals, from `plot_pins()`) and `resolve_aes` (looks
 #'   up an aesthetic's quosure and source data). Which axis carries a
 #'   model's outcome is not here -- that belongs to the plan.

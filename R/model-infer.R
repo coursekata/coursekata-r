@@ -188,8 +188,8 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
 #' @param tag The tag to name the layer with.
 #'
 #' @return A function with the formals `layer_factory()` expects. It must name
-#'   `geom`, `stat` and `position`: a `...`-only shim is stripped of all three
-#'   by `create_formals()` and fails with a missing geom.
+#'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
+#'   all four by `create_formals()` and fails with a missing geom.
 #'
 #' @noRd
 implied_layer_fun <- function(defaults, tag) {
