@@ -57,7 +57,7 @@ test_that("the group mark spans the group position and claims one value", {
   plan <- plan_for(p, lm(later_anxiety ~ condition, data = er))
 
   expect_equal(rlang::f_rhs(plan$args$x), quote(condition))
-  expect_false("y" %in% names(plan$args))
+  expect_equal(rlang::f_rhs(plan$args$y), quote(.model_outcome))
   expect_equal(plan$args$width, .4)
   expect_equal(plan$args$mark_axis, "x")
   expect_false(any(c("ymin", "ymax", "xmin", "xmax") %in% names(plan$args)))
@@ -73,7 +73,7 @@ test_that("a categorical predictor on y puts the group position on y", {
 
   expect_equal(plan$kind, "segment")
   expect_equal(rlang::f_rhs(plan$args$y), quote(condition))
-  expect_false("x" %in% names(plan$args))
+  expect_equal(rlang::f_rhs(plan$args$x), quote(.model_outcome))
   expect_equal(plan$args$mark_axis, "y")
   expect_false(any(c("ymin", "ymax", "xmin", "xmax") %in% names(plan$args)))
 })
@@ -432,13 +432,16 @@ test_that("a plot of the raw column takes a model of a transformation of it", {
   plan <- plan_for(p, model)
 
   expect_equal(plan$kind, "line")
-  expect_equal(names(plan$grid), c("age", "later_anxiety"))
+  expect_equal(names(plan$grid), c("age", "later_anxiety", ".model_outcome"))
   expect_equal(range(plan$grid$age), range(er$age))
   expect_equal(nrow(plan$grid), max(nrow(er), 80L))
   expect_equal(
     plan$grid$later_anxiety,
     unname(predict(model, newdata = data.frame(age = plan$grid$age)))
   )
+  # the plot maps the outcome as a plain symbol, so the drawn value is the
+  # prediction itself, not a re-evaluation of anything
+  expect_equal(plan$grid$.model_outcome, plan$grid$later_anxiety)
 })
 
 test_that("a plot of the transformation takes the model written the same way", {
@@ -446,8 +449,11 @@ test_that("a plot of the transformation takes the model written the same way", {
   plan <- plan_for(p, lm(later_anxiety ~ log(age), data = er))
 
   expect_equal(plan$kind, "line")
-  expect_equal(names(plan$grid), c("age", "later_anxiety"))
+  expect_equal(names(plan$grid), c("age", "later_anxiety", ".model_outcome"))
   expect_equal(rlang::f_rhs(plan$args$x), quote(log(age)))
+  # the plot maps the outcome as a plain symbol, so the drawn value is the
+  # prediction itself, not a re-evaluation of anything
+  expect_equal(plan$grid$.model_outcome, plan$grid$later_anxiety)
 })
 
 test_that("a transformed axis is drawn at the transformed positions", {

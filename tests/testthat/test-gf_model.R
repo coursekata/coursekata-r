@@ -179,22 +179,33 @@ model_shapes <- function() {
   )
 }
 
-test_that("the axis the plot puts the outcome on is never mapped by the model layer", {
+test_that("the axis the plot puts the outcome on is named with the layer's own value", {
   # THE INVARIANT, in the only form that is true of all six shapes. Of the two
-  # positional aesthetics x and y, the model layer never maps the one the plot is
-  # using to carry the outcome -- it leaves that one free and inherits it. That is
-  # the only reason a flipped plot draws correctly; nothing anywhere reasons about
-  # orientation at draw time. xend/yend and the intercepts are terminal companions
-  # ggplot2 cannot inherit, so they are named outright and are not part of this.
+  # positional aesthetics x and y, the model layer always names the one the plot
+  # is using to carry the outcome -- but with a value it computed at call time
+  # (`.model_outcome`), never with the plot's own expression. An intercept is the
+  # one shape with nothing to inherit -- it states xintercept/yintercept outright
+  # and leaves x/y unmapped, as before. xend/yend are the other terminal
+  # companion and are not part of this either way.
   for (name in names(model_shapes())) {
     shape <- model_shapes()[[name]]
     outcome <- "later_anxiety"
     axes <- plot_spec(shape[[1]])$axes
     outcome_axis <- names(axes)[axes == outcome]
     mapping <- model_layer_of(shape[[1]] %>% gf_model(shape[[2]]))$mapping
+    is_intercept <- name %in% c("hline", "vline")
 
-    expect_false(outcome_axis %in% names(mapping), label = paste(name, "leaves", outcome_axis))
+    if (is_intercept) {
+      expect_false(outcome_axis %in% names(mapping), label = paste(name, "leaves", outcome_axis))
+    } else {
+      expect_equal(
+        rlang::as_label(mapping[[outcome_axis]]), ".model_outcome",
+        label = paste(name, "names its own value on", outcome_axis)
+      )
+    }
 
+    # unchanged: the value named for the outcome axis is never the plot's own
+    # expression -- this is what would fail if shuffle() were re-inherited
     positional <- mapping[intersect(names(mapping), c("x", "y"))]
     drawn <- vapply(positional, rlang::as_label, character(1))
     expect_false(outcome %in% drawn, label = paste(name, "maps the outcome positionally"))
@@ -218,6 +229,56 @@ test_that("each shape inherits exactly the aesthetics it can use", {
     expect_true(all(xs >= panel$x.range[[1]] & xs <= panel$x.range[[2]]), label = name)
     expect_true(all(ys >= panel$y.range[[1]] & ys <= panel$y.range[[2]]), label = name)
   }
+})
+
+test_that("a shuffled outcome axis does not scramble the model drawn over it", {
+  set.seed(1)
+  p <- gf_jitter(shuffle(Thumb) ~ Height, data = Fingers)
+  fit <- lm(Thumb ~ Height, data = Fingers)
+
+  for (model in list(Thumb ~ Height, fit)) {
+    q <- p %>% gf_model(model)
+    drawn <- ggplot2::ggplot_build(q)$data[[layer_index(q, "model")]]
+
+    # MUTATION: the layer leaving the outcome aesthetic unmapped and inheriting the
+    # plot's expression, so shuffle() is re-evaluated against the prediction grid.
+    # Both assertions are required: monotonicity alone passes on a constant, and
+    # predict()-equality alone would be satisfied by a sorted frame the geom then
+    # re-sorted.
+    # a regression line is monotone in x; a permutation of one is not
+    expect_false(is.unsorted(drawn$y[order(drawn$x)]))
+    expect_equal(drawn$y, unname(stats::predict(fit, data.frame(Height = drawn$x))))
+  }
+})
+
+test_that("a shuffled outcome does not scramble a categorical model's marks", {
+  # MUTATION: the segment branch of the same fix being skipped, which draws the
+  # two marks at permuted values instead of the real group means.
+  set.seed(1)
+  p <- gf_jitter(shuffle(Thumb) ~ Sex, data = Fingers, width = .1) %>%
+    gf_model(lm(Thumb ~ Sex, data = Fingers))
+  drawn <- ggplot2::ggplot_build(p)$data[[layer_index(p, "model")]]
+
+  expect_equal(
+    sort(drawn$y),
+    sort(unname(as.vector(tapply(Fingers$Thumb, Fingers$Sex, mean)))),
+    tolerance = 1e-5
+  )
+})
+
+test_that("a shuffled outcome does not scramble a flipped categorical model's marks", {
+  # MUTATION: the outcome_axis == "x" branch writing the drawn value to the wrong
+  # args slot, so a flipped plot's marks are never renamed and inherit the shuffle.
+  set.seed(1)
+  p <- gf_boxplot(Sex ~ shuffle(Thumb), data = Fingers) %>%
+    gf_model(lm(Thumb ~ Sex, data = Fingers))
+  drawn <- ggplot2::ggplot_build(p)$data[[layer_index(p, "model")]]
+
+  expect_equal(
+    sort(drawn$x),
+    sort(unname(as.vector(tapply(Fingers$Thumb, Fingers$Sex, mean)))),
+    tolerance = 1e-5
+  )
 })
 
 # Orientation ------------------------------------------------------------------------------------

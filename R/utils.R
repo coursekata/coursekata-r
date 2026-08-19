@@ -39,10 +39,29 @@ layer_with_position <- function(layer, position) {
   copy
 }
 
+#' Run an expression and put the caller's random stream back where it was
+#'
+#' Evaluating a mapping such as `shuffle(Thumb)` consumes draws. A package whose
+#' subject is randomization must not move a reader's stream as a side effect of
+#' drawing, so every call-time evaluation of a mapping goes through this.
+#'
+#' @noRd
+with_random_seed_restored <- function(expr) {
+  if (exists(".Random.seed", .GlobalEnv, inherits = FALSE)) {
+    old <- get(".Random.seed", .GlobalEnv, inherits = FALSE)
+    on.exit(assign(".Random.seed", old, envir = .GlobalEnv), add = TRUE)
+  } else {
+    on.exit(suppressWarnings(rm(".Random.seed", envir = .GlobalEnv)), add = TRUE)
+  }
+  expr
+}
+
 #' Run an expression against a fixed random seed, then put the stream back
 #'
 #' `withr` is only a test dependency, and this is the whole of what a position
-#' needs from it.
+#' needs from it. The save/restore half lives in `with_random_seed_restored()`,
+#' one place, because two callers need it: a position pinning a jitter seed and
+#' `model_plan()`'s call-time probe of an outcome expression.
 #'
 #' @param seed A seed, or `NA` to run `expr` untouched.
 #' @param expr The expression to evaluate.
@@ -52,16 +71,13 @@ layer_with_position <- function(layer, position) {
 #' @noRd
 with_jitter_seed <- function(seed, expr) {
   if (!isTRUE(is.finite(seed))) {
-    return(expr)
-  }
-  if (exists(".Random.seed", .GlobalEnv, inherits = FALSE)) {
-    old <- get(".Random.seed", .GlobalEnv, inherits = FALSE)
-    on.exit(assign(".Random.seed", old, envir = .GlobalEnv), add = TRUE)
+    expr
   } else {
-    on.exit(suppressWarnings(rm(".Random.seed", envir = .GlobalEnv)), add = TRUE)
+    with_random_seed_restored({
+      set.seed(seed)
+      expr
+    })
   }
-  set.seed(seed)
-  expr
 }
 
 #' Join items into a comma-separated string for error messages
