@@ -71,24 +71,26 @@ label_columns <- function(labels) {
 
 #' Refuse a plot with no axis to place a model on
 #'
-#' Shared by `model_plan()` (an explicit model) and `implied_model_spec()` (an
-#' inferred one), so a bare `ggplot()` with nothing mapped is refused in the
-#' same words whichever path found it -- there is no axis-shaped difference
-#' between "I don't know what model to draw" and "I don't know what model this
-#' implies" when there is no axis at all.
+#' Shared by `model_plan()` (an explicit model), `implied_model_spec()` (an
+#' inferred one) and, through `implied_model()`, `gf_b()`/`gf_coef()`, so a
+#' bare `ggplot()` with nothing mapped is refused in the same words whichever
+#' path found it -- there is no axis-shaped difference between "I don't know
+#' what model to draw" and "I don't know what model this implies" when there
+#' is no axis at all.
 #'
 #' @param spec A `plot_spec()` list.
+#' @param fn The name to refuse in, e.g. `"gf_model"` or `"gf_b"`.
 #' @param call The calling environment, for error reporting.
 #'
 #' @return `spec`, invisibly.
 #'
 #' @noRd
-check_model_axes <- function(spec, call = caller_env()) {
+check_model_axes <- function(spec, fn = "gf_model", call = caller_env()) {
   if (length(spec$axes) == 0) {
     abort(
       c(
         paste0(
-          "gf_model() supports plots built with gf_point(), gf_jitter(), gf_boxplot(), ",
+          glue("{fn}() supports plots built with gf_point(), gf_jitter(), gf_boxplot(), "),
           "gf_violin() and gf_histogram()"
         ),
         paste0(
@@ -116,7 +118,7 @@ check_model_axes <- function(spec, call = caller_env()) {
 #'
 #' @noRd
 model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
-  check_model_axes(spec, call)
+  check_model_axes(spec, call = call)
 
   if (!is.null(args$color)) {
     args$colour <- args$color
