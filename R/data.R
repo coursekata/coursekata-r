@@ -407,8 +407,8 @@
 #'
 #' These data have been updated with some historical height data (from [Our World in
 #' Data](https://ourworldindata.org/human-height)), drinking data (collected by the World Health
-#' Organization featured in
-#' [fivethirtyeight](https://fivethirtyeight.com/features/dear-mona-followup-where-do-people-drink-the-most-beer-wine-and-spirits/)),
+#' Organization and published with the
+#' [FiveThirtyEight alcohol-consumption data](https://github.com/fivethirtyeight/data/tree/master/alcohol-consumption)),
 #' population and land characteristics, and vaccination data (from March 2023).
 #'
 #' @format A data frame with 130 observations on the following 14 variables:

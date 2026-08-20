@@ -28,8 +28,8 @@ World
 }
 \description{
 These data have been updated with some historical height data (from \href{https://ourworldindata.org/human-height}{Our World in Data}), drinking data (collected by the World Health
-Organization featured in
-\href{https://fivethirtyeight.com/features/dear-mona-followup-where-do-people-drink-the-most-beer-wine-and-spirits/}{fivethirtyeight}),
+Organization and published with the
+\href{https://github.com/fivethirtyeight/data/tree/master/alcohol-consumption}{FiveThirtyEight alcohol-consumption data}),
 population and land characteristics, and vaccination data (from March 2023).
 }
 \keyword{datasets}
