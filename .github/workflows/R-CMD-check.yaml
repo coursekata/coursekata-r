@@ -66,6 +66,11 @@ jobs:
             lc-ctype: German_Germany.utf8
 
           - os: windows-latest
+            r: devel
+            http-user-agent: release
+            lc-ctype: German_Germany.utf8
+
+          - os: windows-latest
             r: oldrel-1
             lc-ctype: German_Germany.utf8
 
