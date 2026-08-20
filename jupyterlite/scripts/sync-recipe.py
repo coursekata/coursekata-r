@@ -9,12 +9,34 @@ REPO_ROOT = JUPYTERLITE_DIR.parent
 DESCRIPTION_PATH = REPO_ROOT / "DESCRIPTION"
 RECIPE_PATH = JUPYTERLITE_DIR / "recipe.yaml"
 
-# R packages to exclude from the wasm recipe
-EXCLUDE_PACKAGES = set()
+# Packages included with r-base rather than published as separate Conda packages.
+# Keep this list to R's base-priority packages; recommended packages can have
+# their own Conda packages and should still be resolved when explicitly imported.
+BASE_R_PACKAGES = {
+    "base",
+    "compiler",
+    "datasets",
+    "graphics",
+    "grDevices",
+    "grid",
+    "methods",
+    "parallel",
+    "splines",
+    "stats",
+    "stats4",
+    "tcltk",
+    "tools",
+    "utils",
+}
+
+LICENSE_TO_SPDX = {
+    "AGPL (>= 3)": "AGPL-3.0-or-later",
+    "GPL (>= 3)": "GPL-3.0-or-later",
+}
 
 
 def parse_description():
-    """Parse Version, R version floor, and Imports from DESCRIPTION (DCF format)."""
+    """Parse release metadata and Imports from DESCRIPTION (DCF format)."""
     text = DESCRIPTION_PATH.read_text()
 
     version_match = re.search(r"^Version:\s*(.+)$", text, re.MULTILINE)
@@ -22,6 +44,19 @@ def parse_description():
         print("ERROR: Could not find Version in DESCRIPTION", file=sys.stderr)
         sys.exit(1)
     version = version_match.group(1).strip()
+
+    license_match = re.search(r"^License:\s*(.+)$", text, re.MULTILINE)
+    if not license_match:
+        print("ERROR: Could not find License in DESCRIPTION", file=sys.stderr)
+        sys.exit(1)
+    r_license = license_match.group(1).strip()
+    if r_license not in LICENSE_TO_SPDX:
+        print(
+            f"ERROR: No SPDX mapping for DESCRIPTION license: {r_license}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    spdx_license = LICENSE_TO_SPDX[r_license]
 
     depends_match = re.search(
         r"^Depends:\s*\n?(.*?)(?=^[A-Za-z]|\Z)", text, re.MULTILINE | re.DOTALL
@@ -42,9 +77,9 @@ def parse_description():
     imports_text = "Imports: " + imports_match.group(1)
     deps = [
         (name, ver) for name, ver in parse_deps(imports_text)
-        if name not in EXCLUDE_PACKAGES
+        if name not in BASE_R_PACKAGES
     ]
-    return version, r_version, deps
+    return version, r_version, spdx_license, deps
 
 
 def parse_deps(text):
@@ -72,7 +107,7 @@ def format_conda_version(constraint):
     return re.sub(r"\s+", "", constraint)
 
 
-def generate_recipe(version, r_version, deps):
+def generate_recipe(version, r_version, spdx_license, deps):
     """Generate recipe.yaml content."""
     run_deps = []
     for name, constraint in deps:
@@ -116,7 +151,7 @@ requirements:
 about:
   homepage: https://github.com/coursekata/coursekata-r
   summary: Packages and Functions for CourseKata Courses
-  license: AGPL-3.0-or-later
+  license: {spdx_license}
 """
 
 
@@ -129,9 +164,9 @@ def write_if_changed(path, content):
 
 
 def main():
-    version, r_version, deps = parse_description()
+    version, r_version, spdx_license, deps = parse_description()
 
-    recipe_content = generate_recipe(version, r_version, deps)
+    recipe_content = generate_recipe(version, r_version, spdx_license, deps)
     if write_if_changed(RECIPE_PATH, recipe_content):
         print(f"Updated {RECIPE_PATH.relative_to(JUPYTERLITE_DIR)} ({len(deps)} deps, version {version})")
 
