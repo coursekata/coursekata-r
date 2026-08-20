@@ -180,7 +180,10 @@ render_cutoff_plan <- function(plot, plan, geometry, color, size, labels) {
   # in -- the horizontal panel range when coord_flip() has moved them there
   flipped <- inherits(plot$coordinates, "CoordFlip")
   y_at <- panel_fraction(if (flipped) geometry$x_range else geometry$y_range)
-  arrow_y <- y_at(-0.06)
+  # Keep the triangle's body in the scale's lower expansion and put its
+  # downward tip at the axis tick. Farther down, the marker occupies the same
+  # row as the tick label and can make a value such as 80 unreadable.
+  arrow_y <- y_at(-0.03)
   line_top_y <- y_at(0.20)
   line_bottom_y <- y_at(-0.045)
   label_y <- y_at(0.65)
