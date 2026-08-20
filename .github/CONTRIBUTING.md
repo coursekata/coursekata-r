@@ -2,14 +2,15 @@
 
 ## Dependency floors
 
-Two of the version requirements in `DESCRIPTION` are floors we measured a failure
-below, not the versions that happened to be installed when the dependency was
-added. Moving either one is a decision.
+Two of the version requirements in `DESCRIPTION` are deliberate compatibility
+floors, not pins and not the versions that deployment environments should
+install. Moving either one is a decision; normal installations and the browser
+Playground remain free to resolve the newest compatible versions available.
 
-| Package | Floor | Below the floor |
+| Package | Floor | Why this floor |
 |---|---|---|
-| `ggformula` | 0.12.0 | `layer_factory()` resolves the `stat` and `geom` it is handed instead of capturing them unevaluated, so it looks up `coursekata::StatSdRuler` while `coursekata`'s own namespace is still being built. The package cannot be installed at all. |
-| `ggplot2` | 3.5.2 | Nothing -- and that is the point. The floor sits deliberately below the current release because the browser-based Playground ships 3.5.2, so raising it drops those environments. |
+| `ggformula` | 0.12.0 | Below it, `layer_factory()` resolves the `stat` and `geom` it is handed instead of capturing them unevaluated, so it looks up package-owned objects such as `coursekata::GeomResid` while `coursekata`'s own namespace is still being built. The package cannot be installed at all. |
+| `ggplot2` | 3.5.2 | This is the oldest release in the supported compatibility contract. It does not constrain the version selected for ordinary native or browser installations. |
 
 `tests/testthat/test-docs.R` checks that this table and `DESCRIPTION` name the same
 versions. It cannot check the floors themselves, and neither can any other test:
@@ -57,7 +58,7 @@ floor versions are what resolve.
    `** byte-compile and prepare package for lazy loading` with
 
    ```
-   Error : 'StatSdRuler' is not an exported object from 'namespace:coursekata'
+   Error : 'GeomResid' is not an exported object from 'namespace:coursekata'
    ERROR: lazy loading failed for package 'coursekata'
    ```
 
