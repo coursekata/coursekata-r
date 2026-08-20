@@ -1,8 +1,10 @@
 # Everything this package does differently because of the ggplot2 version lives
-# here, and nowhere else. DESCRIPTION's floor is not a formality: the browser
-# environment students actually use (jupyterlite/app/pixi.lock) installs
-# ggplot2 3.5.2 with ggformula 0.12.2, because ggplot2 4.x depends on S7 and S7
-# has no WebAssembly build. Until that changes, 3.5.2 is a target we ship to.
+# here, and nowhere else. DESCRIPTION's floor is not a formality: 3.5.2 is part
+# of the compatibility contract. The browser manifest is unpinned and resolves
+# the newest compatible packages in its channels; at present its solver falls
+# back to ggplot2 3.5.2 with ggformula 0.12.2 because ggplot2 4.x depends on S7
+# and S7 has no WebAssembly build. That fallback is an observed result, not a
+# deployment pin.
 #
 # WHEN THE FLOOR MOVES TO 4.0: delete this file, delete its test file, and
 # inline each helper's 4.0 branch at the call sites listed in its comment. That

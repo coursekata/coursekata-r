@@ -50,10 +50,9 @@ jobs:
             r: "4.1"
             lc-ctype: C.UTF-8
 
-          # The floor the browser environment resolves, on the R it runs it on.
-          # xeus-r pins r-base 4.5.x, so this pair has never been paired with
-          # R 4.1 anywhere a student can reach; testing them together asserted a
-          # combination that exists nowhere.
+          # Test the dependency-floor contract independently on release R.
+          # Deployment environments do not pin this pair; the browser solver is
+          # allowed to choose the newest compatible packages in its channels.
           - os: ubuntu-latest
             r: release
             label: dependency floor
