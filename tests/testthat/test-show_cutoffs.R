@@ -151,11 +151,16 @@ marker_tags <- c(
   "cutoff_lower_label", "cutoff_upper_label", "cutoff_lower_leader", "cutoff_upper_leader"
 )
 
-test_that("the markers hang below the panel, which only unclipping lets them show", {
-  p <- suppressMessages(show_cutoffs(hist_with(~ middle(Thumb, .95))))
+test_that("the markers point at the ticks without occupying the tick-label row", {
+  h <- hist_with(~ middle(Thumb, .95))
+  p <- suppressMessages(show_cutoffs(h))
   expect_equal(p$coordinates$clip, "off")
-  expect_lt(npc_y(p, "cutoff_lower_marker"), 0)
-  expect_lt(npc_y(p, "cutoff_upper_marker"), 0)
+  yr <- plot_geometry(h)$y_range
+  zero <- (0 - yr[[1]]) / diff(yr)
+  for (tag in c("cutoff_lower_marker", "cutoff_upper_marker")) {
+    expect_gt(npc_y(p, tag), 0, label = tag)
+    expect_lt(npc_y(p, tag), zero, label = tag)
+  }
 })
 
 test_that("a transformed count axis still gets its markers", {
@@ -188,7 +193,7 @@ test_that("an untransformed plot draws every marker where it always drew it", {
   top <- yr[[2]]
   p <- suppressMessages(show_cutoffs(h, labels = TRUE))
   at <- function(tag, which = "y") yr[[1]] + npc_y(p, tag, which) * diff(yr)
-  expect_equal(at("cutoff_lower_marker"), -top * 0.06)
+  expect_equal(at("cutoff_lower_marker"), -top * 0.03)
   expect_equal(at("cutoff_lower"), -top * 0.045)
   expect_equal(at("cutoff_lower", "yend"), top * 0.20)
   expect_equal(at("cutoff_lower_label"), top * 0.65)
