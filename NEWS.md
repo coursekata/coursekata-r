@@ -1,4 +1,4 @@
-# coursekata (development version)
+# coursekata 0.20.0
 
 - New `gf_b()`, with `gf_coef()` as the alias readers who know `coef()` will look for. It
   annotates a fitted model's coefficients on the plot they describe: a continuous predictor
@@ -93,6 +93,9 @@
   part of that picture that does not stack: both sets are drawn at the same height, so a
   second `labels = TRUE` call now warns that they will overlap, and draws them anyway -- the
   plot is still the one you asked for, just harder to read.
+- A cutoff triangle now sits above the x-axis tick-label row and points at its tick. When a
+  cutoff was also a labeled break -- 80 in the reference example -- the marker used to be
+  drawn directly over the number and make the axis unreadable.
 - New `StatCutoff` export: the cutoff rule as a `ggplot2::Stat`, emitting the intercepts to
   pair with `ggplot2::GeomVline` in a plot you are assembling yourself. It calls the same
   function `show_cutoffs()` calls, so the two cannot compute a different cutoff for the same
