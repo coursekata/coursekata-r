@@ -15,3 +15,7 @@ A named list of the requested colors in the palette.
 \description{
 The color palettes used in our theme system
 }
+\examples{
+coursekata_palette()
+coursekata_palette(c(1, 3, 5))
+}

@@ -39,6 +39,9 @@ theme_coursekata <- function() {
 #' @return A named list of the requested colors in the palette.
 #'
 #' @export
+#' @examples
+#' coursekata_palette()
+#' coursekata_palette(c(1, 3, 5))
 coursekata_palette <- function(indices = integer(0)) {
   # original order (carbon palette)
   # palette <- list(
@@ -104,6 +107,9 @@ coursekata_palette <- function(indices = integer(0)) {
 #'
 #' @seealso scale_discrete_coursekata
 #' @export
+#' @examples
+#' palette <- coursekata_palette_provider()
+#' palette(3)
 coursekata_palette_provider <- function() {
   unwrap <- function(x) unlist(unname(x))
 
@@ -132,6 +138,9 @@ coursekata_palette_provider <- function() {
 #'
 #' @seealso coursekata_palette
 #' @export
+#' @examples
+#' gf_point(Thumb ~ Height, data = Fingers, color = ~RaceEthnic) +
+#'   scale_discrete_coursekata()
 scale_discrete_coursekata <- function(...) {
   ggplot2::discrete_scale(
     aesthetics = c("colour", "fill"),
