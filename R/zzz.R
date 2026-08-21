@@ -1,3 +1,11 @@
+#' Suppress conflict warnings
+#'
+#' Set to `TRUE` in the package environment during `.onAttach()` so that
+#' `base::library()` skips its default "masked objects" messages.
+#'
+#' @keywords internal
+".conflicts.OK" <- TRUE
+
 .onLoad <- function(libname, pkgname) {
   # Suppress "Registered S3 method overwritten by ..." notes from sub-packages
   # loaded later (e.g. by coursekata_attach). This must be set before those

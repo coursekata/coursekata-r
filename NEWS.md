@@ -1,3 +1,8 @@
+# coursekata 0.20.1
+
+- Document the internal `.conflicts.OK` marker used to suppress duplicate
+  attachment-conflict messages, resolving an R-devel check warning.
+
 # coursekata 0.20.0
 
 - New `gf_b()`, with `gf_coef()` as the alias readers who know `coef()` will look for. It
