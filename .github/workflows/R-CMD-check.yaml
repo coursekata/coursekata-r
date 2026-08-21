@@ -77,6 +77,8 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Match CRAN and win-builder by checking undocumented dot-prefixed names.
+      _R_CHECK_UNDOC_USE_ALL_NAMES_: "true"
 
     steps:
       - uses: actions/checkout@v7
