@@ -15,6 +15,10 @@ A discrete color scale.
 \description{
 See \code{\link[=coursekata_palette]{coursekata_palette()}} for more information.
 }
+\examples{
+gf_point(Thumb ~ Height, data = Fingers, color = ~RaceEthnic) +
+  scale_discrete_coursekata()
+}
 \seealso{
 coursekata_palette
 }

@@ -6,6 +6,11 @@
 #' @return A list with two data frames, `train` and `test`.
 #'
 #' @export
+#' @examples
+#' set.seed(123)
+#' parts <- split_data(Fingers, prop = 0.8)
+#' nrow(parts$train)
+#' nrow(parts$test)
 split_data <- function(data, prop = .7) {
   row_numbers <- seq_len(nrow(data))
   train_rows <- sample(row_numbers, floor(prop * nrow(data)))
@@ -21,6 +26,12 @@ split_data <- function(data, prop = .7) {
 #' @return A data frame with the fit statistics.
 #'
 #' @export
+#' @examples
+#' set.seed(123)
+#' parts <- split_data(Fingers)
+#' model <- lm(Thumb ~ Height, data = parts$train)
+#' fit_stats(model, parts$train, parts$test)
+#' fitstats(model, parts$train, parts$test)
 fit_stats <- function(model, df_train, df_test) {
   fit_train <- stats::update(model, data = df_train)
   fit_test  <- stats::update(model, data = df_test)

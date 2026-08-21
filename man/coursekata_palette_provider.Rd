@@ -16,6 +16,10 @@ safe palettes. Where possible, the function will use the hand-picked colors from
 \description{
 Create a function that provides a colorblind palette.
 }
+\examples{
+palette <- coursekata_palette_provider()
+palette(3)
+}
 \seealso{
 scale_discrete_coursekata
 }

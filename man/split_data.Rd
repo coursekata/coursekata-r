@@ -17,3 +17,9 @@ A list with two data frames, \code{train} and \code{test}.
 \description{
 Split data into train and test sets.
 }
+\examples{
+set.seed(123)
+parts <- split_data(Fingers, prop = 0.8)
+nrow(parts$train)
+nrow(parts$test)
+}

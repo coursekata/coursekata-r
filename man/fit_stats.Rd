@@ -22,3 +22,10 @@ A data frame with the fit statistics.
 \description{
 Test the fit of a model on a train and test set.
 }
+\examples{
+set.seed(123)
+parts <- split_data(Fingers)
+model <- lm(Thumb ~ Height, data = parts$train)
+fit_stats(model, parts$train, parts$test)
+fitstats(model, parts$train, parts$test)
+}
