@@ -52,5 +52,10 @@ Authors:
   \item Jim Stigler \email{jim@coursekata.org} (\href{https://orcid.org/0000-0001-6107-7827}{ORCID})
 }
 
+Other contributors:
+\itemize{
+  \item CourseKata [copyright holder]
+}
+
 }
 \keyword{internal}
