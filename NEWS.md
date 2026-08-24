@@ -1,3 +1,5 @@
+# coursekata (development version)
+
 # coursekata 0.20.1
 
 - Document the internal `.conflicts.OK` marker used to suppress duplicate
