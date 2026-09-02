@@ -90,96 +90,31 @@ StatResid <- ggplot2::ggproto(
 #' of the seed and the rows. So the residual declares its own jitter rather than
 #' capturing the points layer's position and replaying it.
 #'
-#' It cannot be `position_jitter()` itself, because that transforms every
-#' positional aesthetic and `yend` is a prediction: moving it would take the
-#' fitted end off the model the residual is measured against. This applies the
-#' same two draws, in the same order, to `x` and `y` alone -- which is what
-#' makes the offsets identical to the points layer's rather than merely similar.
+#' Delegate to [ggplot2::PositionJitter] with only `x` and `y`, so fitted
+#' endpoints are not moved. Its panel splitting, default widths and heights,
+#' seeds, and draw order then match the points layer's own implementation.
 #'
-#' Two things about how the points layer spends the stream are a CONTRACT here
-#' rather than implementation details this file happens to share.
-#'
-#' The FIRST is where the seed is set. [ggplot2::PositionJitter] defines
-#' `compute_panel`, not `compute_layer`, so ggplot2's own parent splits the
-#' layer by panel and re-seeds inside each one. This does the same. Jittering
-#' the whole layer in one sequence agrees with the points layer only while the
-#' plot has one panel; facet it and every segment lands on some other
-#' observation's offset.
-#'
-#' The SECOND is that `x` is drawn before `y`, here and in
-#' [ggplot2::PositionJitter] itself. `jitter()` advances R's RNG stream by one draw per call, so
-#' a residual layer that wants its `x` offsets to equal the points layer's has
-#' to call `jitter(x, ...)` first and consume the same slice of the stream the
-#' points layer consumed first. Drawing `y` unconditionally instead of guarding
-#' it with `if (height > 0)`, or reordering the two draws, would silently move
-#' the `x` offsets off the points layer's.
-#'
-#' A reduction's segments start at the grand mean, a single repeated number,
-#' so there is nothing for the OUTCOME axis to gain from jittering -- but which
-#' physical axis that is depends on the plot's orientation, and both draws
-#' still have to happen, in the points layer's own order, for the OTHER axis's
-#' offsets to match. `outcome` names the aesthetic (`"x"` or `"y"`) to hold
-#' still: both draws run as usual and the held axis is restored to its
-#' pre-jitter values afterward, rather than skipping one draw outright, so the
-#' surviving axis's offsets are identical to the points layer's whichever axis
-#' that is.
+#' A reduction starts at the grand mean, so its outcome axis must stay fixed.
+#' `outcome` names that axis (`"x"` or `"y"`). Both jitter draws still run,
+#' but only the other axis is copied back, preserving its offsets in either
+#' orientation.
 #'
 #' @format A [ggplot2::Position] object.
 #'
 #' @seealso [gf_resid()], which pairs this position with the plot's own jitter.
 #' @noRd
 PositionResidJitter <- ggplot2::ggproto(
-  "PositionResidJitter", ggplot2::Position,
-  width = NULL, height = NULL, seed = NA, outcome = NULL,
-  # mirrors position_jitter()'s own defaults, so an unspecified width or height
-  # resolves to the same number for both layers
-  setup_params = function(self, data) {
-    list(
-      width = self$width %||% (ggplot2::resolution(data$x, zero = FALSE) * 0.4),
-      height = self$height %||% (ggplot2::resolution(data$y, zero = FALSE) * 0.4),
-      seed = self$seed,
-      outcome = self$outcome
+  "PositionResidJitter", ggplot2::PositionJitter,
+  outcome = NULL,
+  compute_panel = function(self, data, params, scales) {
+    jittered <- ggplot2::ggproto_parent(ggplot2::PositionJitter, self)$compute_panel(
+      data[c("x", "y")], params, scales
     )
-  },
-  # WHICHEVER HOOK UPSTREAM USES, because the points layer's offsets are not
-  # ours to choose and the two have to agree. On ggplot2 3.5.2
-  # [ggplot2::PositionJitter] implements `compute_layer` and spends one
-  # sequence over the whole layer; on 4.0 it implements `compute_panel`, so
-  # ggplot2's own parent splits by panel and re-seeds inside each one. Pick the
-  # wrong one and a faceted plot detaches every segment from its point --
-  # measured on five panels, every segment displaced by up to the full jitter
-  # width, while the unfaceted case stays exact either way.
-  compute_layer = function(self, data, params, layout) {
-    if (jitter_is_per_panel()) {
-      # hand it back to Position, which splits by panel and calls the method below
-      ggplot2::ggproto_parent(ggplot2::Position, self)$compute_layer(data, params, layout)
-    } else {
-      jitter_holding(data, params)
-    }
-  },
-  compute_panel = function(data, params, scales) jitter_holding(data, params)
-)
-
-#' Jitter `x` and `y`, then put the outcome axis back where it was
-#'
-#' The body both of `PositionResidJitter`'s hooks share, so the offsets cannot
-#' differ between the two paths -- see that object for why there are two.
-#'
-#' @param data A layer's data, whole or one panel's worth.
-#' @param params The position's resolved params.
-#'
-#' @return `data`, with the jittered axes moved.
-#'
-#' @noRd
-jitter_holding <- function(data, params) {
-  with_fixed_seed(params$seed, {
-    held <- if (!is.null(params$outcome)) data[[params$outcome]]
-    if (params$width > 0) data$x <- jitter(data$x, amount = params$width)
-    if (params$height > 0) data$y <- jitter(data$y, amount = params$height)
-    if (!is.null(params$outcome)) data[[params$outcome]] <- held
+    axes <- setdiff(c("x", "y"), self$outcome)
+    data[axes] <- jittered[axes]
     data
-  })
-}
+  }
+)
 
 #' @noRd
 position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcome = NULL) {
@@ -710,13 +645,8 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
 #' `gf_resid_fun(p, fun = f)` hands this function `params = fun, linewidth` where
 #' `gf_resid_fun(p, f)` hands it `params = linewidth`. Both name what to draw
 #' rather than how, so both are removed, and that is what makes the two spellings
-#' build the identical layer. Measured honestly the other way too: at ggplot2
-#' 4.0.3 `layer()` under `check.param = FALSE` already discards a parameter no
-#' geom or stat claims, so neither line changes the built layer there. They stay
-#' because the two spellings genuinely arrive carrying different `params`,
-#' because this package supports ggplot2 back to 3.5.2, and because a rule stated
-#' for `model` and quietly not applied to `fun` is the drift this file exists to
-#' prevent. Unlike `model_layer_fun()`, everything else the caller wrote is kept:
+#' build the identical layer even when parameter checking is enabled. Unlike
+#' `model_layer_fun()`, everything else the caller wrote is kept:
 #' `linewidth`, `aspect`, `color`, `alpha` and `linetype` are the whole point of
 #' `...` here and there is no plan to supply them instead.
 #'

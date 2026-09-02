@@ -243,8 +243,7 @@ sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
 gf_sd_ruler <- ggformula::layer_factory(
   geom = "segment",
   # A bare ggproto symbol here only resolves through the search path -- see the
-  # matching note above `gf_squareplot`'s `layer_factory()` call, including why
-  # this needs ggformula 0.12.0 -- so it is package-qualified instead, which `::`
+  # matching note above `gf_squareplot`'s `layer_factory()` call. Here `::`
   # resolves the same regardless of whether `coursekata` is attached.
   stat = coursekata::StatSdRuler,
   position = "identity",

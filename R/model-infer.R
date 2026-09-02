@@ -141,7 +141,7 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
       # vocabulary; this line means "the model", and the rest of the family
       # draws that in the neutral GeomLine uses. Same reasoning, same spelling,
       # as the `segment` branch below.
-      colour = ggplot2::GeomLine$default_aes$colour
+      colour = ggplot2::get_geom_defaults("line")$colour
     ),
     segment = list(
       fun = mean, na.rm = TRUE, width = .4,
@@ -149,7 +149,7 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
       # groups, the same reasoning model_plan()'s own comment gives
       mark_axis = if (im$flipped) "y" else "x",
       orientation = if (im$flipped) "y" else "x",
-      colour = ggplot2::GeomLine$default_aes$colour,
+      colour = ggplot2::get_geom_defaults("line")$colour,
       linewidth = 1
     ),
     list(linewidth = 1)

@@ -57,9 +57,6 @@ jobs:
             r: release
             label: dependency floor
             lc-ctype: C.UTF-8
-            pin:
-              - ggplot2@3.5.2
-              - ggformula@0.12.2
 
           - os: windows-latest
             r: release
@@ -91,14 +88,42 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Read graphics dependency floors
+        if: matrix.config.label == 'dependency floor'
+        id: graphics-floors
+        shell: Rscript {0}
+        run: |
+          deps <- trimws(strsplit(read.dcf("DESCRIPTION")[1, "Imports"], ",")[[1]])
+          deps <- deps[grepl("^(ggplot2|ggformula)\\s*\\(", deps)]
+          pins <- sub("^([^[:space:]]+)\\s*\\(>=\\s*([^)]+)\\)$", "\\1@\\2", deps)
+          stopifnot(length(pins) == 2L, all(grepl("^[[:alnum:]]+@[0-9.]+$", pins)))
+          cat("packages=", paste(pins, collapse = " "), "\n",
+              file = Sys.getenv("GITHUB_OUTPUT"), sep = "")
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           # The action splits this on whitespace or commas, so a row with no pins
           # contributes a blank line and nothing else.
           extra-packages: |
             any::rcmdcheck
-            ${{ join(matrix.config.pin, ' ') }}
+            ${{ steps.graphics-floors.outputs.packages }}
           needs: check
+
+      - name: Verify graphics dependency floors
+        if: matrix.config.label == 'dependency floor'
+        env:
+          GRAPHICS_FLOORS: ${{ steps.graphics-floors.outputs.packages }}
+        shell: Rscript {0}
+        run: |
+          for (pin in strsplit(Sys.getenv("GRAPHICS_FLOORS"), " ")[[1]]) {
+            parts <- strsplit(pin, "@", fixed = TRUE)[[1]]
+            loadNamespace(parts[1])
+            actual <- as.character(getNamespaceVersion(parts[1]))
+            message(parts[1], ": ", actual)
+            stopifnot(identical(actual, parts[2]))
+          }
+          # .github is excluded from the package tarball; check the source tree.
+          testthat::test_local(filter = "^docs$", stop_on_failure = TRUE)
 
       - uses: r-lib/actions/check-r-package@v2
         env:

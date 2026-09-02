@@ -1,5 +1,12 @@
 # coursekata (development version)
 
+- Require ggplot2 4.0.2 and ggformula 1.0.0 or later. Remove the compatibility
+  paths for the older graphics stack previously used in WebAssembly environments.
+- Keep residuals aligned with jittered points across facets when jitter width
+  or height is left at its default, by using ggplot2's per-panel jitter directly.
+- Resolve ggplot2's themed defaults when drawing models, including when
+  CourseKata is used through namespace-qualified calls without attaching it.
+
 # coursekata 0.20.1
 
 - Document the internal `.conflicts.OK` marker used to suppress duplicate

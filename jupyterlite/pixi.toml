@@ -41,7 +41,7 @@ python ../scripts/patch-channel-meta.py && \
 rm -rf _output .jupyterlite.doit.db && \
 jupyter lite build \
     --XeusAddon.prefix=.pixi/envs/default \
-    --XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-dev \
+    --XeusAddon.default_channels=https://repo.prefix.dev/emscripten-forge-4x \
     --XeusAddon.default_channels=https://conda.anaconda.org/conda-forge
 """
 depends-on = ["build-package"]

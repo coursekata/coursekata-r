@@ -8,8 +8,7 @@ x_breaks <- function(p) {
   b[!is.na(b)]
 }
 x_labels <- function(p) ggplot2::ggplot_build(p)$layout$panel_params[[1]]$x$get_labels()
-# ggplot2 3.5.2 fills p$labels eagerly and ggplot2 4 leaves it empty until build,
-# so a default label is only portable when it is read from the built plot
+# Default labels are filled in when the plot is built.
 label_of <- function(p, aes) as.character(ggplot2::ggplot_build(p)$plot$labels[[aes]])
 rect_grobs <- function(p) {
   grDevices::pdf(NULL, width = 7, height = 4.5)
@@ -107,11 +106,11 @@ test_that("caller-owned scales win, and incompatible count axes are refused", {
   # redirected to the coord spelling rather than refused as impossible
   expect_error(
     (gf_histogram(~x, data = squares) + ggplot2::scale_y_sqrt()) %>% gf_squareplot(),
-    glue::glue('{coursekata:::coord_transform_name()}\\(y = "sqrt"\\)')
+    'coord_transform\\(y = "sqrt"\\)'
   )
   expect_error(
     ggplot2::ggplot_build(gf_squareplot(~x, data = squares) + ggplot2::scale_y_sqrt()),
-    glue::glue('{coursekata:::coord_transform_name()}\\(y = "sqrt"\\)')
+    'coord_transform\\(y = "sqrt"\\)'
   )
   # a discrete y keeps its refusal, and says why rather than naming a scale type
   expect_error(
@@ -475,7 +474,7 @@ test_that("a coord transform distorts the squares instead of being refused", {
   # reader that the unit changes as the scale climbs
   d <- data.frame(x = c(rep(1, 16), rep(2, 4)))
   p <- gf_squareplot(~x, data = d, binwidth = 1) %>%
-    gf_refine(coursekata:::coord_transform_compat(y = "sqrt"))
+    gf_refine(ggplot2::coord_transform(y = "sqrt"))
 
   expect_no_error(built <- ggplot2::ggplot_build(p))
   # every square still spans exactly one count before the coord draws it
@@ -511,7 +510,7 @@ test_that("a border is fitted to the square it borders, not to the first one", {
   set.seed(24)
   d <- data.frame(x = rnorm(400, 50, 10))
   drawn <- rect_grobs(
-    gf_squareplot(~x, data = d) %>% gf_refine(coursekata:::coord_transform_compat(y = "sqrt"))
+    gf_squareplot(~x, data = d) %>% gf_refine(ggplot2::coord_transform(y = "sqrt"))
   )[[1]]
 
   expect_gt(length(unique(round(drawn$gp$lwd, 3))), 1)

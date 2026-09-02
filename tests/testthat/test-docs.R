@@ -69,14 +69,10 @@ test_that("a reference page does not argue against a premise the reader never ha
   expect_equal(hits, NULL)
 })
 
-# The `ggformula` floor is an install-time claim, and no test can check it.
-# `layer_factory()` bakes the `Stat` and `Geom` it captured into the lazy-load
-# database while the package is being installed, so an installed copy either
-# survived that or was never built: by the time a test session starts, the question
-# has been answered. What a test can do is keep the floor in one place, so that the
-# procedure a maintainer follows verifies the version the package declares. The
-# procedure, and the reason each floor is where it is, are in
-# `.github/CONTRIBUTING.md`.
+# Keep the contributor instructions consistent with DESCRIPTION. CI derives its
+# exact pins from DESCRIPTION and runs this test against the checkout, where
+# .github is present. Source installation separately checks that layer_factory()
+# can build the package's lazy-load database at those versions.
 
 declared_floors <- function() {
   entries <- trimws(strsplit(read.dcf(pkg_file("DESCRIPTION"))[1, "Imports"], ",")[[1]])

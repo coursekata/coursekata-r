@@ -24,9 +24,7 @@ squares_bins <- function(p) {
 }
 
 # StatBin reads the x scale's dimension() while binning, so a stat called
-# outside a plot needs a scale trained on the data rather than a NULL standing
-# in for one. ggplot2 4.0 tolerates the NULL and 3.5.2 does not; a trained scale
-# is what the real draw passes and gives both versions the same bins.
+# outside a plot gets a scale trained on the data, as it would in a real draw.
 trained_scales <- function(data, aes = "x") {
   scale <- ggplot2::scale_x_continuous()
   scale$train(data[[aes]])
@@ -218,7 +216,6 @@ test_that("an explicit linewidth is honoured exactly, never fitted", {
 })
 
 test_that("the theme's borderwidth still reaches the squares", {
-  skip_if_not_installed("ggplot2", "4.0.0")
   p <- ggplot2::ggplot(data.frame(x = c(1, 1, 2, 3)), ggplot2::aes(x = .data$x)) +
     ggplot2::layer(geom = GeomSquareplot, stat = StatSquareplot, position = "identity") +
     ggplot2::theme(geom = ggplot2::element_geom(borderwidth = 3))
