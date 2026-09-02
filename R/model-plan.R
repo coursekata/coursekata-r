@@ -218,7 +218,7 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
   ]
   for (aesthetic in names(not_in_model)) {
     if (aesthetic %in% ggplot2::GeomLine$aesthetics() && is.null(args[[aesthetic]])) {
-      args[[aesthetic]] <- ggplot2::GeomLine$default_aes[[aesthetic]]
+      args[[aesthetic]] <- ggplot2::get_geom_defaults("line")[[aesthetic]]
     }
   }
 
@@ -293,7 +293,7 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
   if (kind == "segment") {
     # GeomSegment's colour default is themed while GeomErrorbar's was not, so an
     # unpinned mark would silently turn blue; keep the neutral the fit line uses
-    args$colour <- args$colour %||% ggplot2::GeomLine$default_aes$colour
+    args$colour <- args$colour %||% ggplot2::get_geom_defaults("line")$colour
   }
 
   params <- list()

@@ -99,11 +99,9 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
         "a scale transforms the counts before the squares are built, so the",
         "squares would be drawn in one space and labeled in another"
       ),
-      # the coord is spelled coord_trans() before ggplot2 4.0; naming the one
-      # the reader does not have sends them somewhere they cannot go
       "*" = glue(
         "to draw the same distortion at render, transform the coordinate ",
-        'instead: `%>% gf_refine({coord_transform_name()}(y = "{instead}"))`'
+        'instead: `%>% gf_refine(coord_transform(y = "{instead}"))`'
       ),
       "*" = "each square still spans one count, so the stack thins as it climbs"
     ), call = call)
@@ -464,11 +462,6 @@ gf_squareplot <- ggformula::layer_factory(
   # this package's. A bare symbol only resolves there if `coursekata` is attached;
   # the package-qualified form resolves the same regardless, because `::` looks up
   # the namespace directly rather than walking the calling scope.
-  #
-  # Capturing unevaluated is what makes the qualified form safe, and it arrived in
-  # ggformula 0.12.0. Before that these arguments are forced here, while this
-  # namespace is still being built and its exports are empty, and the package fails
-  # to install rather than failing at run time. That is the floor DESCRIPTION names.
   geom = coursekata::GeomSquareplot,
   stat = coursekata::StatSquareplot,
   position = "identity",

@@ -2,7 +2,7 @@
 name = "coursekata-demo-wasm"
 channels = [
     "../.channel",
-    "https://repo.prefix.dev/emscripten-forge-dev",
+    "https://repo.prefix.dev/emscripten-forge-4x",
     "conda-forge",
 ]
 platforms = ["emscripten-wasm32"]

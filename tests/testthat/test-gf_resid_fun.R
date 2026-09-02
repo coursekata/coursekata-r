@@ -216,16 +216,6 @@ test_that("a discrete x reaches the function as the factor the plot draws", {
   # everywhere and only a function that coerces draws anything
   p <- gf_point(Thumb ~ Sex, data = Fingers)
 
-  # ggplot2 4.0 carries the arithmetic-on-a-factor NAs through to the layer and
-  # warns; 3.5.2's continuous scale refuses them before the layer is built. Both
-  # reject the nonsense, at different depths, so only the version that lets it
-  # reach the data can be asked what the data holds.
-  # WHEN THE FLOOR MOVES TO 4.0: delete this skip.
-  skip_if_not(
-    utils::packageVersion("ggplot2") >= "4.0.0",
-    "ggplot2 3.5.2 refuses a factor at the scale; see R/compat-ggplot2.R"
-  )
-
   expect_warning(
     arithmetic <- ggplot2::ggplot_build(
       suppressMessages(gf_resid_fun(p, function(x) 0.5 * x))
@@ -292,6 +282,7 @@ test_that("a residual stays on its point when the plot jitters AND facets", {
   expect_length(segments, length(points))
   for (panel in seq_along(points)) {
     expect_equal(as.numeric(segments[[panel]]$x0), as.numeric(points[[panel]]$x))
+    expect_equal(as.numeric(segments[[panel]]$y1), as.numeric(points[[panel]]$y))
   }
 })
 

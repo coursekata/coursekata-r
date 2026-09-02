@@ -342,6 +342,24 @@ test_that("the ordinary line keeps the family's own color, not a smoother's", {
   expect_equal(unique(built(p)$colour), ggplot2::GeomLine$default_aes$colour)
 })
 
+test_that("model layers resolve ggplot2's themed defaults before using them as parameters", {
+  defaults <- ggplot2::GeomLine$default_aes
+  withr::defer(ggplot2::update_geom_defaults("line", defaults))
+  ggplot2::update_geom_defaults("line", NULL)
+
+  line <- gf_point(Thumb ~ Height, data = Fingers)
+  groups <- gf_point(Thumb ~ Sex, data = Fingers)
+  coloured <- gf_point(Thumb ~ Height, data = Fingers, color = ~Sex)
+  plots <- list(
+    gf_model(line), gf_model(groups),
+    gf_model(groups, lm(Thumb ~ Sex, data = Fingers)),
+    gf_model(coloured, lm(Thumb ~ Height, data = Fingers))
+  )
+  for (p in plots) {
+    expect_equal(unique(built(p)$colour), ggplot2::get_geom_defaults("line")$colour)
+  }
+})
+
 test_that("a caller's own color wins over the stated default, either spelling", {
   # MUTATION: dropping the color/colour normalization in `implied_layer_fun()`.
   # `modifyList()` matches names literally, so a default stated as `colour`
