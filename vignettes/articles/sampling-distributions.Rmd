@@ -80,15 +80,19 @@ gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95), binwidth = 1) %>%
 ```
 
 Two calls put two sets on one plot, which is how you see what changing alpha
-costs you.
+costs you. `show_labels = TRUE` puts each call's explanation in its own measured
+guide row, outside both the histogram and the numeric axis.
 
 ```{r}
 gf_histogram(~b1, data = sdob1, binwidth = 1) %>%
-  show_cutoffs(middle(b1, .95)) %>%
-  show_cutoffs(middle(b1, .99), color = "firebrick")
+  show_cutoffs(middle(b1, .95), show_labels = TRUE) %>%
+  show_cutoffs(middle(b1, .99), color = "firebrick", show_labels = TRUE)
 ```
 
 The wider pair is harder to fall outside, so a result that clears it is rarer.
+For plots assembled at the ggplot2 layer level, the same calculation and drawing
+pieces are available separately through `stat_cutoff()`, `geom_cutoff()`, and
+`guide_cutoff()`.
 
 ## Bootstrapping instead of shuffling
 

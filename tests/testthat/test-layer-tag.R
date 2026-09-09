@@ -52,3 +52,23 @@ test_that("layer_index is NA when no layer carries the tag", {
   # layer_indices(p, tag)[[1]]
   expect_identical(layer_index(p, "resid"), NA_integer_)
 })
+
+test_that("replace_tagged_layers preserves surrounding layer order", {
+  first <- tag_layer(ggplot2::geom_blank(), "replace")
+  second <- tag_layer(ggplot2::geom_blank(), "replace")
+  replacement <- tag_layer(ggplot2::geom_point(), "replacement")
+  p <- ggplot2::ggplot() + ggplot2::geom_rug() + first +
+    ggplot2::geom_segment() + second + ggplot2::geom_text()
+
+  out <- replace_tagged_layers(p, "replace", list(replacement))
+
+  expect_identical(
+    unname(vapply(
+      out$layers, function(layer) class(layer$geom)[[1L]], character(1)
+    )),
+    c("GeomRug", "GeomPoint", "GeomSegment", "GeomText")
+  )
+  expect_identical(layer_indices(out, "replace"), integer())
+  expect_identical(layer_indices(out, "replacement"), 2L)
+  expect_length(p$layers, 5L)
+})

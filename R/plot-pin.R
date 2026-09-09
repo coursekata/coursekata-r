@@ -29,13 +29,12 @@ has_build_time_call <- function(expr) {
 #' A mapping such as `shuffle(Thumb)` names a different permutation on every
 #' render, and independently in every layer that carries it -- there is no
 #' seed to declare and no function of the plot's inputs an inferred model
-#' could agree with it on. This rewrites the plot, and every layer that
-#' shares the mapping, to point at a fixed column instead. Only a `waiver()`
-#' layer draws the plot's own data, so only it can share the plot-level
-#' evaluation; a layer carrying its own data frame gets its own evaluation of
-#' the same expression, against its own rows, so a pinned layer still draws
-#' exactly the rows it always did. A model fit from the returned plot's data
-#' is then fit on exactly what the returned plot draws.
+#' could agree with it on. This rewrites the mapping at its owner: a plot-level
+#' mapping and every layer that inherits or repeats it, or a first-layer mapping
+#' and only layers that state the same expression themselves. A layer carrying
+#' its own data frame gets its own evaluation against its own rows, so a pinned
+#' layer still draws exactly the rows it always did. A model fit from the
+#' returned plot's data is then fit on exactly what the returned plot draws.
 #'
 #' The plot handed in is never modified. A ggplot2 layer is a ggproto object --
 #' an environment -- so writing into a layer's own `mapping` field in place
@@ -128,6 +127,7 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
     v <- with_fixed_seed(seed, eval_tidy(original, resolved$data))
     col <- paste0(".coursekata_pin_", a)
     pinned_quo <- new_quosure(sym(col), base_env())
+    plot_owned <- identical(resolved$owner, "plot")
 
     for (i in seq_along(plot$layers)) {
       layer <- plot$layers[[i]]
@@ -140,6 +140,12 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
 
       layer_mapping_a <- layer$mapping[[a]]
       inherits_mapping <- is.null(layer_mapping_a)
+      if (!plot_owned && inherits_mapping) {
+        # A mapping stated only by the first layer does not become a plot-level
+        # mapping when pinned. Sibling layers with no mapping did not inherit it
+        # before the pin and must not begin inheriting its storage column now.
+        next
+      }
       if (!inherits_mapping) {
         layer_expr <- if (is_quosure(layer_mapping_a)) {
           quo_get_expr(layer_mapping_a)
@@ -189,11 +195,20 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
       }
     }
 
-    if (is.data.frame(plot$data)) {
+    owner_layer <- if (identical(resolved$owner, "layer")) {
+      plot$layers[[resolved$layer_index]]
+    } else {
+      NULL
+    }
+    owner_uses_plot_data <- !is.null(owner_layer) &&
+      !is.data.frame(owner_layer$data)
+    if (is.data.frame(plot$data) && (plot_owned || owner_uses_plot_data)) {
       plot$data[[col]] <- v
     }
 
-    plot$mapping[[a]] <- pinned_quo
+    if (plot_owned) {
+      plot$mapping[[a]] <- pinned_quo
+    }
     # the pin's spelling is a fallback, not an override: ggplot2 derives an
     # axis title from the mapping, which after the rewrite would read
     # `.coursekata_pin_y`. A label already on the plot is one the reader set

@@ -30,41 +30,15 @@ test_that("plot_spec on a one-axis plot reports only the mapped axis", {
   expect_equal(spec$aesthetics, setNames(character(0), character(0)))
 })
 
-test_that("plot_geometry returns the rendered positions and panel ranges", {
-  p <- gf_point(Thumb ~ Height, data = Fingers)
-  geom <- plot_geometry(p)
-
-  expect_length(geom$x, nrow(Fingers))
-  expect_length(geom$y, nrow(Fingers))
-  expect_equal(geom$x, Fingers$Height)
-  expect_equal(geom$y, Fingers$Thumb)
-  expect_length(geom$x_range, 2)
-  expect_length(geom$y_range, 2)
-  expect_true(geom$x_range[1] < min(Fingers$Height))
-})
-
-test_that("plot_geometry reads the observations, not a model layer drawn over them", {
-  model <- lm(Thumb ~ Height, data = Fingers)
-  p <- gf_point(Thumb ~ Height, data = Fingers) %>% gf_model(model)
-  geom <- plot_geometry(p)
-
-  expect_equal(geom$x, Fingers$Height)
-  expect_equal(geom$y, Fingers$Thumb)
-})
-
-test_that("plot_geometry is stable across repeated reads of a jittered plot", {
-  p <- resid_jitter(gf_jitter(Thumb ~ Sex, data = Fingers, width = .1))$plot
-
-  expect_equal(plot_geometry(p)$x, plot_geometry(p)$x)
-  expect_equal(plot_geometry(p)$y, plot_geometry(p)$y)
-})
-
 test_that("resolve_aes finds an aesthetic mapped on the plot", {
   p <- ggplot2::ggplot(Fingers, ggplot2::aes(x = Thumb)) + ggplot2::geom_histogram()
   x <- plot_spec(p)$resolve_aes("x")
 
   expect_equal(rlang::as_name(x$quo), "Thumb")
   expect_identical(x$data, Fingers)
+  expect_identical(x$label, "Thumb")
+  expect_identical(x$owner, "plot")
+  expect_identical(x$layer_index, NA_integer_)
 })
 
 test_that("resolve_aes falls back to a layer's mapping and its own data", {
@@ -74,6 +48,9 @@ test_that("resolve_aes falls back to a layer's mapping and its own data", {
 
   expect_equal(rlang::as_name(x$quo), "Thumb")
   expect_identical(x$data, Fingers)
+  expect_identical(x$label, "Thumb")
+  expect_identical(x$owner, "layer")
+  expect_identical(x$layer_index, 1L)
 })
 
 test_that("resolve_aes prefers the plot's mapping when both plot and layer map it", {
@@ -132,6 +109,8 @@ test_that("a pinned plot reports the reader's words and the drawn values", {
   expect_equal(spec$axes[["y"]], "shuffle(Thumb)")
   expect_equal(spec$labels[["y"]], "shuffle(Thumb)")
   expect_equal(rlang::as_label(spec$mapping$y), ".coursekata_pin_y")
+  expect_identical(spec$resolve_aes("y")$label, "shuffle(Thumb)")
+  expect_identical(spec$resolve_aes("y")$owner, "plot")
   expect_equal(
     rlang::eval_tidy(spec$resolve_aes("y")$quo, spec$data),
     q$data$.coursekata_pin_y

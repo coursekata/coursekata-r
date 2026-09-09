@@ -24,7 +24,9 @@ test_that("scale and plot guide objects are detached before composition", {
   original_scale <- base$scales$get_scales("x")
   original_guides <- base$guides
 
-  out <- add_position_guide_child(base, guide_dgp(role = "estimate"))
+  out <- add_dgp_position_guides(
+    base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
+  )
   out_scale <- out$scales$get_scales("x")
 
   expect_identical(base$scales$get_scales("x"), original_scale)
@@ -44,24 +46,45 @@ test_that("a named NULL guide override remains explicit suppression", {
     ggplot2::guides(x = NULL)
   expect_true("x" %in% names(base$guides$guides))
 
-  out <- add_position_guide_child(base, guide_dgp(role = "estimate"))
-  children <- out$scales$get_scales("x")$guide$params$guides
+  out <- add_dgp_position_guides(
+    base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
+  )
+  guide <- out$scales$get_scales("x")$guide
 
-  expect_length(children, 1)
-  expect_s3_class(children[[1]], "GuideDgp")
+  expect_s3_class(guide, "GuideDgp")
   expect_true("x" %in% names(base$guides$guides))
+})
+
+test_that("moving a position override preserves unrelated caller guides", {
+  legend <- ggplot2::guide_legend(reverse = TRUE)
+  base <- ggplot2::ggplot(
+    mtcars, ggplot2::aes(wt, mpg, colour = factor(cyl))
+  ) +
+    ggplot2::geom_point() +
+    ggplot2::guides(x = ggplot2::guide_axis(angle = 17), colour = legend)
+
+  out <- add_dgp_position_guides(
+    base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
+  )
+
+  expect_setequal(names(base$guides$guides), c("x", "colour"))
+  expect_identical(names(out$guides$guides), "colour")
+  expect_true(out$guides$guides$colour$params$reverse)
+  expect_no_error(ggplot2::ggplotGrob(out))
 })
 
 test_that("an existing axis stack is rebuilt flat with its settings", {
   caller <- ggplot2::guide_axis_stack(
     ggplot2::guide_axis(angle = 17),
     ggplot2::guide_axis(minor.ticks = TRUE),
-    spacing = grid::unit(2, "mm"), order = 3, position = "top"
+    spacing = grid::unit(2, "mm"), order = 3, position = "bottom"
   )
   base <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
     ggplot2::geom_point() + ggplot2::scale_x_continuous(guide = caller)
 
-  out <- add_position_guide_child(base, guide_dgp(role = "estimate"))
+  out <- add_dgp_position_guides(
+    base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
+  )
   stack <- out$scales$get_scales("x")$guide
 
   expect_s3_class(stack, "GuideAxisStack")
@@ -71,7 +94,7 @@ test_that("an existing axis stack is rebuilt flat with its settings", {
   expect_true(stack$params$guides[[2]]$params$minor.ticks)
   expect_equal(stack$params$spacing, grid::unit(2, "mm"))
   expect_identical(stack$params$order, 3L)
-  expect_identical(stack$params$position, "top")
+  expect_identical(stack$params$position, "bottom")
 })
 
 test_that("DGP guides are scale-owned and a later scale replacement wins", {
@@ -115,7 +138,10 @@ test_that("repeated builds neither expand scales nor accumulate guide children",
   values <- data.frame(x = c(-3, -1, 2, 4))
   base <- ggplot2::ggplot(values, ggplot2::aes(x)) +
     ggplot2::geom_histogram(bins = 4)
-  out <- add_position_guide_child(base, guide_dgp(value = 0, role = "estimate"))
+  out <- add_dgp_position_guides(
+    base, guide_dgp(value = 0, role = "estimate"),
+    guide_dgp(value = 0, role = "population")
+  )
   before <- ggplot2::ggplot_build(base)$layout$panel_params[[1]]$x.range
   expected_children <- length(out$scales$get_scales("x")$guide$params$guides)
 
@@ -129,19 +155,14 @@ test_that("repeated builds neither expand scales nor accumulate guide children",
   expect_length(out$scales$get_scales("x")$guide$params$guides, expected_children)
 })
 
-test_that("flipped guide suppression uses the effective physical aesthetic", {
+test_that("flipped guide state reads suppression from the physical aesthetic", {
   values <- data.frame(x = c(-3, -1, 2, 4))
   base <- ggplot2::ggplot(values, ggplot2::aes(x)) +
-    ggplot2::geom_histogram(bins = 4) + ggplot2::coord_flip()
-  out <- add_position_guide_child(base, guide_dgp(value = 0, role = "estimate"))
+    ggplot2::geom_histogram(bins = 4) + ggplot2::coord_flip() +
+    ggplot2::guides(y = "none")
 
-  visible <- ggplot2::ggplotGrob(out)
-  suppressed <- ggplot2::ggplotGrob(out + ggplot2::guides(y = "none"))
-  height <- function(gtable, name) {
-    i <- which(gtable$layout$name == name)
-    as.numeric(grid::convertUnit(grid::grobHeight(gtable$grobs[[i]]), "cm"))
-  }
-
-  expect_gt(height(visible, "axis-l"), 0)
-  expect_equal(height(suppressed, "axis-l"), 0)
+  state <- position_guide_state(base, "x")
+  expect_identical(state$physical, "y")
+  expect_true(state$from_override)
+  expect_true(guide_is_suppressed(state$guide))
 })

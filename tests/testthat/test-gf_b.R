@@ -11,6 +11,104 @@ test_that("a continuous model's b0 dot and rise arrow read the model, not the pl
 
   b1 <- mark(p, "b1")
   expect_equal(b1$data$yend - b1$data$y, coef(model)[[2]] * 5)
+  expect_equal(
+    grid::convertUnit(b1$geom_params$arrow$length, "inches", valueOnly = TRUE),
+    0.05
+  )
+})
+
+test_that("continuous label placement rotates without changing coefficient geometry", {
+  model <- lm(Thumb ~ Height, data = Fingers)
+  upright <- gf_point(Thumb ~ Height, data = Fingers) |>
+    gf_b(model, run = 5, run_x = 60)
+  transposed <- gf_point(Height ~ Thumb, data = Fingers) |>
+    gf_b(model, run = 5, run_x = 60)
+
+  for (tag in c("b1", "run")) {
+    plain <- mark(upright, tag)$data
+    turned <- mark(transposed, tag)$data
+    expect_equal(turned$x, plain$y, label = tag)
+    expect_equal(turned$y, plain$x, label = tag)
+    expect_equal(turned$xend, plain$yend, label = tag)
+    expect_equal(turned$yend, plain$xend, label = tag)
+  }
+  for (tag in c("b0", "b0_label", "b1_label", "run_label")) {
+    plain <- mark(upright, tag)$data
+    turned <- mark(transposed, tag)$data
+    expect_equal(turned$x, plain$y, label = tag)
+    expect_equal(turned$y, plain$x, label = tag)
+  }
+
+  expect_equal(mark(upright, "b1_label")$geom_params[c("x_just", "y_just")],
+               list(x_just = 1.35, y_just = 0.5))
+  expect_equal(mark(transposed, "b1_label")$geom_params[c("x_just", "y_just")],
+               list(x_just = 0.5, y_just = 1.35))
+  expect_equal(mark(upright, "run_label")$geom_params[c("x_just", "y_just")],
+               list(x_just = 0, y_just = 1.8))
+  expect_equal(mark(transposed, "run_label")$geom_params[c("x_just", "y_just")],
+               list(x_just = 1.8, y_just = 0))
+  expect_equal(mark(upright, "b0_label")$geom_params$x_just, -1.2)
+  expect_equal(mark(transposed, "b0_label")$geom_params$y_just, -1.2)
+})
+
+test_that("continuous labels retain their coefficient anchors and teaching sides", {
+  negative <- data.frame(x = seq(-20, 20, length.out = 81))
+  negative$y <- 50 - 2.25 * negative$x
+  model <- lm(y ~ x, data = negative)
+  out <- gf_point(y ~ x, data = negative) |>
+    gf_b(model, run = 10, run_x = -15)
+
+  rise <- mark(out, "b1")$data
+  run <- mark(out, "run")$data
+  b0 <- mark(out, "b0")$data
+  expect_equal(mark(out, "b1_label")$data,
+               data.frame(x = rise$x, y = (rise$y + rise$yend) / 2,
+                          label = "10 %*% b[1]"))
+  expect_equal(mark(out, "run_label")$data,
+               data.frame(x = (run$x + run$xend) / 2, y = run$y,
+                          label = "10"))
+  expect_equal(mark(out, "b0_label")$data,
+               data.frame(x = b0$x, y = b0$y, label = "b[0]"))
+  expect_equal(mark(out, "run_label")$geom_params$y_just, -0.8)
+})
+
+test_that("continuous label_nudge still controls predictor-axis separation", {
+  model <- lm(Thumb ~ Height, data = Fingers)
+  near <- gf_point(Thumb ~ Height, data = Fingers) |>
+    gf_b(model, run = 5, run_x = 60, label_nudge = 0.01)
+  far <- gf_point(Thumb ~ Height, data = Fingers) |>
+    gf_b(model, run = 5, run_x = 60, label_nudge = 0.2)
+
+  expect_gt(mark(far, "b1_label")$geom_params$x_just,
+            mark(near, "b1_label")$geom_params$x_just)
+  expect_lt(mark(far, "b0_label")$geom_params$x_just,
+            mark(near, "b0_label")$geom_params$x_just)
+})
+
+test_that("categorical label nudges and semantic orientation are preserved", {
+  set.seed(20)
+  values <- data.frame(
+    g = factor(rep(c("a", "b", "c"), each = 20)),
+    y = c(rnorm(20, 10), rnorm(20, 15), rnorm(20, 6))
+  )
+  model <- lm(y ~ g, data = values)
+  upright <- gf_jitter(y ~ g, data = values, width = 0.1) |>
+    gf_b(model, label_nudge = 0.2)
+  transposed <- gf_jitter(g ~ y, data = values, height = 0.1) |>
+    gf_b(model, label_nudge = 0.2)
+  farther <- gf_jitter(y ~ g, data = values, width = 0.1) |>
+    gf_b(model, label_nudge = 0.4)
+
+  expect_equal(mark(upright, "b0_label")$data$x,
+               mark(farther, "b0_label")$data$x + 0.2)
+  expect_equal(mark(upright, "bk_2_label")$data$x,
+               mark(farther, "bk_2_label")$data$x + 0.2)
+  expect_equal(mark(upright, "b0_label")$data$y, coef(model)[[1]])
+  expect_equal(mark(transposed, "b0_label")$data$x, coef(model)[[1]])
+  expect_equal(mark(upright, "b0_label")$geom_params[c("x_just", "y_just")],
+               list(x_just = 1, y_just = -0.35))
+  expect_equal(mark(transposed, "b0_label")$geom_params[c("x_just", "y_just")],
+               list(x_just = -0.35, y_just = 1))
 })
 
 test_that("the rise and run labels follow the run == 1 rule, not an eyeballed default", {

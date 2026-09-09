@@ -11,6 +11,21 @@
   guides, keeping its population and estimate frames outside the data panel so
   fixed, transformed, zoomed, and free count axes no longer need special
   handling.
+- Complete the cutoff extension surface with `StatCutoff`/`stat_cutoff()`,
+  `GeomCutoff`/`geom_cutoff()`, and `GuideCutoff`/`guide_cutoff()`.
+  `show_cutoffs()` now leaves ggplot2's numeric axis intact and draws its
+  scale-aligned triangles, leaders, and translucent callouts in the data panel.
+  Triangle tips touch the axis, labels stay clear of its tick text, and repeated
+  labelled calls use separate compact lanes instead of overlapping or warning.
+  Callouts retain the two-line legacy silhouette when it fits, then reflow from
+  the measured panel size when narrow or flipped layouts need more room.
+  The high-level helper keeps whole-distribution cutoffs across facets;
+  `stat_cutoff()` keeps ggplot2's conventional per-panel behavior. `part` is now
+  the stat's public parameter, with `func` retained as a deprecated alias.
+- Keep `gf_b()` and `gf_coef()` coefficient labels clear of their own arrows,
+  segments, and b0 marks. The labels retain their teaching roles and follow
+  predictor/outcome directions through transposed formulas, reversed scales,
+  and flipped coordinates.
 
 # coursekata 0.20.1
 
