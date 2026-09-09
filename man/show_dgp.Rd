@@ -4,20 +4,27 @@
 \alias{show_dgp}
 \title{Frame a Sampling Distribution With Its Data Generating Process}
 \usage{
-show_dgp(plot, color = "#003d70", null_color = "#E60000", size = 4)
+show_dgp(
+  object = NULL,
+  color = "#003d70",
+  null_color = "#E60000",
+  size = 4,
+  plot = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{plot}{A plot of one distribution of estimates.}
+\item{object}{A plot of one distribution of estimates.}
 
 \item{color}{Color of the axes, equations and titles. Default \code{"#003d70"}.}
 
 \item{null_color}{Color of the null hypothesis marker. Default \code{"#E60000"}.}
 
 \item{size}{Size of the null hypothesis marker. Default \code{4}.}
+
+\item{plot}{Deprecated alias for \code{object}.}
 }
 \value{
-The plot, with tagged annotation layers added and its count axis
-raised to hold them.
+The plot, with population and estimate guides added.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -28,19 +35,11 @@ population model on a top axis labeled "Population Parameter (DGP)", the
 sample estimate below the plot, and a marker at the null hypothesis
 (\eqn{\beta_1 = 0}) on both -- drawn only when zero is on the axis.
 
-The band is drawn \strong{inside} the panel, and the count axis is raised to hold
-it. It has to be: countable squares size the separator between them from the
-fraction of the panel they occupy, so a band hanging outside the panel would
-leave every square a different shape. A plot whose count axis is pinned with
-\code{scale_y_continuous(limits = )} or \code{coord_cartesian(ylim = )} is refused,
-because there is no room to raise without discarding the caller's chosen
-range; set a minimum height with \code{expand_limits(y = )} instead. A faceted
-plot needs a shared count axis (the default): \code{scales = "free_y"} is
-refused, because the band's height is one number for every panel. A
-transformed count axis (\code{scale_y_sqrt()}, \code{scale_y_log10()}) is refused
-too: the sample estimate band is drawn in the margin below the panel,
-where a transformed scale has no value. \code{show_mean()} is unaffected by
-either restriction.
+The population and estimate frames are position guides, outside the data
+panel. They therefore do not change the count range and remain compatible
+with fixed, zoomed, transformed, and free count axes. The ordinary numeric x
+guide stays in place as the estimate scale. Zero is omitted when it is not a
+finite visible value on that scale; it is never moved to a boundary.
 }
 \examples{
 # with only ten shuffles the mean of the distribution can land well away
@@ -51,7 +50,7 @@ shuffled <- data.frame(b1 = replicate(10, {
 }))
 
 # expand_limits() sets the count axis so two runs can be compared side by
-# side; show_dgp() raises it further to make room for the population band
+# side; show_dgp() does not alter that range
 gf_histogram(~b1, data = shuffled, binwidth = 2) \%>\%
   gf_refine(ggplot2::expand_limits(y = 10)) \%>\%
   show_mean() \%>\%

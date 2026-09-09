@@ -109,6 +109,8 @@ gf_histogram(~b1, data = sdob1_boot, fill = ~ middle(b1, .95), bins = 100)
 model on the top axis, the sample estimate on the bottom, and a marker at the
 null hypothesis. Both overlays take a plot and give one back, so the same
 frame goes just as readily on a `gf_histogram()` of the same shuffles.
+The frame is measured guide content outside the data panel, so it does not
+change the count range or the size of the squares.
 
 With only ten shuffles the mean of the distribution can land well away from the
 null.

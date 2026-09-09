@@ -212,63 +212,66 @@ test_that("a transformed count axis does not move the mean line", {
   expect_null(sqrt_y$y)
 })
 
-test_that("show_dgp() raises the count axis to make room for the band", {
-  p <- show_dgp(framed())
-  # band = max(3, .25 * 10) = 3; the axis sits 40% up it, the top of the band 1 above
-  expect_equal(panel_top(p), 14.7)      # was: expect_equal(count_top(p), 14)
-  expect_equal(tagged(p, "dgp_axis")$y, 11.2)
-  expect_equal(tagged(p, "dgp_null_marker")$y, 11.68)
-  expect_equal(tagged(p, "dgp_title")$y, 12.94)
+test_that("show_dgp() reserves guide space without changing the panel", {
+  base <- framed()
+  p <- show_dgp(base)
+  expect_equal(panel_top(p), panel_top(base))
+  expect_equal(count_top(p), count_top(base))
+
+  scale <- p$scales$get_scales("x")
+  expect_s3_class(scale$guide, "GuideAxisStack")
+  expect_length(position_guide_matches(scale$guide, "GuideDgp", "estimate"), 1)
+  expect_length(position_guide_matches(scale$secondary.axis, "GuideDgp", "population"), 1)
 })
 
-test_that("the band is drawn inside the panel, with headroom of its own above it", {
-  # squares size their separators from the fraction of the panel they fill, so a
-  # band that trains the axis by accident silently redraws every square
+test_that("the population and estimate narratives keep their teaching roles", {
   p <- show_dgp(framed())
-  top <- panel_top(p)
-  highest <- max(vapply(
-    c("dgp_axis", "dgp_population_equation", "dgp_title",
-      "dgp_null_marker", "dgp_null_label"),
-    function(tag) max(tagged(p, tag)$y),
-    numeric(1)
-  ))
-  expect_lt(highest, top)
-  # the headroom layer puts a full count above the top of the band; without it the
-  # tallest text trains the axis itself and lands hard against the panel edge
-  expect_gt(top - highest, 1)
+  scale <- p$scales$get_scales("x")
+  estimate <- position_guide_matches(scale$guide, "GuideDgp", "estimate")[[1]]
+  population <- position_guide_matches(scale$secondary.axis, "GuideDgp", "population")[[1]]
+
+  expect_identical(population$params$heading, "Population Parameter (DGP)")
+  expect_identical(estimate$params$heading, "Parameter Estimate")
+  expect_equal(population$params$label, expression(beta[1] == 0))
+  expect_equal(estimate$params$label, expression(b[1] == 0))
+  expect_identical(population$params$value, 0)
+  expect_identical(estimate$params$value, 0)
 })
 
 test_that("the two overlays compose in either order", {
   a <- framed() %>% show_mean() %>% show_dgp()
   b <- framed() %>% show_dgp() %>% show_mean()
   expect_equal(tagged(a, "distribution_mean")$yend, tagged(b, "distribution_mean")$yend)
-  expect_equal(tagged(a, "dgp_axis")$y, tagged(b, "dgp_axis")$y)
   expect_equal(count_top(a), count_top(b))
+  expect_equal(
+    length(position_guide_matches(a$scales$get_scales("x")$guide, "GuideDgp")),
+    length(position_guide_matches(b$scales$get_scales("x")$guide, "GuideDgp"))
+  )
 })
 
-test_that("the null-hypothesis marker is drawn only where zero is on the axis", {
-  expect_false(is.na(layer_index(show_dgp(framed()), "dgp_null_marker")))
-  # Thumb runs 37 to 90; there is no zero to mark
-  thumb <- show_dgp(gf_histogram(~Thumb, data = Fingers, binwidth = 5))
-  expect_true(is.na(layer_index(thumb, "dgp_null_marker")))
-  expect_true(is.na(layer_index(thumb, "dgp_estimate_marker")))
-  expect_false(is.na(layer_index(thumb, "dgp_axis")))
+test_that("the DGP null remains zero when the distribution mean is not", {
+  p <- framed() %>% show_mean() %>% show_dgp()
+  scale <- p$scales$get_scales("x")
+  expect_false(isTRUE(all.equal(tagged(p, "distribution_mean")$xintercept, 0)))
+  expect_identical(
+    position_guide_matches(scale$guide, "GuideDgp", "estimate")[[1]]$params$value,
+    0
+  )
 })
 
 test_that("a second data generating process is refused rather than stacked", {
   expect_error(show_dgp(show_dgp(framed())), "already")
 })
 
-test_that("a count axis that cannot be raised is refused by name", {
+test_that("fixed and zoomed count axes are left to ggplot2", {
   fixed <- gf_histogram(~b1, data = shuffles(10), binwidth = 2) +
     ggplot2::scale_y_continuous(limits = c(0, 10))
-  expect_error(show_dgp(fixed), "count axis is fixed")
-  expect_error(show_dgp(fixed), "expand_limits")
+  expect_no_error(ggplot2::ggplotGrob(show_dgp(fixed)))
   expect_no_error(show_mean(fixed))
 
   coord_fixed <- gf_histogram(~b1, data = shuffles(10), binwidth = 2) +
     ggplot2::coord_cartesian(ylim = c(0, 10))
-  expect_error(show_dgp(coord_fixed), "coordinate y range is fixed")
+  expect_no_error(ggplot2::ggplotGrob(show_dgp(coord_fixed)))
 
   x_zoom <- gf_histogram(~b1, data = shuffles(10), binwidth = 2) +
     ggplot2::coord_cartesian(xlim = c(-20, 20))
@@ -276,59 +279,39 @@ test_that("a count axis that cannot be raised is refused by name", {
   expect_equal(drawn$coordinates$limits$x, c(-20, 20))
 })
 
-test_that("a free top is not a fixed axis, and the refusal message names the real limits", {
-  # limits = c(0, NA) leaves the top free -- expand_limits() can still raise it
+test_that("partial and function-valued count limits are supported", {
   free_top <- gf_histogram(~b1, data = shuffles(10), binwidth = 2) +
     ggplot2::scale_y_continuous(limits = c(0, NA))
-  expect_no_error(show_dgp(free_top))
+  expect_no_error(ggplot2::ggplotGrob(show_dgp(free_top)))
   raised <- show_dgp(free_top + ggplot2::expand_limits(y = 25))
-  expect_gt(count_top(raised), 25)
+  expect_equal(count_top(raised), 25)
 
-  # a bottom of NA does not itself free the top: c(NA, 10) still pins it, and
-  # this is the spelling that forces the message to be built without relying
-  # on a vector that contains NA collapsing to just "NA"
   na_bottom <- gf_histogram(~b1, data = shuffles(10), binwidth = 2) +
     ggplot2::scale_y_continuous(limits = c(NA, 10))
-  expect_error(show_dgp(na_bottom), "limits = c\\(NA, 10\\)")
+  expect_no_error(ggplot2::ggplotGrob(show_dgp(na_bottom)))
 
-  fixed <- gf_histogram(~b1, data = shuffles(10), binwidth = 2) +
-    ggplot2::scale_y_continuous(limits = c(0, 10))
-  expect_error(show_dgp(fixed), "limits = c\\(0, 10\\)")
+  fn_limits <- framed() +
+    ggplot2::scale_y_continuous(limits = function(r) c(0, max(r) * 2))
+  expect_no_error(ggplot2::ggplotGrob(show_dgp(fn_limits)))
 })
 
-test_that("a top and bottom that are both NA pin nothing, and the axis can still be raised", {
-  # scale_y_continuous(limits = c(NA, NA)) is the ggplot2 spelling for "no
-  # limits", and its top is a *logical* NA rather than a numeric one
+test_that("an entirely free count scale is unchanged", {
   both_na <- framed() + ggplot2::scale_y_continuous(limits = c(NA, NA))
-  expect_no_error(show_dgp(both_na))
-  expect_equal(panel_top(show_dgp(both_na)), 14.7)      # was: expect_equal(count_top(...), 14)
+  expect_equal(panel_top(show_dgp(both_na)), panel_top(both_na))
 })
 
-test_that("a function-valued limits argument is still treated as pinning the axis", {
-  fn_limits <- framed() + ggplot2::scale_y_continuous(limits = function(r) c(0, max(r) * 2))
-  expect_error(show_dgp(fn_limits), "count axis is fixed")
-  expect_error(show_dgp(fn_limits), "with a function")
-})
-
-test_that("a transformed count axis is refused, because the estimate band has no value below it", {
-  # scale_y_sqrt() has no real value for the -Inf the estimate band draws at
-  # in the margin below the panel -- sqrt(-Inf) is NaN, not -Inf, so the
-  # band would silently vanish rather than draw
+test_that("a transformed count axis does not affect either guide", {
   transformed <- framed() + ggplot2::scale_y_sqrt()
-  expect_error(show_dgp(transformed), "untransformed count axis")
+  expect_no_error(ggplot2::ggplotGrob(show_dgp(transformed)))
   expect_no_error(show_mean(transformed))
 })
 
-test_that("a free y scale across facets is refused, because the band is one height", {
-  # asymmetric on purpose: a tenfold difference between panels makes a wrong
-  # endpoint (e.g. every panel trained to the first panel's ceiling) unmissable
+test_that("free count scales remain panel-local", {
   d <- data.frame(v = c(rep(1, 100), rep(2, 10)), g = c(rep("a", 100), rep("b", 10)))
   free_y <- gf_histogram(~v, data = d, binwidth = 1) + ggplot2::facet_wrap(~g, scales = "free_y")
-  expect_error(show_dgp(free_y), "shared count axis")
-
   expect_equal(unname(panel_tops(free_y)), c(100, 10))
+  expect_equal(unname(panel_tops(show_dgp(free_y))), c(100, 10))
   drawn <- show_mean(free_y)
-  # show_mean() must not retrain the panels it draws into
   expect_equal(unname(panel_tops(drawn)), c(100, 10))
 
   seg <- tagged(drawn, "distribution_mean")
@@ -348,6 +331,8 @@ test_that("a non-cartesian plot is refused by name", {
   p <- gf_histogram(~Thumb, data = Fingers, binwidth = 5) + ggplot2::coord_polar()
   expect_error(show_mean(p), "cartesian")
   expect_error(show_mean(p), "CoordPolar")
+  expect_error(show_dgp(p), "cartesian")
+  expect_error(show_dgp(p), "CoordPolar")
 
   flipped <- gf_histogram(~Thumb, data = Fingers, binwidth = 5) + ggplot2::coord_flip()
   expect_error(show_dgp(flipped), "upright cartesian")
@@ -369,15 +354,13 @@ test_that("a discrete count axis is refused, because there is no count to mark o
   expect_error(show_dgp(p), "count axis")
 })
 
-test_that("the overlays tag every layer they add", {
+test_that("only marks that remain layers keep layer tags", {
   p <- framed() %>% show_mean() %>% show_dgp()
   added <- setdiff(
     vapply(p$layers, function(l) attr(l, "coursekata_layer") %||% "", character(1)),
     ""
   )
-  expect_length(added, 10)
-  expect_true("distribution_mean" %in% added)
-  expect_true(all(c("dgp_headroom", "dgp_axis", "dgp_estimate_title") %in% added))
+  expect_identical(added, "distribution_mean")
 })
 
 test_that("show_dgp snapshot", {

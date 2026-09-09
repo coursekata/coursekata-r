@@ -168,14 +168,19 @@ test_that("an overlay drawn above the counts does not relabel the count axis", {
   shuffled <- data.frame(b1 = replicate(10, {
     b1(lm(base::sample(TipExperiment$Tip) ~ Condition, data = TipExperiment))
   }))
-  framed <- gf_squareplot(~b1, data = shuffled, binwidth = 2) %>%
+  counts <- gf_squareplot(~b1, data = shuffled, binwidth = 2) %>%
     gf_lims(x = c(-30, 30)) %>%
-    gf_refine(ggplot2::expand_limits(y = 10)) %>%
+    gf_refine(ggplot2::expand_limits(y = 10))
+  framed <- counts %>%
     show_mean() %>%
     show_dgp()
-  # the band sits from 11.2 up; a tick at 12 would claim a count that is not there
+
+  # The DGP is axis decor, so it cannot claim space on the count axis.
   expect_equal(y_breaks(framed), 0:10)
-  expect_equal(built_of(framed)$layout$panel_params[[1]]$y.range, c(-0.7, 14.7))
+  expect_equal(
+    built_of(framed)$layout$panel_params[[1]]$y.range,
+    built_of(counts)$layout$panel_params[[1]]$y.range
+  )
 })
 
 test_that("a factor level nobody landed in still holds its place on the axis", {

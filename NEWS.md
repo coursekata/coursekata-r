@@ -6,6 +6,11 @@
   or height is left at its default, by using ggplot2's per-panel jitter directly.
 - Resolve ggplot2's themed defaults when drawing models, including when
   CourseKata is used through namespace-qualified calls without attaching it.
+- Add the conventional `StatDistMean`/`stat_dist_mean()` ggplot2 extension
+  surface beneath `show_mean()`. Rebuild `show_dgp()` with scale-owned position
+  guides, keeping its population and estimate frames outside the data panel so
+  fixed, transformed, zoomed, and free count axes no longer need special
+  handling.
 
 # coursekata 0.20.1
 
