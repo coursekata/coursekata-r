@@ -53,21 +53,48 @@ b_mark_segment <- function(tag, cols, predictor, outcome, predictor_end, outcome
 #'
 #' @noRd
 b_mark_text <- function(tag, cols, predictor, outcome, label, colour, size,
-                        hjust = 0.5, vjust = 0.5) {
+                        predictor_just = 0.5, outcome_just = 0.5) {
   frame <- b_mark_frame(cols, predictor, outcome)
   frame$label <- label
+  justification <- c(predictor = predictor_just, outcome = outcome_just)
+  names(justification) <- unlist(cols[names(justification)])
   tag_layer(
     ggplot2::layer(
-      geom = ggplot2::GeomText, stat = "identity", position = "identity",
+      geom = GeomBText, stat = "identity", position = "identity",
       data = frame,
       mapping = ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
       params = list(
-        colour = colour, size = size, parse = TRUE, hjust = hjust, vjust = vjust, na.rm = TRUE
+        colour = colour, size = size, parse = TRUE,
+        x_just = justification[["x"]], y_just = justification[["y"]],
+        na.rm = TRUE
       ),
       inherit.aes = FALSE, show.legend = FALSE
     ),
     tag
   )
+}
+
+#' Put a label a fixed glyph-relative distance along a semantic axis
+#'
+#' A positive direction places the label above or to the right of its anchor;
+#' a negative direction places it below or to the left. `GeomBText` resolves
+#' this separation at draw time, so the gap stays physical when the data range,
+#' device size, scales, or predictor/outcome orientation changes.
+#'
+#' @noRd
+b_outward_justification <- function(direction, gap = 0.35) {
+  if (direction >= 0) -gap else 1 + gap
+}
+
+#' Retain the public continuous `label_nudge` as physical clearance
+#'
+#' The historical default is 0.08. Moving above or below it changes the
+#' glyph-relative gap while leaving the label's data anchor on the coefficient
+#' mark, where draw-time scale and coordinate handling can keep it in bounds.
+#'
+#' @noRd
+b_continuous_label_gap <- function(label_nudge, default_gap) {
+  max(0, default_gap + label_nudge - 0.08)
 }
 
 #' The hollow b0 dot on a continuous predictor's axis
@@ -173,7 +200,8 @@ b_ref_line <- function(cols, b0, args) {
     ),
     b_mark_text(
       "b0_label", cols, 1 - args$label_nudge, b0, "b[0]",
-      colour = args$label_color, size = args$label_size, hjust = 1
+      colour = args$label_color, size = args$label_size,
+      predictor_just = 1, outcome_just = b_outward_justification(1)
     )
   )
 }
@@ -199,14 +227,16 @@ b_empty_marks <- function(cols, b0, args) {
     # vertical, so the label sits at the top of the panel, left of the line
     b_mark_text(
       "b0_label", cols, Inf, b0, "b[0]",
-      colour = args$label_color, size = args$label_size, hjust = 1, vjust = 1
+      colour = args$label_color, size = args$label_size,
+      predictor_just = 1, outcome_just = 1
     )
   } else {
     # outcome on y: the b0 line is horizontal, so the label sits at the
     # panel's left edge, lifted just clear of the line
     b_mark_text(
       "b0_label", cols, -Inf, b0, "b[0]",
-      colour = args$label_color, size = args$label_size, hjust = 0, vjust = -0.3
+      colour = args$label_color, size = args$label_size,
+      predictor_just = 0, outcome_just = b_outward_justification(1)
     )
   }
   list(
@@ -259,7 +289,8 @@ b_cat_marks <- function(cols, b0, coefs, args) {
       b_mark_text(
         paste0("bk_", k, "_label"), cols, arrow_x - args$label_nudge, b0 + b_k / 2,
         paste0("b[", k - 1, "]"),
-        colour = args$label_color, size = args$label_size, hjust = 1
+        colour = args$label_color, size = args$label_size,
+        predictor_just = 1
       )
     ))
   }
@@ -269,11 +300,11 @@ b_cat_marks <- function(cols, b0, coefs, args) {
 #' The rise-over-run triangle, plus the b0 dot at x = 0
 #'
 #' `run`/`run_x` fall back to `nice_run()`/`b_run_x()` when the caller does
-#' not supply them. The run label sits under the horizontal run segment for a
-#' positive rise and over it for a negative one, moved toward the arrow's own
-#' body rather than away from it, which is what "under (or over) the segment"
-#' means for a segment that is sometimes the top of the rise and sometimes the
-#' bottom.
+#' not supply them. The run label stays on the triangle's interior side of the
+#' run segment: below it for a positive rise and above it for a negative rise.
+#' Label gaps use draw-time text justification rather than a fraction of a data
+#' range, so the same placement works after scale reversal and when predictor
+#' and outcome exchange physical axes.
 #'
 #' @param b1 The single slope coefficient, already unnamed.
 #' @param values The predictor's own values (from the model's data), which
@@ -293,34 +324,52 @@ b_cont_marks <- function(cols, b0, b1, values, args) {
   y0 <- fit(run_x)
   y1 <- fit(run_x + run)
   rise <- y1 - y0
-  toward_start <- if (rise >= 0) 1 else -1
+  away_from_run <- if (run >= 0) -1 else 1
+  toward_rise <- if (rise >= 0) -1 else 1
 
   marks <- list(
     b_mark_segment(
       "b1", cols, run_x, y0, run_x, y1,
       colour = args$color, linewidth = args$arrow_linewidth,
-      arrow = grid::arrow(length = grid::unit(0.1, "inches"), ends = "last")
+      arrow = grid::arrow(length = grid::unit(0.05, "inches"), ends = "last")
     ),
     b_mark_text(
-      "b1_label", cols, run_x - args$label_nudge * x_span, (y0 + y1) / 2,
-      format_run(run), colour = args$label_color, size = args$label_size, hjust = 1
+      "b1_label", cols, run_x, (y0 + y1) / 2,
+      format_run(run), colour = args$label_color, size = args$label_size,
+      predictor_just = b_outward_justification(
+        away_from_run, b_continuous_label_gap(args$label_nudge, 0.35)
+      )
     ),
     b_mark_segment(
       "run", cols, run_x, y1, run_x + run, y1,
       colour = args$color, linewidth = args$arrow_linewidth
     ),
     b_mark_text(
-      "run_label", cols, run_x + run / 2, y1 - toward_start * abs(rise) * 0.12,
-      as.character(run), colour = args$label_color, size = args$label_size, vjust = 1
+      "run_label", cols, run_x + run / 2, y1,
+      as.character(run), colour = args$label_color, size = args$label_size,
+      predictor_just = if (run >= 0) 0 else 1,
+      outcome_just = b_outward_justification(toward_rise, gap = 0.8)
     )
   )
 
   if (isTRUE(args$show_b0)) {
+    label_direction <- if (0 <= x_min) {
+      1
+    } else if (0 >= x_max) {
+      -1
+    } else if (run_x >= 0) {
+      -1
+    } else {
+      1
+    }
     marks <- c(marks, list(
       b_mark_point("b0", cols, 0, b0, colour = args$color, size = args$b0_size),
       b_mark_text(
-        "b0_label", cols, -args$label_nudge * x_span, b0, "b[0]",
-        colour = args$label_color, size = args$label_size, hjust = 1
+        "b0_label", cols, 0, b0, "b[0]",
+        colour = args$label_color, size = args$label_size,
+        predictor_just = b_outward_justification(
+          label_direction, b_continuous_label_gap(args$label_nudge, 1.2)
+        )
       ),
       do.call(ggplot2::expand_limits, stats::setNames(list(0), cols$predictor))
     ))
@@ -549,6 +598,17 @@ check_b_predictor <- function(spec, outcome_axis, predictor, fn, call = caller_e
 gf_b_spec <- function(object, model, args, fn, call = caller_env()) {
   check_resid_plot(object, fn, call = call)
 
+  if (!inherits(object$coordinates, "CoordCartesian")) {
+    abort(
+      c(
+        glue("`{fn}()` needs a plot with cartesian x and y axes"),
+        glue("this plot uses {class(object$coordinates)[[1]]}")
+      ),
+      class = "coursekata_gf_b_coord",
+      call = call
+    )
+  }
+
   # Every extra here sets a mark's appearance to one value. `color = ~species`
   # is the family's mapping idiom everywhere else, and `layer_factory()` would
   # turn it into a mapping -- but `pre` reads these before that conversion, and
@@ -720,7 +780,7 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #' **A continuous predictor**: a vertical rise arrow from `fit(run_x)` to
 #' `fit(run_x + run)`, a horizontal run segment at its tip, a rise label
 #' (plotmath b1 when `run` is 1, otherwise `run` times b1), a run-distance
-#' label under the run segment (over it, for a negative rise), and a hollow
+#' label on the triangle's interior side of the run segment, and a hollow
 #' dot at `(0, b0)` with a b0 label.
 #'
 #' **A categorical predictor**: one horizontal reference line at `b0` (the
@@ -771,6 +831,11 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #'   numbers, and there is no fit to read them from. May be given positionally
 #'   or as `model =`. Omitted, the model the plot implies is fit and annotated
 #'   instead.
+#'
+#'   Coefficient marks require Cartesian coordinates. Reversed position scales,
+#'   `coord_cartesian(reverse = )`, and `coord_flip()` are supported; polar and
+#'   other non-Cartesian coordinates are refused because rise, run, and label
+#'   sides lack a linear coefficient interpretation there.
 #' @param color,label_color The arrows/lines and the label text. `colour` and
 #'   `label_colour` are accepted too. Each is a single value, not a mapping --
 #'   every mark is one row computed from the coefficients, so there are no
@@ -787,9 +852,12 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #'   left `NULL`. Naming `run` on a categorical model is warned about and
 #'   ignored -- its coefficients are group differences, not a rate.
 #' @param b0_alpha The transparency of the categorical b0 reference line.
-#' @param arrow_nudge,label_nudge A categorical arrow's x position, and its
-#'   label's offset from it, in level units (1 = one group apart). Not used on
-#'   the empty model, whose one axis is a count, not a level, and whose b0
+#' @param arrow_nudge A categorical arrow's x position in level units (1 = one
+#'   group apart).
+#' @param label_nudge The predictor-axis clearance for coefficient labels. It
+#'   uses level units for a categorical predictor and adjusts the physical gap
+#'   beside the b0 and rise marks for a continuous predictor. Not used on the
+#'   empty model, whose one axis is a count rather than a predictor and whose b0
 #'   label is placed at the panel's edge instead.
 #' @param gformula Not used. `gf_b()` annotates a model, not an aesthetic
 #'   formula; a model given positionally lands here and is moved to `model`.

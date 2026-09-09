@@ -1,494 +1,867 @@
-hist_with <- function(frm) gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = frm)
+cutoff_test_histogram <- function(values = 1:10) {
+  ggplot2::ggplot(data.frame(x = values), ggplot2::aes(x = x)) +
+    ggplot2::geom_histogram(binwidth = 1, boundary = 0.5)
+}
 
-test_that("a two-sided fill draws a marker on each side", {
-  p <- suppressMessages(show_cutoffs(hist_with(~ middle(Thumb, .95))))
-  expect_false(is.na(layer_index(p, "cutoff_lower")))
-  expect_false(is.na(layer_index(p, "cutoff_upper")))
+cutoff_test_layers <- function(plot) {
+  Filter(function(layer) inherits(layer$geom, "GeomCutoff"), plot$layers)
+}
+
+cutoff_test_expected <- function(part, prop, values, greedy = TRUE) {
+  plan <- cutoff_plan(
+    list(func = part, prop = prop, greedy = greedy),
+    values
+  )
+  anchors <- unlist(plan[c("lower", "upper")], use.names = FALSE)
+  anchors[!is.na(anchors)]
+}
+
+cutoff_test_draw <- function(plot, width = 8, height = 6) {
+  grDevices::pdf(NULL, width = width, height = height)
+  on.exit(grDevices::dev.off())
+  grid::grid.newpage()
+  grid::grid.draw(ggplot2::ggplotGrob(plot))
+  TRUE
+}
+
+cutoff_test_layout <- function(plot, width = 160, height = 110,
+                               panel_index = 1L) {
+  built <- suppressWarnings(ggplot2::ggplot_build(plot))
+  layer_index <- which(vapply(built$plot$layers, function(layer) {
+    inherits(layer$geom, "GeomCutoffCallout")
+  }, logical(1)))
+  stopifnot(length(layer_index) == 1L)
+  layer <- built$plot$layers[[layer_index]]
+  data <- built$data[[layer_index]]
+  if ("PANEL" %in% names(data)) {
+    data <- data[as.integer(data$PANEL) == panel_index, , drop = FALSE]
+  }
+  panel_params <- built$layout$panel_params[[panel_index]]
+  panel <- cutoff_panel_data(data, panel_params, built$plot$coordinates)
+  stopifnot(!is.null(panel))
+  avoidance <- cutoff_avoidance_panel(
+    layer$geom_params$avoidance, panel_params, built$plot$coordinates
+  )
+
+  grid::pushViewport(grid::viewport(
+    width = grid::unit(width, "mm"), height = grid::unit(height, "mm")
+  ))
+  on.exit(grid::popViewport())
+  measured <- measure_cutoff_callouts(panel$boundary, 3.2, 1.6)
+  layout <- solve_cutoff_callout_layout(
+    measured$data, horizontal = panel$horizontal, height = 0.2,
+    metrics = measured$metrics, panel_width = measured$panel_width,
+    panel_height = measured$panel_height, avoidance = avoidance
+  )
+  layout$data <- measured$data
+  layout$panel_width <- width
+  layout$panel_height <- height
+  layout
+}
+
+cutoff_test_boxes_overlap <- function(first, second, gap = 1.5) {
+  first$x1 < second$x2 + gap && first$x2 > second$x1 - gap &&
+    first$y1 < second$y2 + gap && first$y2 > second$y1 - gap
+}
+
+expect_complete_cutoff_layout <- function(layout, count,
+                                          allow_overlap = FALSE) {
+  expect_length(layout$boxes, count)
+  expect_length(layout$routes, count)
+  expect_true(all(vapply(layout$boxes, function(box) {
+    box$x1 >= 0 && box$x2 <= layout$panel_width &&
+      box$y1 >= 0 && box$y2 <= layout$panel_height
+  }, logical(1))))
+
+  if (count > 1L && !allow_overlap) {
+    pairs <- utils::combn(seq_len(count), 2L)
+    expect_false(any(apply(pairs, 2L, function(pair) {
+      cutoff_test_boxes_overlap(
+        layout$boxes[[pair[[1L]]]], layout$boxes[[pair[[2L]]]]
+      )
+    })))
+  }
+
+  for (i in seq_len(count)) {
+    row <- layout$data[i, , drop = FALSE]
+    source <- if (layout$horizontal) {
+      inward <- sign(row$.opposite_x - row$x)
+      c(
+        row$x * layout$panel_width + inward * min(
+          0.2 * layout$panel_width,
+          abs(row$.opposite_x - row$x) * layout$panel_width
+        ),
+        row$y * layout$panel_height
+      )
+    } else {
+      inward <- sign(row$.opposite_y - row$y)
+      c(
+        row$x * layout$panel_width,
+        row$y * layout$panel_height + inward * min(
+          0.2 * layout$panel_height,
+          abs(row$.opposite_y - row$y) * layout$panel_height
+        )
+      )
+    }
+    route <- layout$routes[[i]]
+    expect_equal(unname(route[1L, ]), source)
+
+    box <- layout$boxes[[i]]
+    ports <- rbind(
+      right = c(box$x2, box$y), top = c(box$x, box$y2),
+      left = c(box$x1, box$y), bottom = c(box$x, box$y1)
+    )
+    nearest <- which.min(rowSums((ports - rep(source, each = 4L))^2))
+    expect_equal(unname(route[nrow(route), ]), unname(ports[nearest, ]))
+  }
+}
+
+test_that("fill inference makes one truthful self-contained layer", {
+  base <- gf_histogram(
+    ~Thumb, data = Fingers, binwidth = 5,
+    fill = ~middle(Thumb, .95)
+  )
+  expected <- cutoff_test_expected("middle", .95, Fingers$Thumb)
+  out <- suppressMessages(show_cutoffs(base, show_labels = TRUE))
+
+  layers <- cutoff_test_layers(out)
+  expect_length(layers, 1)
+  expect_null(out$scales$get_scales("x"))
+
+  layer <- layers[[1]]
+  expect_identical(attr(layer, "coursekata_layer"), "distribution_cutoff")
+  expect_identical(
+    attr(layer, "coursekata_cutoff_style"),
+    list(
+      colour = "#1e3a8a", fill = "white", linetype = "dashed",
+      linewidth = 0.5
+    )
+  )
+  expect_identical(layer$inherit.aes, FALSE)
+  expect_identical(layer$show.legend, FALSE)
+  expect_identical(layer$aes_params$colour, "#1e3a8a")
+  expect_identical(layer$aes_params$linewidth, 0.5)
+  expect_equal(layer$data$xintercept, expected)
+  expect_equal(layer$data$.value, expected)
+  expect_identical(layer$data$.coursekata_protect, c(TRUE, TRUE))
+  expect_identical(layer$data$side, c("lower", "upper"))
+  expect_identical(layer$data$call_id, c(1L, 1L))
+  expect_equal(
+    layer$data$label,
+    c(".025 of\nvalues below", ".025 of\nvalues above")
+  )
+  expect_identical(layer$geom_params$marker, TRUE)
+  expect_identical(layer$geom_params$marker_size, 4)
 })
 
-test_that("a one-sided fill draws one marker", {
-  p <- suppressMessages(show_cutoffs(hist_with(~ upper(Thumb, .05))))
-  expect_true(is.na(layer_index(p, "cutoff_lower")))
-  expect_false(is.na(layer_index(p, "cutoff_upper")))
+test_that("labels are layer metadata and appear only when requested", {
+  base <- cutoff_test_histogram()
+  bare <- suppressMessages(show_cutoffs(base, middle(x, .8)))
+  labelled <- suppressMessages(show_cutoffs(
+    base, middle(x, .8), color = "purple", size = 7,
+    show_labels = TRUE
+  ))
+
+  bare_layer <- cutoff_test_layers(bare)[[1]]
+  labelled_layer <- cutoff_test_layers(labelled)[[1]]
+  expect_true(all(is.na(bare_layer$data$label)))
+  expect_equal(
+    labelled_layer$data$label,
+    c(".1 of\nvalues below", ".1 of\nvalues above")
+  )
+  expect_identical(labelled_layer$data$side, c("lower", "upper"))
+  expect_identical(labelled_layer$aes_params$colour, "purple")
+  expect_identical(labelled_layer$geom_params$marker_size, 7)
 })
 
-test_that("a non-greedy tail holding no values still draws its marker", {
-  d <- data.frame(v = 1:10)
+test_that("all five distribution parts preserve cutoff_plan semantics", {
+  values <- c(1:20, NA_real_)
+  base <- cutoff_test_histogram(values)
+  cases <- list(
+    middle = list(
+      plot = suppressMessages(show_cutoffs(base, middle(x, .8))),
+      prop = .8
+    ),
+    tails = list(
+      plot = suppressMessages(show_cutoffs(base, tails(x, .8))),
+      prop = .8
+    ),
+    outer = list(
+      plot = suppressMessages(show_cutoffs(base, outer(x, .2))),
+      prop = .2
+    ),
+    upper = list(
+      plot = suppressMessages(show_cutoffs(base, upper(x, .2))),
+      prop = .2
+    ),
+    lower = list(
+      plot = suppressMessages(show_cutoffs(base, lower(x, .2))),
+      prop = .2
+    )
+  )
+
+  for (part in names(cases)) {
+    layer <- cutoff_test_layers(cases[[part]]$plot)[[1]]
+    expect_equal(
+      layer$data$xintercept,
+      cutoff_test_expected(part, cases[[part]]$prop, values),
+      label = part
+    )
+  }
+  expect_identical(cutoff_test_layers(cases$upper$plot)[[1]]$data$side, "upper")
+  expect_identical(cutoff_test_layers(cases$lower$plot)[[1]]$data$side, "lower")
+})
+
+test_that("greediness, ties, missing values, and empty one-sided tails are preserved", {
+  tied <- c(1, 1, 2, 2, 3, 3, 4, 4, NA_real_)
+  tied_base <- cutoff_test_histogram(tied)
+  greedy <- suppressMessages(show_cutoffs(
+    tied_base, middle(x, .5, greedy = TRUE)
+  ))
+  conservative <- suppressMessages(show_cutoffs(
+    tied_base, middle(x, .5, greedy = FALSE)
+  ))
+  expect_equal(
+    cutoff_test_layers(greedy)[[1]]$data$xintercept,
+    cutoff_test_expected("middle", .5, tied, greedy = TRUE)
+  )
+  expect_equal(
+    cutoff_test_layers(conservative)[[1]]$data$xintercept,
+    cutoff_test_expected("middle", .5, tied, greedy = FALSE)
+  )
+
+  small <- cutoff_test_histogram(1:10)
   low <- suppressMessages(show_cutoffs(
-    gf_histogram(~v, data = d, binwidth = 1, fill = ~ lower(v, .05, greedy = FALSE))
+    small, lower(x, .05, greedy = FALSE)
   ))
   high <- suppressMessages(show_cutoffs(
-    gf_histogram(~v, data = d, binwidth = 1, fill = ~ upper(v, .05, greedy = FALSE))
+    small, upper(x, .05, greedy = FALSE)
   ))
-  expect_false(is.na(layer_index(low, "cutoff_lower_marker")))
-  expect_false(is.na(layer_index(high, "cutoff_upper_marker")))
+  expect_identical(as.numeric(cutoff_test_layers(low)[[1]]$data$xintercept), 1)
+  expect_identical(as.numeric(cutoff_test_layers(high)[[1]]$data$xintercept), 10)
 })
 
-test_that("labels are added only when asked for", {
-  bare <- suppressMessages(show_cutoffs(hist_with(~ middle(Thumb, .95))))
-  expect_true(is.na(layer_index(bare, "cutoff_lower_label")))
-})
-
-test_that("each labelled side names its proportion and its direction", {
-  h <- hist_with(~ middle(Thumb, .95))
-  # from the input plot: the returned plot's own range moves with the labels it placed
-  xr <- plot_geometry(h)$x_range
-  p <- suppressMessages(show_cutoffs(h, labels = TRUE))
-  lower <- p$layers[[layer_index(p, "cutoff_lower_label")]]
-  upper <- p$layers[[layer_index(p, "cutoff_upper_label")]]
-  expect_equal(lower$aes_params$label, ".025 of\nvalues below")
-  expect_equal(upper$aes_params$label, ".025 of\nvalues above")
-  expect_gt(lower$data$x, xr[[1]])
-  expect_lt(lower$data$x, upper$data$x)
-  expect_lt(upper$data$x, xr[[2]])
-  expect_false(is.na(layer_index(p, "cutoff_lower_leader")))
-  expect_false(is.na(layer_index(p, "cutoff_upper_leader")))
-})
-
-drawn_x <- function(p, tag) {
-  ggplot2::ggplot_build(p)$data[[layer_index(p, tag)]]$x[[1]]
-}
-
-test_that("an untransformed plot puts each label where an identity transform must leave it", {
-  p <- suppressMessages(show_cutoffs(hist_with(~ middle(Thumb, .95)), labels = TRUE))
-  panel <- ggplot2::ggplot_build(p)$layout$panel_params[[1]]$x.range
-  expect_equal(drawn_x(p, "cutoff_lower_label"), 43.08)
-  expect_equal(drawn_x(p, "cutoff_upper_label"), 85.92)
-  expect_lt(drawn_x(p, "cutoff_lower_label"), drawn_x(p, "cutoff_lower_marker"))
-  expect_gt(drawn_x(p, "cutoff_upper_label"), drawn_x(p, "cutoff_upper_marker"))
-  expect_gt(drawn_x(p, "cutoff_lower_label"), panel[[1]])
-  expect_lt(drawn_x(p, "cutoff_upper_label"), panel[[2]])
-})
-
-test_that("the labels answer to the data, not to however wide the panel around it is", {
-  h <- hist_with(~ middle(Thumb, .95))
-  narrow <- suppressMessages(show_cutoffs(h, labels = TRUE))
-  wide <- suppressMessages(
-    show_cutoffs(h + ggplot2::coord_cartesian(xlim = c(0, 200)), labels = TRUE)
-  )
-  expect_equal(drawn_x(wide, "cutoff_lower_label"), drawn_x(narrow, "cutoff_lower_label"))
-  expect_equal(drawn_x(wide, "cutoff_upper_label"), drawn_x(narrow, "cutoff_upper_label"))
-})
-
-test_that("a transformed x scale insets each label by the same visual step at both ends", {
-  set.seed(1)
-  d <- data.frame(v = 10^runif(200, 0, 3))
-  h <- gf_histogram(~v, data = d, bins = 20, fill = ~ middle(v, .95)) + ggplot2::scale_x_log10()
-  p <- suppressMessages(show_cutoffs(h, labels = TRUE))
-  panel <- diff(ggplot2::ggplot_build(p)$layout$panel_params[[1]]$x.range)
-  gap <- function(side) {
-    abs(drawn_x(p, paste0("cutoff_", side, "_label")) -
-      drawn_x(p, paste0("cutoff_", side, "_marker"))) / panel
-  }
-  # untransformed the same drawing lands 2.3% and 9.8% of the panel from its marker, so three
-  # decades of x staying under 12% says the offset is a visual step and not a raw-unit one
-  expect_lt(gap("lower"), 0.12)
-  expect_lt(gap("upper"), 0.12)
+test_that("an explicit part can supply or override the fill-derived plan", {
+  no_fill <- gf_histogram(~Thumb, data = Fingers, binwidth = 5)
+  explicit <- suppressMessages(show_cutoffs(no_fill, middle(Thumb, .95)))
   expect_equal(
-    drawn_x(p, "cutoff_lower_label") - log10(min(d$v)),
-    log10(max(d$v)) - drawn_x(p, "cutoff_upper_label")
+    cutoff_test_layers(explicit)[[1]]$data$xintercept,
+    cutoff_test_expected("middle", .95, Fingers$Thumb)
+  )
+
+  shaded <- gf_histogram(
+    ~Thumb, data = Fingers, binwidth = 5,
+    fill = ~middle(Thumb, .95)
+  )
+  inferred <- suppressMessages(show_cutoffs(shaded))
+  overridden <- suppressMessages(show_cutoffs(shaded, middle(Thumb, .99)))
+  inferred_at <- cutoff_test_layers(inferred)[[1]]$data$xintercept
+  overridden_at <- cutoff_test_layers(overridden)[[1]]$data$xintercept
+
+  expect_lt(overridden_at[[1]], inferred_at[[1]])
+  expect_gt(overridden_at[[2]], inferred_at[[2]])
+  expect_equal(
+    overridden_at,
+    cutoff_test_expected("middle", .99, Fingers$Thumb)
   )
 })
 
-test_that("a one-sided fill labels only the side it shades", {
-  p <- suppressMessages(show_cutoffs(hist_with(~ upper(Thumb, .05)), labels = TRUE))
-  expect_true(is.na(layer_index(p, "cutoff_lower_label")))
-  expect_false(is.na(layer_index(p, "cutoff_upper_label")))
+test_that("show_cutoffs plans exactly once", {
+  base <- gf_histogram(
+    ~Thumb, data = Fingers, binwidth = 5,
+    fill = ~middle(Thumb, .95)
+  )
+  original_spec <- cutoff_spec
+  original_plan <- cutoff_plan
+  spec_calls <- 0L
+  plan_calls <- 0L
+  local_mocked_bindings(
+    cutoff_spec = function(...) {
+      spec_calls <<- spec_calls + 1L
+      original_spec(...)
+    },
+    cutoff_plan = function(...) {
+      plan_calls <<- plan_calls + 1L
+      original_plan(...)
+    },
+    .package = "coursekata"
+  )
+
+  suppressMessages(show_cutoffs(base))
+  expect_identical(spec_calls, 1L)
+  expect_identical(plan_calls, 1L)
 })
 
-test_that("the marker is drawn at the cutoff the plan chose", {
-  p <- hist_with(~ middle(Thumb, .95))
-  drawn <- suppressMessages(show_cutoffs(p))
-  plan <- cutoff_plan(cutoff_spec(plot_spec(p)$resolve_aes("fill")), Fingers$Thumb)
-  # the triangle is tagged "_marker"; "cutoff_lower" is the dashed segment above it
-  marker <- drawn$layers[[layer_index(drawn, "cutoff_lower_marker")]]
-  expect_equal(marker$data$x[[1]], plan$lower)
+test_that("public plot and labels aliases keep the legacy call shape", {
+  withr::local_options(lifecycle_verbosity = "default")
+  cache <- get("deprecation_env", asNamespace("lifecycle"))
+  ids <- c("coursekata-show_cutoffs-plot", "coursekata-show_cutoffs-labels")
+  clear <- function() {
+    present <- ids[vapply(ids, exists, logical(1), envir = cache, inherits = FALSE)]
+    if (length(present) > 0L) rlang::env_unbind(cache, present)
+  }
+  clear()
+  withr::defer(clear())
+
+  base <- gf_histogram(~Thumb, data = Fingers, binwidth = 5)
+  legacy_plot <- NULL
+  expect_warning(
+    legacy_plot <- suppressMessages(
+      show_cutoffs(plot = base, middle(Thumb, .95))
+    ),
+    class = "lifecycle_warning_deprecated"
+  )
+  expect_s3_class(legacy_plot, "ggplot")
+  expect_equal(
+    cutoff_test_layers(legacy_plot)[[1]]$data$xintercept,
+    cutoff_test_expected("middle", .95, Fingers$Thumb)
+  )
+
+  clear()
+  legacy_labels <- NULL
+  expect_warning(
+    legacy_labels <- suppressMessages(
+      show_cutoffs(base, middle(Thumb, .95), labels = TRUE)
+    ),
+    class = "lifecycle_warning_deprecated"
+  )
+  expect_equal(
+    cutoff_test_layers(legacy_labels)[[1]]$data$label,
+    c(".025 of\nvalues below", ".025 of\nvalues above")
+  )
+
+  expect_error(
+    show_cutoffs(object = base, plot = base, part = middle(Thumb, .95)),
+    "both `object` and deprecated `plot`"
+  )
+  expect_error(
+    show_cutoffs(
+      base, middle(Thumb, .95), show_labels = FALSE, labels = TRUE
+    ),
+    "both `show_labels` and deprecated `labels`"
+  )
 })
 
-test_that("all five distribution functions are accepted", {
-  for (frm in list(
-    ~ middle(Thumb, .95), ~ tails(Thumb, .95), ~ outer(Thumb, .05),
-    ~ upper(Thumb, .05), ~ lower(Thumb, .05)
-  )) {
-    expect_s3_class(suppressMessages(show_cutoffs(hist_with(frm))), "ggplot")
+test_that("invalid plots and parts are refused in the caller's vocabulary", {
+  distribution <- gf_histogram(~Thumb, data = Fingers, binwidth = 5)
+  expect_error(show_cutoffs(distribution), "distribution function")
+  expect_error(show_cutoffs(distribution, "red"), "distribution part")
+  colour_name <- "red"
+  expect_error(show_cutoffs(distribution, colour_name), "distribution part")
+  expect_error(show_cutoffs(distribution, Thumb), "distribution part")
+
+  expression_plot <- gf_histogram(
+    ~log(Thumb), data = Fingers, binwidth = .05,
+    fill = ~middle(log(Thumb), .95)
+  )
+  expect_error(show_cutoffs(expression_plot), "log\\(Thumb\\)")
+
+  external <- Fingers$Thumb
+  external_plot <- gf_histogram(
+    ~external, bins = 10, fill = ~middle(external, .95)
+  )
+  expect_error(show_cutoffs(external_plot), "Can't find `external`", fixed = TRUE)
+
+  other_x <- gf_histogram(~Height, data = Fingers, binwidth = 5)
+  mismatch <- rlang::catch_cnd(show_cutoffs(other_x, middle(Thumb, .95)))
+  expect_match(conditionMessage(mismatch), "Height")
+  expect_match(conditionMessage(mismatch), "Thumb")
+  expect_match(conditionMessage(mismatch), "x axis")
+
+  scatter <- gf_point(Thumb ~ Height, data = Fingers)
+  expect_error(
+    show_cutoffs(scatter, middle(Height, .95)),
+    "marks cutoffs on a distribution"
+  )
+  empty <- ggplot2::ggplot(Fingers, ggplot2::aes(
+    x = Thumb, fill = middle(Thumb, .95)
+  ))
+  expect_error(show_cutoffs(empty), "marks cutoffs on a distribution")
+
+  polar <- gf_histogram(
+    ~Thumb, data = Fingers, binwidth = 5,
+    fill = ~middle(Thumb, .95)
+  ) + ggplot2::coord_polar()
+  expect_error(show_cutoffs(polar), "cartesian")
+
+  discrete <- gf_bar(~Sex, data = Fingers)
+  expect_error(show_cutoffs(discrete, upper(Sex, .05)), "numeric")
+  expect_error(show_cutoffs(distribution, middle(Thumb, .95), show_labels = 1),
+    "TRUE.*FALSE"
+  )
+  expect_error(show_cutoffs(distribution, middle(Thumb, .95), size = -1),
+    "non-negative"
+  )
+  expect_error(
+    show_cutoffs(cutoff_test_histogram(c(NA_real_, NA_real_)), middle(x, .95)),
+    "no non-missing"
+  )
+})
+
+test_that("the package distribution geom accepts an explicit part", {
+  square <- gf_squareplot(~Thumb, data = Fingers)
+  expect_s3_class(
+    suppressMessages(show_cutoffs(square, middle(Thumb, .95))),
+    "ggplot"
+  )
+})
+
+test_that("labelled one-sided and single-valued distributions draw", {
+  base <- cutoff_test_histogram(1:10)
+  lower_plot <- suppressMessages(show_cutoffs(
+    base, lower(x, .2), show_labels = TRUE
+  ))
+  upper_plot <- suppressMessages(show_cutoffs(
+    base, upper(x, .2), show_labels = TRUE
+  ))
+  constant <- cutoff_test_histogram(rep(5, 10))
+  constant_plot <- suppressMessages(show_cutoffs(
+    constant, middle(x, .8), show_labels = TRUE
+  ))
+
+  lower_layout <- cutoff_test_layout(lower_plot)
+  upper_layout <- cutoff_test_layout(upper_plot)
+  constant_layout <- cutoff_test_layout(constant_plot)
+
+  expect_complete_cutoff_layout(lower_layout, 1L)
+  expect_complete_cutoff_layout(upper_layout, 1L)
+  expect_complete_cutoff_layout(constant_layout, 2L)
+  expect_identical(lower_layout$physical, "lower")
+  expect_identical(upper_layout$physical, "upper")
+})
+
+test_that("avoidance profiles handle degenerate distributions", {
+  expect_equal(
+    cutoff_avoidance_profile(c(NA_real_, Inf)),
+    data.frame(value = numeric(), height = numeric())
+  )
+  expect_equal(
+    cutoff_avoidance_profile(rep(5, 10)),
+    data.frame(value = c(4, 5, 6), height = c(0, .86, 0))
+  )
+})
+
+test_that("all supported distribution geoms render labelled callouts", {
+  values <- data.frame(x = rep(1:20, each = 2))
+  plots <- list(
+    histogram = ggplot2::ggplot(values, ggplot2::aes(x)) +
+      ggplot2::geom_histogram(binwidth = 1),
+    density = ggplot2::ggplot(values, ggplot2::aes(x)) +
+      ggplot2::geom_density(),
+    dotplot = ggplot2::ggplot(values, ggplot2::aes(x)) +
+      ggplot2::geom_dotplot(binwidth = 1),
+    bar = ggplot2::ggplot(values, ggplot2::aes(x)) + ggplot2::geom_bar(),
+    squareplot = gf_squareplot(~x, data = values)
+  )
+
+  for (name in names(plots)) {
+    marked <- suppressMessages(show_cutoffs(
+      plots[[name]], middle(x, .8), show_labels = TRUE
+    ))
+    expect_true(
+      suppressWarnings(suppressMessages(cutoff_test_draw(marked))),
+      label = paste(name, "upright")
+    )
+    expect_true(
+      suppressWarnings(suppressMessages(cutoff_test_draw(
+        marked + ggplot2::coord_flip()
+      ))),
+      label = paste(name, "flipped")
+    )
   }
 })
 
-test_that("a plot with no distribution fill is refused by name", {
-  p <- gf_histogram(~Thumb, data = Fingers)
-  expect_error(suppressMessages(show_cutoffs(p)), "distribution function")
+test_that("pinned expression plots mark the values that were drawn", {
+  original <- gf_histogram(
+    ~log(Thumb), data = Fingers, binwidth = .05,
+    fill = ~middle(log(Thumb), .95)
+  )
+  pinned <- pin_plot_values(original)$plot
+  out <- suppressMessages(show_cutoffs(pinned))
+
+  expect_true("x" %in% names(plot_pins(pinned)))
+  expect_no_match(names(cutoff_test_layers(out)[[1]]$data), ".coursekata_pin_",
+    fixed = TRUE
+  )
+  expect_equal(
+    cutoff_test_layers(out)[[1]]$data$xintercept,
+    cutoff_test_expected("middle", .95, log(Fingers$Thumb))
+  )
 })
 
-test_that("an x aesthetic that is an expression is refused by name", {
-  p <- gf_histogram(~ log(Thumb), data = Fingers, fill = ~ middle(Thumb, .95))
-  expect_error(suppressMessages(show_cutoffs(p)), "log\\(Thumb\\)")
+test_that("an explicit part matches a pinned expression by its reader-facing name", {
+  original <- gf_histogram(~log(Thumb), data = Fingers, binwidth = .05)
+  pinned <- pin_plot_values(original)$plot
+
+  expect_no_error(out <- suppressMessages(
+    show_cutoffs(pinned, middle(log(Thumb), .9))
+  ))
+  expect_equal(
+    cutoff_test_layers(out)[[1]]$data$xintercept,
+    cutoff_test_expected("middle", .9, log(Fingers$Thumb))
+  )
 })
 
-test_that("an x variable that is not in the plot's data is refused by name", {
-  v <- Fingers$Thumb
-  p <- gf_histogram(~v, bins = 10, fill = ~ middle(v, .95))
-  expect_error(suppressMessages(show_cutoffs(p)), "Can't find `v`", fixed = TRUE)
+test_that("facets repeat one whole-distribution plan in every panel", {
+  base <- gf_histogram(~Thumb | Sex, data = Fingers, binwidth = 5)
+  out <- suppressMessages(show_cutoffs(
+    base, middle(Thumb, .5), show_labels = TRUE
+  ))
+  expected <- cutoff_test_expected("middle", .5, Fingers$Thumb)
+  built <- suppressWarnings(ggplot2::layer_data(out, length(out$layers)))
+  by_panel <- lapply(split(built$xintercept, built$PANEL), sort)
+
+  expect_length(by_panel, length(unique(Fingers$Sex)))
+  for (anchors in by_panel) expect_equal(anchors, sort(expected))
+  expect_equal(cutoff_test_layers(out)[[1]]$data$xintercept, expected)
+  expect_true(suppressWarnings(cutoff_test_draw(out)))
 })
 
-test_that("a plot without cartesian axes says so instead of failing inside arithmetic", {
-  p <- gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~ middle(Thumb, .95)) +
-    ggplot2::coord_polar()
-  expect_error(suppressMessages(show_cutoffs(p)), "cartesian")
+test_that("global cutoff stems do not retrain free x facets", {
+  values <- data.frame(
+    x = 1:120,
+    panel = rep(c("low", "middle", "high"), each = 40)
+  )
+  base <- ggplot2::ggplot(values, ggplot2::aes(x = x)) +
+    ggplot2::geom_histogram(binwidth = 5) +
+    ggplot2::facet_wrap(~panel, scales = "free_x")
+  before <- lapply(
+    ggplot2::ggplot_build(base)$layout$panel_params,
+    function(panel) panel$x.range
+  )
+  out <- suppressMessages(show_cutoffs(
+    base, middle(x, .8), show_labels = TRUE
+  ))
+  after <- lapply(
+    ggplot2::ggplot_build(out)$layout$panel_params,
+    function(panel) panel$x.range
+  )
+
+  expect_equal(after, before)
+  expect_equal(
+    as.numeric(cutoff_test_layers(out)[[1]]$data$xintercept),
+    cutoff_test_expected("middle", .8, values$x)
+  )
+  grobs <- ggplot2::layer_grob(out, length(out$layers))
+  expect_true(all(vapply(
+    grobs[1:2], inherits, logical(1), "coursekata_cutoff_callouts"
+  )))
+  expect_s3_class(grobs[[3L]], "zeroGrob")
+  expect_true(suppressWarnings(cutoff_test_draw(out)))
 })
 
-# the markers are placed outside the position scale, so read them back as a fraction of the
-# panel, which is the one thing both a scaled and an unscaled position can be asked for
-npc_y <- function(p, tag, which = "y") {
-  built <- ggplot2::ggplot_build(p)
-  v <- built$data[[layer_index(p, tag)]][[which]]
-  if (inherits(v, "AsIs")) return(as.numeric(v))
-  yr <- built$layout$panel_params[[1]]$y.range
-  (as.numeric(v) - yr[[1]]) / diff(yr)
-}
+test_that("repeated calls retain stable stems and share one callout coordinator", {
+  base <- cutoff_test_histogram(1:100)
+  out <- suppressMessages(
+    base |>
+      show_cutoffs(middle(x, .8), show_labels = TRUE) |>
+      show_cutoffs(middle(x, .9), show_labels = TRUE) |>
+      show_cutoffs(middle(x, .98), show_labels = TRUE)
+  )
+  layers <- cutoff_test_layers(out)
 
-marker_tags <- c(
-  "cutoff_lower", "cutoff_upper", "cutoff_lower_marker", "cutoff_upper_marker",
-  "cutoff_lower_label", "cutoff_upper_label", "cutoff_lower_leader", "cutoff_upper_leader"
-)
-
-test_that("the markers point at the ticks without occupying the tick-label row", {
-  h <- hist_with(~ middle(Thumb, .95))
-  p <- suppressMessages(show_cutoffs(h))
-  expect_equal(p$coordinates$clip, "off")
-  yr <- plot_geometry(h)$y_range
-  zero <- (0 - yr[[1]]) / diff(yr)
-  for (tag in c("cutoff_lower_marker", "cutoff_upper_marker")) {
-    expect_gt(npc_y(p, tag), 0, label = tag)
-    expect_lt(npc_y(p, tag), zero, label = tag)
-  }
+  expect_length(layers, 3)
+  expect_identical(
+    unname(vapply(layers, function(layer) unique(layer$data$call_id), integer(1))),
+    1:3
+  )
+  expect_equal(
+    unname(lapply(layers, function(layer) layer$data$xintercept)),
+    list(
+      cutoff_test_expected("middle", .8, 1:100),
+      cutoff_test_expected("middle", .9, 1:100),
+      cutoff_test_expected("middle", .98, 1:100)
+    )
+  )
+  coordinators <- Filter(
+    function(layer) inherits(layer$geom, "GeomCutoffCallout"), out$layers
+  )
+  expect_length(coordinators, 1L)
+  expect_identical(
+    attr(coordinators[[1L]], "coursekata_layer"),
+    "distribution_cutoff_callouts"
+  )
+  expect_identical(coordinators[[1L]]$data$call_id, rep(1:3, each = 2L))
+  expect_no_warning(ggplot2::ggplotGrob(out))
 })
 
-test_that("a transformed count axis still gets its markers", {
-  h <- hist_with(~ middle(Thumb, .95)) + ggplot2::scale_y_sqrt()
-  expect_no_warning(p <- suppressMessages(show_cutoffs(h, labels = TRUE)))
-  expect_no_warning(built <- ggplot2::ggplot_build(p))
-  for (tag in marker_tags) {
-    d <- built$data[[layer_index(p, tag)]]
-    expect_true(all(is.finite(as.numeric(d$y))), label = paste(tag, "y"))
-    if (!is.null(d$yend)) {
-      expect_true(all(is.finite(as.numeric(d$yend))), label = paste(tag, "yend"))
+test_that("standalone cutoff layers are not collected as helper metadata", {
+  data <- data.frame(
+    xintercept = I(c(2, 8)), .value = c(2, 8),
+    .coursekata_protect = TRUE,
+    label = c("low", "high"), side = c("lower", "upper"), call_id = 1L
+  )
+  mapping <- ggplot2::aes(
+    xintercept = .data$xintercept, .value = .data$.value,
+    .coursekata_protect = .data$.coursekata_protect,
+    label = .data$label, side = .data$side, call_id = .data$call_id
+  )
+  plot <- cutoff_test_histogram() + geom_cutoff(
+    data = data, mapping = mapping, inherit.aes = FALSE
+  )
+
+  out <- update_cutoff_callout_layer(plot)
+
+  expect_identical(out, plot)
+  expect_identical(
+    layer_indices(out, "distribution_cutoff_callouts"), integer()
+  )
+})
+
+test_that("one to three overlays lay out at default and narrow sizes", {
+  base <- gf_histogram(~Thumb, data = Fingers, bins = 30)
+  once <- suppressMessages(show_cutoffs(
+    base, middle(Thumb, .999), show_labels = TRUE
+  ))
+  twice <- suppressMessages(show_cutoffs(
+    once, middle(Thumb, .95), color = "firebrick", show_labels = TRUE
+  ))
+  three <- suppressMessages(show_cutoffs(
+    twice, middle(Thumb, .80), color = "darkgreen", show_labels = TRUE
+  ))
+
+  for (n in seq_along(list(once, twice, three))) {
+    plot <- list(once, twice, three)[[n]]
+    for (flipped in c(FALSE, TRUE)) {
+      if (flipped) plot <- plot + ggplot2::coord_flip()
+      default <- cutoff_test_layout(plot)
+      narrow <- cutoff_test_layout(plot, width = 80, height = 60)
+      narrow_again <- cutoff_test_layout(plot, width = 80, height = 60)
+
+      expect_complete_cutoff_layout(default, 2L * n)
+      expect_complete_cutoff_layout(
+        narrow, 2L * n, allow_overlap = n == 3L
+      )
+      expect_equal(narrow$boxes, narrow_again$boxes)
+      expect_equal(narrow$routes, narrow_again$routes)
+
+      if (n > 1L) {
+        pairs <- utils::combn(seq_len(2L * n), 2L)
+        expect_identical(sum(apply(pairs, 2L, function(pair) {
+          cutoff_route_conflict(
+            default$routes[[pair[[1L]]]], default$routes[[pair[[2L]]]]
+          )
+        })), 0)
+      }
+      expect_identical(sum(vapply(seq_along(default$routes), function(i) {
+        sum(vapply(default$boxes[-i], function(box) {
+          cutoff_route_box_hits(default$routes[[i]], box)
+        }, numeric(1)))
+      }, numeric(1))), 0)
     }
   }
-})
 
-test_that("the markers land in the same place whichever way the count axis is drawn", {
-  h <- hist_with(~ middle(Thumb, .95))
-  plain <- suppressMessages(show_cutoffs(h, labels = TRUE))
-  rooted <- suppressMessages(show_cutoffs(h + ggplot2::scale_y_sqrt(), labels = TRUE))
-  for (tag in marker_tags) {
-    expect_equal(npc_y(rooted, tag), npc_y(plain, tag), label = tag)
-  }
-})
-
-test_that("an untransformed plot draws every marker where it always drew it", {
-  # the parity gate, stated as an assertion: an identity axis must be left alone, and
-  # these five numbers are what the committed snapshot was drawn from
-  h <- hist_with(~ middle(Thumb, .95))
-  yr <- plot_geometry(h)$y_range
-  top <- yr[[2]]
-  p <- suppressMessages(show_cutoffs(h, labels = TRUE))
-  at <- function(tag, which = "y") yr[[1]] + npc_y(p, tag, which) * diff(yr)
-  expect_equal(at("cutoff_lower_marker"), -top * 0.03)
-  expect_equal(at("cutoff_lower"), -top * 0.045)
-  expect_equal(at("cutoff_lower", "yend"), top * 0.20)
-  expect_equal(at("cutoff_lower_label"), top * 0.65)
-  expect_equal(at("cutoff_lower_leader", "yend"), top * 0.57)
-})
-
-test_that("a flipped plot measures its fractions along the axis the counts are drawn on", {
-  h <- hist_with(~ middle(Thumb, .95))
-  plain <- suppressMessages(show_cutoffs(h, labels = TRUE))
-  flipped <- suppressMessages(show_cutoffs(h + ggplot2::coord_flip(), labels = TRUE))
-  for (tag in marker_tags) {
-    expect_equal(npc_y(flipped, tag), npc_y(plain, tag), label = tag)
-  }
-})
-
-test_that("adding the markers leaves the histogram its own count axis", {
-  h <- hist_with(~ middle(Thumb, .95))
-  expect_equal(
-    plot_geometry(suppressMessages(show_cutoffs(h, labels = TRUE)))$y_range,
-    plot_geometry(h)$y_range
+  tiny <- cutoff_test_layout(
+    three + ggplot2::coord_flip(), width = 25, height = 20
   )
-  f <- h + ggplot2::coord_flip()
-  expect_equal(
-    plot_geometry(suppressMessages(show_cutoffs(f, labels = TRUE)))$x_range,
-    plot_geometry(f)$x_range
+  expect_complete_cutoff_layout(tiny, 6L, allow_overlap = TRUE)
+})
+
+test_that("adding calls does not mutate plots the caller retained", {
+  base <- cutoff_test_histogram(1:100)
+  once <- suppressMessages(show_cutoffs(
+    base, middle(x, .8), show_labels = TRUE
+  ))
+  once_layer_count <- length(once$layers)
+  once_stem_data <- cutoff_test_layers(once)[[1]]$data
+  once_callout_data <- Filter(
+    function(layer) inherits(layer$geom, "GeomCutoffCallout"), once$layers
+  )[[1]]$data
+  twice <- suppressMessages(show_cutoffs(
+    once, middle(x, .95), show_labels = TRUE
+  ))
+
+  expect_length(once$layers, once_layer_count)
+  expect_identical(cutoff_test_layers(once)[[1]]$data, once_stem_data)
+  expect_identical(
+    Filter(
+      function(layer) inherits(layer$geom, "GeomCutoffCallout"), once$layers
+    )[[1]]$data,
+    once_callout_data
+  )
+  expect_identical(
+    unname(vapply(
+      cutoff_test_layers(twice),
+      function(layer) unique(layer$data$call_id), integer(1)
+    )),
+    1:2
   )
 })
 
-test_that("drawing the cutoffs twice puts the second set on top of the first", {
-  h <- hist_with(~ middle(Thumb, .95))
-  twice <- suppressMessages(show_cutoffs(suppressMessages(show_cutoffs(h))))
-  ys <- unlist(lapply(twice$layers, function(l) {
-    if (identical(attr(l, "coursekata_layer"), "cutoff_lower_marker")) as.numeric(l$data$y)
-  }))
-  expect_length(ys, 2)
-  expect_equal(ys[[1]], ys[[2]])
+test_that("position transforms change drawing coordinates but not raw anchors", {
+  values <- 10^(0:9)
+  expected <- cutoff_test_expected("upper", .2, values)
+  base <- ggplot2::ggplot(data.frame(x = values), ggplot2::aes(x = x)) +
+    ggplot2::geom_histogram(bins = 10)
+  plain <- suppressMessages(show_cutoffs(
+    base, upper(x, .2), show_labels = TRUE
+  ))
+  logged <- suppressMessages(show_cutoffs(
+    base + ggplot2::scale_x_log10(), upper(x, .2), show_labels = TRUE
+  ))
+  reversed <- suppressMessages(show_cutoffs(
+    base + ggplot2::scale_x_reverse(), upper(x, .2), show_labels = TRUE
+  ))
+
+  for (plot in list(plain, logged, reversed)) {
+    expect_equal(cutoff_test_layers(plot)[[1]]$data$xintercept, expected)
+    expect_true(suppressWarnings(cutoff_test_draw(plot)))
+  }
+  expect_equal(
+    as.numeric(ggplot2::layer_data(logged, length(logged$layers))$xintercept),
+    expected
+  )
+  expect_equal(
+    as.numeric(ggplot2::layer_data(reversed, length(reversed$layers))$xintercept),
+    expected
+  )
+  expect_s3_class(ggplot2::layer_grob(logged, length(logged$layers))[[1]], "gTree")
+  expect_s3_class(ggplot2::layer_grob(reversed, length(reversed$layers))[[1]], "gTree")
 })
 
-test_that("unclipping keeps the coordinate system the caller chose", {
-  h <- hist_with(~ middle(Thumb, .95)) + ggplot2::coord_flip()
-  p <- suppressMessages(show_cutoffs(h))
-  expect_s3_class(p$coordinates, "CoordFlip")
-  expect_equal(p$coordinates$clip, "off")
+test_that("hard limits omit false boundary marks while zoom preserves raw anchors", {
+  base <- cutoff_test_histogram(1:10)
+  expected <- cutoff_test_expected("middle", .5, 1:10)
+  censored <- suppressMessages(show_cutoffs(
+    base + ggplot2::scale_x_continuous(limits = c(4, 7)),
+    middle(x, .5), show_labels = TRUE
+  ))
+  squished <- suppressMessages(show_cutoffs(
+    base + ggplot2::scale_x_continuous(
+      limits = c(4, 7), oob = scales::squish
+    ),
+    middle(x, .5), show_labels = TRUE
+  ))
+  zoomed <- suppressMessages(show_cutoffs(
+    base + ggplot2::coord_cartesian(xlim = c(4, 7)),
+    middle(x, .5), show_labels = TRUE
+  ))
+
+  for (plot in list(censored, squished, zoomed)) {
+    expect_equal(cutoff_test_layers(plot)[[1]]$data$xintercept, expected)
+  }
+  expect_equal(
+    as.numeric(suppressWarnings(
+      ggplot2::layer_data(censored, length(censored$layers))$xintercept
+    )),
+    expected
+  )
+  expect_equal(
+    as.numeric(suppressWarnings(
+      ggplot2::layer_data(squished, length(squished$layers))$xintercept
+    )),
+    expected
+  )
+  expect_s3_class(
+    suppressWarnings(ggplot2::layer_grob(censored, length(censored$layers))[[1]]),
+    "zeroGrob"
+  )
+  expect_s3_class(
+    suppressWarnings(ggplot2::layer_grob(squished, length(squished$layers))[[1]]),
+    "zeroGrob"
+  )
+  expect_equal(
+    suppressWarnings(ggplot2::layer_data(zoomed, length(zoomed$layers))$xintercept),
+    expected
+  )
+  expect_identical(zoomed$coordinates$limits$x, c(4, 7))
+  expect_true(suppressWarnings(cutoff_test_draw(censored)))
+  expect_true(suppressWarnings(cutoff_test_draw(squished)))
+  expect_true(suppressWarnings(cutoff_test_draw(zoomed)))
+
+  guide_warnings <- character()
+  withCallingHandlers(
+    ggplot2::ggplotGrob(squished),
+    warning = function(condition) {
+      guide_warnings <<- c(guide_warnings, conditionMessage(condition))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_no_match(guide_warnings, "Position guide")
 })
 
-test_that("unclipping keeps the range the caller zoomed to", {
-  h <- hist_with(~ middle(Thumb, .95)) + ggplot2::coord_cartesian(xlim = c(50, 70))
-  before <- plot_geometry(h)$x_range
-  p <- suppressMessages(show_cutoffs(h))
-  expect_equal(before, c(49, 71))
-  expect_equal(plot_geometry(p)$x_range, before)
+test_that("show_cutoffs leaves caller guide choices under ggplot2 ownership", {
+  base <- cutoff_test_histogram()
+  caller <- ggplot2::guide_axis(angle = 17)
+  composed <- suppressMessages(show_cutoffs(
+    base + ggplot2::scale_x_continuous(guide = caller),
+    middle(x, .5)
+  ))
+  composed_guide <- composed$scales$get_scales("x")$guide
+  expect_s3_class(composed_guide, "GuideAxis")
+  expect_identical(composed_guide$params$angle, 17)
+
+  without_numeric_axis <- suppressMessages(show_cutoffs(
+    base + ggplot2::guides(x = "none"), middle(x, .5)
+  ))
+  expect_identical(without_numeric_axis$guides$guides$x, "none")
+  expect_no_error(ggplot2::ggplotGrob(without_numeric_axis))
+
+  replaced <- suppressMessages(composed + ggplot2::scale_x_continuous())
+  expect_s3_class(replaced$scales$get_scales("x")$guide, "waiver")
+
+  suppressed_later <- composed + ggplot2::guides(x = "none")
+  expect_identical(suppressed_later$guides$guides$x, "none")
+  expect_no_error(ggplot2::ggplotGrob(suppressed_later))
 })
 
-test_that("show_cutoffs snapshot", {
+test_that("coord_flip works before or after show_cutoffs", {
+  base <- cutoff_test_histogram()
+  before <- suppressMessages(show_cutoffs(
+    base + ggplot2::coord_flip(), middle(x, .5), show_labels = TRUE
+  ))
+  after <- suppressMessages(show_cutoffs(
+    base, middle(x, .5), show_labels = TRUE
+  ) + ggplot2::coord_flip())
+
+  expect_s3_class(before$coordinates, "CoordFlip")
+  expect_s3_class(after$coordinates, "CoordFlip")
+  expect_equal(
+    cutoff_test_layers(before)[[1]]$data$xintercept,
+    cutoff_test_layers(after)[[1]]$data$xintercept
+  )
+  expect_no_warning(ggplot2::ggplotGrob(before))
+  expect_no_warning(ggplot2::ggplotGrob(after))
+})
+
+test_that("a top primary x guide remains the caller's ordinary axis", {
+  out <- suppressMessages(show_cutoffs(
+    cutoff_test_histogram() + ggplot2::scale_x_continuous(position = "top"),
+    middle(x, .5), show_labels = TRUE
+  ))
+  scale <- out$scales$get_scales("x")
+
+  expect_identical(scale$position, "top")
+  expect_s3_class(scale$guide, "waiver")
+  expect_true(suppressWarnings(cutoff_test_draw(out)))
+})
+
+test_that("show_cutoffs callout snapshot", {
   skip_if_not_installed("vdiffr")
-  p <- gf_histogram(~Thumb, data = Fingers, fill = ~ middle(Thumb, .95), bins = 30)
-  suppressMessages(show_cutoffs(p)) %>%
+  plot <- gf_histogram(
+    ~Thumb, data = Fingers, fill = ~middle(Thumb, .95), bins = 30
+  )
+
+  suppressMessages(show_cutoffs(plot, show_labels = TRUE)) |>
     expect_doppelganger("show_cutoffs-middle-95")
 })
 
-# --- an explicit `part` argument -------------------------------------------------
-
-test_that("an explicit part computes the same marker the fill it overrides would have", {
-  fill_based <- suppressMessages(show_cutoffs(hist_with(~ middle(Thumb, .95))))
-  part_based <- suppressMessages(show_cutoffs(hist_with(NULL), middle(Thumb, .95)))
-  # MUTATION: the explicit path computing from different values than the fill path
-  expect_equal(
-    part_based$layers[[layer_index(part_based, "cutoff_lower_marker")]]$data$x,
-    fill_based$layers[[layer_index(fill_based, "cutoff_lower_marker")]]$data$x
-  )
-})
-
-test_that("an explicit part overrides a mismatched fill instead of deferring to it", {
-  h <- hist_with(~ middle(Thumb, .95))
-  fill_based <- suppressMessages(show_cutoffs(h))
-  overridden <- suppressMessages(show_cutoffs(h, middle(Thumb, .99)))
-  # MUTATION: the override being ignored -- the markers would land on top of the fill's
-  expect_lt(
-    overridden$layers[[layer_index(overridden, "cutoff_lower_marker")]]$data$x,
-    fill_based$layers[[layer_index(fill_based, "cutoff_lower_marker")]]$data$x
-  )
-  expect_gt(
-    overridden$layers[[layer_index(overridden, "cutoff_upper_marker")]]$data$x,
-    fill_based$layers[[layer_index(fill_based, "cutoff_upper_marker")]]$data$x
-  )
-})
-
-test_that("show_cutoffs(hist, \"red\") and a symbol holding the same string both refuse by name", {
-  h <- hist_with(~ middle(Thumb, .95))
-  # MUTATION: checking only for a string literal, which misses the second and third calls
-  expect_error(show_cutoffs(h, "red"), "distribution part")
-  col <- "red"
-  expect_error(show_cutoffs(h, col), "distribution part")
-  expect_error(show_cutoffs(h, Thumb), "distribution part")
-})
-
-test_that("an explicit part naming a variable the plot's data has not got names both", {
-  hist_of_b1 <- gf_histogram(~b1, data = data.frame(b1 = 1:20), bins = 5)
-  # MUTATION: a raw `object 'nonexistent' not found` from eval_tidy, naming neither variable
-  err <- rlang::catch_cnd(show_cutoffs(hist_of_b1, middle(nonexistent, .95)))
-  expect_match(conditionMessage(err), "b1")
-  expect_match(conditionMessage(err), "nonexistent")
-})
-
-test_that("a part naming a variable the plot does not put on x is refused by its axis", {
-  p <- gf_point(Thumb ~ Height, data = Fingers)
-  # MUTATION: the x-agreement check being skipped
-  expect_error(show_cutoffs(p, middle(Thumb, .95)), "x axis")
-})
-
-test_that("a part matching x on a non-distribution plot is still refused, by its shape", {
-  p <- gf_point(Thumb ~ Height, data = Fingers)
-  # MUTATION: the distribution-shape guard omitted, letting quantile markers hang under a
-  # scatterplot whenever the part happens to name the variable already on x
-  expect_error(show_cutoffs(p, middle(Height, .95)), "marks cutoffs on a distribution")
-})
-
-test_that("an explicit part still works on the package's own distribution geom", {
-  p <- gf_squareplot(~Thumb, data = Fingers)
-  # MUTATION: the distribution geom list omitting GeomSquareplot
-  expect_s3_class(suppressMessages(show_cutoffs(p, middle(Thumb, .95))), "ggplot")
-})
-
-test_that("a plot that draws no layers at all is refused, not crashed on", {
-  # MUTATION: indexing plot$layers[[1]] with no length guard, which throws a
-  # raw "subscript out of bounds" instead of the package's own refusal
-  p <- ggplot2::ggplot(Fingers, ggplot2::aes(x = Thumb, fill = middle(Thumb, .95)))
-  expect_error(show_cutoffs(p), "marks cutoffs on a distribution")
-})
-
-# --- stacking ---------------------------------------------------------------------
-
-test_that("stacking two calls keeps both complete sets of markers", {
-  base <- hist_with(~ middle(Thumb, .95))
-  twice <- suppressMessages(show_cutoffs(suppressMessages(show_cutoffs(base)), middle(Thumb, .99)))
-  idx <- layer_indices(twice, "cutoff_lower_marker")
-  # MUTATION: stacking dropping a set, or the second call re-reading the first's plan
-  expect_length(idx, 2)
-  xs <- vapply(idx, function(i) twice$layers[[i]]$data$x, numeric(1))
-  expect_equal(sort(xs), sort(c(
-    cutoff_plan(list(func = "middle", prop = .95, greedy = TRUE), Fingers$Thumb)$lower,
-    cutoff_plan(list(func = "middle", prop = .99, greedy = TRUE), Fingers$Thumb)$lower
-  )))
-})
-
-test_that("a second stacked call's label and leader land where a solo call would put them", {
-  base <- hist_with(~ middle(Thumb, .95))
-  solo <- suppressMessages(show_cutoffs(base, middle(Thumb, .99), labels = TRUE))
-  stacked <- suppressWarnings(suppressMessages(show_cutoffs(
-    suppressMessages(show_cutoffs(base, labels = TRUE)),
-    middle(Thumb, .99), labels = TRUE
-  )))
-
-  solo_label <- solo$layers[[layer_index(solo, "cutoff_lower_label")]]
-  stacked_label <- stacked$layers[[layer_indices(stacked, "cutoff_lower_label")[[2]]]]
-  # MUTATION: the rebuilt geometry moving label_x or label_y between a solo and a stacked call
-  expect_equal(stacked_label$data$x, solo_label$data$x)
-  expect_equal(stacked_label$data$y, solo_label$data$y)
-
-  solo_leader <- solo$layers[[layer_index(solo, "cutoff_lower_leader")]]
-  stacked_leader <- stacked$layers[[layer_indices(stacked, "cutoff_lower_leader")[[2]]]]
-  expect_equal(stacked_leader$data$x, solo_leader$data$x)
-  expect_equal(stacked_leader$data$xend, solo_leader$data$xend)
-  expect_equal(stacked_leader$data$y, solo_leader$data$y)
-  expect_equal(stacked_leader$data$yend, solo_leader$data$yend)
-
-  # the marker's npc y is a fixed fraction of the panel and is unaffected by the rebuild
-  expect_equal(npc_y(stacked, "cutoff_lower_marker"), npc_y(solo, "cutoff_lower_marker"))
-})
-
-test_that("three stacked calls wrap the coord exactly once and leave clip off", {
-  base <- hist_with(~ middle(Thumb, .95))
-  thrice <- suppressWarnings(suppressMessages(show_cutoffs(
-    suppressMessages(show_cutoffs(suppressMessages(show_cutoffs(base)), middle(Thumb, .99))),
-    middle(Thumb, .90)
-  )))
-  expect_equal(thrice$coordinates$clip, "off")
-  parent <- get("super", envir = thrice$coordinates)()
-  # MUTATION: the ggproto chain deepening on every stacked call instead of staying one deep
-  expect_false(isTRUE(attr(parent, "coursekata_cutoff_unclipped")))
-})
-
-test_that("two labeled calls warn that their labels overlap, and still return a plot", {
-  base <- hist_with(~ middle(Thumb, .95))
-  once <- suppressMessages(show_cutoffs(base, labels = TRUE))
-  # MUTATION: the warning missing, or escalated to an abort that drops the second set
-  expect_warning(
-    twice <- suppressMessages(show_cutoffs(once, middle(Thumb, .99), labels = TRUE)),
-    class = "coursekata_cutoff_labels_overlap"
-  )
-  expect_s3_class(twice, "ggplot")
-})
-
-test_that("one labeled call does not warn", {
-  base <- hist_with(~ middle(Thumb, .95))
-  # MUTATION: an over-eager warning firing on the documented single-call default
-  expect_no_warning(suppressMessages(show_cutoffs(base, labels = TRUE)))
-})
-
-test_that("show_cutoffs stacking snapshot", {
+test_that("show_cutoffs stacked callout snapshots", {
   skip_if_not_installed("vdiffr")
-  p <- gf_histogram(~Thumb, data = Fingers, bins = 30)
-  suppressWarnings(suppressMessages(
-    p %>%
-      show_cutoffs(middle(Thumb, .999)) %>%
-      show_cutoffs(middle(Thumb, .95)) %>%
-      show_cutoffs(middle(Thumb, .80), labels = TRUE)
-  )) %>%
-    expect_doppelganger("show_cutoffs-stacked-three-levels")
-})
-
-# --- StatCutoff ---------------------------------------------------------------------
-
-test_that("StatCutoff's built xintercepts equal cutoff_plan()'s for all five distribution parts", {
-  values <- Fingers$Thumb
-  for (fn in c("middle", "tails", "outer", "upper", "lower")) {
-    prop <- if (fn %in% c("upper", "lower")) .05 else .95
-    plan <- cutoff_plan(list(func = fn, prop = prop, greedy = TRUE), values)
-    expected <- c(plan$lower, plan$upper)
-    expected <- expected[!is.na(expected)]
-
-    built <- StatCutoff$compute_panel(data.frame(x = values), scales = NULL, func = fn, prop = prop)
-    # MUTATION: the stat and cutoff_plan() drifting apart for any one of the five parts
-    expect_equal(sort(built$xintercept), sort(expected), label = fn)
-  }
-})
-
-test_that("StatCutoff computes per panel while show_cutoffs repeats one plan across panels", {
-  built_stat <- ggplot2::ggplot_build(
-    ggplot2::ggplot(Fingers, ggplot2::aes(x = Thumb)) +
-      ggplot2::layer(
-        stat = StatCutoff, geom = ggplot2::GeomVline, position = "identity",
-        params = list(func = "middle", prop = .5, na.rm = TRUE)
-      ) +
-      ggplot2::facet_wrap(~Sex)
+  plot <- suppressMessages(
+    gf_histogram(~Thumb, data = Fingers, bins = 30) |>
+      show_cutoffs(middle(Thumb, .999), show_labels = TRUE) |>
+      show_cutoffs(
+        middle(Thumb, .95), color = "firebrick", show_labels = TRUE
+      ) |>
+      show_cutoffs(
+        middle(Thumb, .80), color = "darkgreen", show_labels = TRUE
+      )
   )
-  dat <- built_stat$data[[1]]
-  panel_cutoffs <- unique(lapply(split(dat$xintercept, dat$PANEL), sort))
-  # MUTATION: the stat aggregating across panels instead of per panel, becoming one repeated plan
-  expect_gt(length(panel_cutoffs), 1)
 
-  h <- gf_histogram(~Thumb | Sex, data = Fingers, binwidth = 5, fill = ~ middle(Thumb, .5))
-  p <- suppressMessages(show_cutoffs(h))
-  built_show <- ggplot2::ggplot_build(p)
-  marker_x <- built_show$data[[layer_index(p, "cutoff_lower_marker")]]$x
-  # MUTATION: show_cutoffs() accidentally computing per panel instead of from the whole data
-  expect_length(unique(marker_x), 1)
-})
-
-test_that("StatCutoff refuses a part it does not have and a proportion that is not one", {
-  # MUTATION: no `setup_params`. `show_cutoffs()` reaches `cutoff_plan()`
-  # through `cutoff_spec()`, which reads a call and can refuse a name it does
-  # not know; this route is handed plain values by someone writing a layer by
-  # hand and nothing was reading them. Measured before the check:
-  # `func = "bogus"` fell through the switch and marked a lower cutoff, and
-  # `prop = 2` returned an "upper" cutoff sitting on the smallest observation.
-  # Both drew a mark indistinguishable from a real one.
-  marked <- function(...) {
-    ggplot2::ggplot_build(
-      gf_histogram(~Thumb, data = Fingers, binwidth = 5) +
-        ggplot2::layer(
-          stat = StatCutoff, geom = ggplot2::GeomVline, position = "identity",
-          params = list(na.rm = TRUE, ...)
-        )
-    )
-  }
-
-  expect_error(marked(func = "bogus"), "names the part of the distribution")
-  expect_error(marked(func = 42), "names the part of the distribution")
-  expect_error(marked(prop = 2), "proportion")
-  expect_error(marked(prop = -1), "proportion")
-  expect_error(marked(prop = c(.1, .2)), "proportion")
-  expect_no_error(marked(func = "upper", prop = .05))
-})
-
-test_that("a cutoff marks the reader's own upper tail on a scale that runs backwards", {
-  # MUTATION: planning from `data$x` as it arrives. A cutoff is a quantile;
-  # quantiles survive a transformation that increases and turn over under one
-  # that decreases. Measured before the fix, an upper cutoff on 1:10 under
-  # `scale_x_reverse()` landed on 2 -- the reader's LOWER tail, drawn with
-  # every appearance of being the upper one.
-  d <- data.frame(x = 1:10)
-  plain <- ggplot2::ggplot(d, ggplot2::aes(x = x)) + ggplot2::geom_histogram(bins = 10)
-  cut <- function(...) {
-    ggplot2::layer(
-      stat = StatCutoff, geom = ggplot2::GeomVline, position = "identity",
-      params = list(na.rm = TRUE, ...)
-    )
-  }
-  drawn <- function(p) ggplot2::ggplot_build(p)$data[[2]]$xintercept
-
-  # forward: the upper 5% of 1:10 is the top of the range
-  expect_equal(drawn(plain + cut(func = "upper", prop = .05)), 10)
-  # reversed: the same request marks the same VALUE, which the reversed scale
-  # stores negated -- not the value at the other end of the data
-  expect_equal(drawn(plain + cut(func = "upper", prop = .05) + ggplot2::scale_x_reverse()), -10)
-  expect_equal(drawn(plain + cut(func = "lower", prop = .05) + ggplot2::scale_x_reverse()), -1)
+  expect_doppelganger(plot, "show_cutoffs-stacked-three-levels")
+  expect_doppelganger(
+    plot + ggplot2::coord_flip(),
+    "show_cutoffs-stacked-three-levels-flipped"
+  )
 })

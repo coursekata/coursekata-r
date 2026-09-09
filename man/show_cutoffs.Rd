@@ -4,10 +4,18 @@
 \alias{show_cutoffs}
 \title{Add Cutoff Markers to a Distribution}
 \usage{
-show_cutoffs(plot, part, color = "#1e3a8a", size = 4, labels = FALSE)
+show_cutoffs(
+  object = NULL,
+  part,
+  color = "#1e3a8a",
+  size = 4,
+  show_labels = FALSE,
+  plot = lifecycle::deprecated(),
+  labels = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{plot}{A ggplot of one distribution -- a histogram, bar chart, density,
+\item{object}{A ggplot of one distribution -- a histogram, bar chart, density,
 dotplot, or \code{\link[=gf_squareplot]{gf_squareplot()}}.}
 
 \item{part}{A distribution part, e.g. \code{middle(Thumb, .95)}. Optional: without
@@ -17,7 +25,11 @@ it, the part is read off the plot's fill aesthetic.}
 
 \item{size}{Marker size. Default \code{4}.}
 
-\item{labels}{Whether to annotate the cutoffs. Default \code{FALSE}.}
+\item{show_labels}{Whether to annotate the cutoffs. Default \code{FALSE}.}
+
+\item{plot}{Deprecated alias for \code{object}.}
+
+\item{labels}{Deprecated alias for \code{show_labels}.}
 }
 \value{
 A ggplot object with cutoff markers and optional labels.
@@ -26,20 +38,18 @@ A ggplot object with cutoff markers and optional labels.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Adds downward-pointing triangle markers at the empirical quantile cutoffs of a
-distribution part -- \code{middle()}, \code{tails()}, \code{upper()}, \code{lower()}, or \code{outer()}.
+Adds empirical quantile cutoffs for a distribution part -- \code{middle()},
+\code{tails()}, \code{upper()}, \code{lower()}, or \code{outer()}. Short dashed stems end in
+downward triangles that touch the numeric axis. Optional callouts are drawn
+in the data panel. Repeated labelled calls are measured and placed together.
+Their boxes stay separate when the panel has room, and their routed leaders
+remain tied to the exact cutoffs.
+
 By default the part is read off the plot's fill aesthetic, e.g.
 \code{fill = ~middle(Thumb, .95)}. Passing \code{part} overrides that reading: it marks
 whatever part is named there instead, and the fill (if any) is ignored --
 marking the 99\% cutoffs on a plot shaded for the 95\% is a deliberate, lossless
 override, not a mismatch.
-
-Calling \code{show_cutoffs()} more than once on the same plot stacks a second,
-independent set of markers on top of the first; nothing about the plot or the
-first call needs to change for the second one to land correctly. A second
-\code{labels = TRUE} call, though, draws its labels at the same height as the
-first's and the two overlap -- \code{show_cutoffs()} warns about that and draws
-anyway, because the picture is still the one asked for, just harder to read.
 
 \code{show_cutoffs()} refuses a plot whose first layer does not draw a distribution
 (a scatterplot, for instance) and, when \code{part} is given explicitly, a \code{part}
@@ -47,13 +57,14 @@ that names a variable other than the one the plot puts on x.
 }
 \examples{
 gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) \%>\%
-  show_cutoffs(labels = TRUE)
+  show_cutoffs(show_labels = TRUE)
 
 # an explicit part overrides the fill instead of requiring it to match
 gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) \%>\%
   show_cutoffs(middle(Thumb, .99))
 }
 \seealso{
-\link{StatCutoff}, a \code{ggplot2::Stat} that computes the same rule per
-panel, for building a marker into a plot with \code{ggplot2::layer()} directly.
+\code{\link[=stat_cutoff]{stat_cutoff()}} computes the same rule per panel; \code{\link[=geom_cutoff]{geom_cutoff()}}
+is the lower-level drawing component. \code{\link[=guide_cutoff]{guide_cutoff()}} can place cutoff
+anchors in a position guide instead.
 }

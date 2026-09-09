@@ -17,7 +17,10 @@ position_guide_state <- function(plot, aesthetic = "x") {
   stopifnot(aesthetic %in% c("x", "y"))
 
   out <- plot
-  out$scales <- plot$scales$clone()
+  # ggplot2 4 plots are S7 objects. Replace their mutable containers through
+  # the property interface; `$<-` composes a component as though it had been
+  # added with `+`, which is not a detached copy.
+  out@scales <- plot$scales$clone()
   scale <- out$scales$get_scales(aesthetic)
   if (is.null(scale)) {
     scale <- switch(aesthetic,
@@ -38,7 +41,16 @@ position_guide_state <- function(plot, aesthetic = "x") {
 
   if (from_override) {
     overrides[physical] <- NULL
-    out$guides <- ggplot2::ggproto(NULL, out$guides, guides = overrides)
+    # A Guides object produced by repeated `+ guides()` calls may have one or
+    # more instance layers above the Guides prototype. Cloning from the
+    # instance itself creates a self-referential parent chain, so walk to the
+    # prototype before installing the copied override list.
+    guides_super <- out$guides
+    while (is.function(guides_super$super)) {
+      guides_super <- guides_super$super()
+    }
+    detached <- ggplot2::ggproto(NULL, guides_super, guides = overrides)
+    out@guides <- detached
   }
 
   list(
@@ -133,11 +145,14 @@ order_coursekata_position_guides <- function(guides) {
 #' @param children The guide children, already ordered.
 #' @param template The resolved guide before the new child was added.
 #'
-#' @return A `GuideAxisStack`.
+#' @return The one child directly, or a `GuideAxisStack` for multiple children.
 #' @noRd
 new_position_guide_stack <- function(children, template) {
   if (length(children) == 0L) {
     return("none")
+  }
+  if (length(children) == 1L) {
+    return(clone_position_guide(children[[1L]]))
   }
 
   stack_params <- if (inherits(template, "GuideAxisStack")) template$params else NULL
@@ -179,22 +194,6 @@ new_position_guide_stack <- function(children, template) {
   stack
 }
 
-#' Add one CourseKata child to a mapped position scale
-#'
-#' @param plot A ggplot object.
-#' @param guide A `GuideDgp` or `GuideCutoff` instance.
-#' @param aesthetic The mapped position aesthetic.
-#'
-#' @return A copied ggplot with one rebuilt scale-owned guide stack.
-#' @noRd
-add_position_guide_child <- function(plot, guide, aesthetic = "x") {
-  state <- position_guide_state(plot, aesthetic)
-  children <- position_guide_children(state$guide)
-  children <- order_coursekata_position_guides(c(children, list(guide)))
-  state$scale$guide <- new_position_guide_stack(children, state$guide)
-  state$plot
-}
-
 #' Find CourseKata guide children recursively
 #'
 #' @param guide A guide object, guide name, or secondary-axis object.
@@ -216,6 +215,26 @@ position_guide_matches <- function(guide, class, role = NULL) {
   if (!inherits(guide, class)) return(list())
   if (!is.null(role) && !identical(guide$params$role, role)) return(list())
   list(guide)
+}
+
+#' Choose the next stable cutoff-call identifier
+#'
+#' @param plot A ggplot object.
+#' @param aesthetic The mapped position aesthetic.
+#'
+#' @return A positive integer.
+#' @noRd
+next_cutoff_call_id <- function(plot, aesthetic = "x") {
+  layers <- plot$layers[layer_indices(plot, "distribution_cutoff")]
+  layer_ids <- unlist(lapply(layers, function(layer) {
+    data <- layer$data
+    if (!is.data.frame(data) || !"call_id" %in% names(data)) {
+      return(integer())
+    }
+    unique(as.integer(data$call_id[is.finite(data$call_id)]))
+  }), use.names = FALSE)
+  if (length(layer_ids) == 0L) return(1L)
+  as.integer(max(layer_ids) + 1L)
 }
 
 #' Resolve a position guide's requested side

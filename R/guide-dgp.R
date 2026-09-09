@@ -48,7 +48,7 @@ guide_dgp <- function(value = 0, role = c("population", "estimate"),
 
   display <- list(label = label, equation = equation, title = heading)
   for (name in names(display)) {
-    if (!dgp_is_label(display[[name]])) {
+    if (!is_position_guide_label(display[[name]])) {
       abort(glue("`guide_dgp()`'s `{name}` must be one label or `NULL`"))
     }
   }
@@ -91,16 +91,9 @@ GuideDgp <- ggplot2::ggproto(
   hashables = rlang::exprs(title, key$.value, key$.label, role, name),
   extract_key = function(scale, aesthetic, value, label, role, colour, shape,
                          size, linewidth, ...) {
-    transformation <- scale$scale$get_transformation()
-    transformed <- suppressWarnings(transformation$transform(value))
-    scale_limits <- scale$scale$get_limits()
-    oob_value <- suppressWarnings(scale$scale$oob(transformed, range = scale_limits))
-    unchanged <- length(oob_value) == 1L && isTRUE(all.equal(
-      as.numeric(oob_value), as.numeric(transformed), check.attributes = FALSE
-    ))
-    viewport <- range(scale$continuous_range, finite = TRUE)
-    visible <- unchanged && is.finite(transformed) && length(viewport) == 2L &&
-      transformed >= viewport[[1L]] && transformed <= viewport[[2L]]
+    anchor <- position_anchor_key(scale, value)
+    transformed <- anchor$transformed
+    visible <- anchor$visible[[1L]]
 
     key <- data.frame(if (visible) transformed else NA_real_)
     names(key) <- aesthetic
@@ -144,7 +137,7 @@ GuideDgp <- ggplot2::ggproto(
     if (!identical(params$role, "population") || !isTRUE(key$.visible[[1L]])) {
       return(grid::nullGrob())
     }
-    dgp_marker_grob(
+    position_anchor_grob(
       at = key[[params$aes]][[1L]], position = params$position,
       shape = params$shape, size = params$size, colour = params$colour,
       linewidth = params$linewidth
@@ -160,7 +153,7 @@ GuideDgp <- ggplot2::ggproto(
     if (inherits(element, "element_blank")) return(list(grid::nullGrob()))
     element$colour <- params$colour
     element$face <- "bold"
-    just <- dgp_inward_justification(at)
+    just <- position_anchor_justification(at)
 
     grob <- if (isTRUE(params$vertical)) {
       ggplot2::element_grob(
@@ -222,17 +215,6 @@ dgp_role_defaults <- function(role) {
   }
 }
 
-#' Whether an object can be drawn as one guide label
-#'
-#' @param x An object supplied as a label.
-#'
-#' @return `TRUE` or `FALSE`.
-#' @noRd
-dgp_is_label <- function(x) {
-  is.null(x) || (is.character(x) && length(x) == 1L && !is.na(x)) ||
-    (is.expression(x) && length(x) == 1L) || is.language(x)
-}
-
 #' Combine a DGP heading and equation into one measured axis title
 #'
 #' Position-axis titles are drawn once for the complete plot, including under
@@ -249,79 +231,6 @@ dgp_display_title <- function(heading, equation) {
   heading <- if (is.expression(heading)) heading[[1L]] else heading
   equation <- if (is.expression(equation)) equation[[1L]] else equation
   as.expression(call("atop", call("bold", heading), call("bold", equation)))
-}
-
-#' Put an anchored label's box inside the guide viewport
-#'
-#' @param at A trained position from zero to one.
-#'
-#' @return A justification value.
-#' @noRd
-dgp_inward_justification <- function(at) {
-  if (at <= 0.1) return(0)
-  if (at >= 0.9) return(1)
-  0.5
-}
-
-#' Draw a population triangle pointing toward its panel
-#'
-#' @param at Trained position along the guide.
-#' @param position Guide side.
-#' @param shape Point shape, or a waiver for a directional triangle.
-#' @param size,colour,linewidth Marker styling.
-#'
-#' @return A grid grob.
-#' @noRd
-dgp_marker_grob <- function(at, position, shape, size, colour, linewidth) {
-  if (!inherits(shape, "waiver")) {
-    if (is.na(shape)) return(grid::nullGrob())
-    x <- if (position %in% c("top", "bottom")) at else c(left = 0, right = 1)[[position]]
-    y <- if (position %in% c("left", "right")) at else c(top = 1, bottom = 0)[[position]]
-    return(grid::pointsGrob(
-      x = grid::unit(x, "npc"), y = grid::unit(y, "npc"), pch = shape,
-      size = grid::unit(size, "mm"),
-      gp = grid::gpar(col = colour, fill = colour, lwd = linewidth * 2.845276)
-    ))
-  }
-
-  geometry <- switch(position,
-    top = list(
-      x = c(0.5, 0, 1), y = c(0, 1, 1),
-      vp = grid::viewport(
-        x = grid::unit(at, "npc"), y = grid::unit(1, "npc"),
-        width = grid::unit(size, "mm"), height = grid::unit(size, "mm"),
-        just = c(0.5, 0)
-      )
-    ),
-    bottom = list(
-      x = c(0.5, 0, 1), y = c(1, 0, 0),
-      vp = grid::viewport(
-        x = grid::unit(at, "npc"), y = grid::unit(0, "npc"),
-        width = grid::unit(size, "mm"), height = grid::unit(size, "mm"),
-        just = c(0.5, 1)
-      )
-    ),
-    left = list(
-      x = c(1, 0, 0), y = c(0.5, 0, 1),
-      vp = grid::viewport(
-        x = grid::unit(0, "npc"), y = grid::unit(at, "npc"),
-        width = grid::unit(size, "mm"), height = grid::unit(size, "mm"),
-        just = c(1, 0.5)
-      )
-    ),
-    right = list(
-      x = c(0, 1, 1), y = c(0.5, 0, 1),
-      vp = grid::viewport(
-        x = grid::unit(1, "npc"), y = grid::unit(at, "npc"),
-        width = grid::unit(size, "mm"), height = grid::unit(size, "mm"),
-        just = c(0, 0.5)
-      )
-    )
-  )
-  grid::polygonGrob(
-    x = geometry$x, y = geometry$y, default.units = "npc", vp = geometry$vp,
-    gp = grid::gpar(col = colour, fill = colour, lwd = linewidth * 2.845276)
-  )
 }
 
 #' Mark a DGP guide for the high-level upright-only teaching composition
@@ -342,7 +251,7 @@ dgp_upright_guide <- function(guide) {
 #' @noRd
 dgp_null_theme <- function() {
   ggplot2::theme(
-    axis.text.x = ggplot2::element_text(size = 5 * 2.845276, face = "bold"),
-    axis.text.y = ggplot2::element_text(size = 5 * 2.845276, face = "bold")
+    axis.text.x = ggplot2::element_text(size = 5 * ggplot2::.pt, face = "bold"),
+    axis.text.y = ggplot2::element_text(size = 5 * ggplot2::.pt, face = "bold")
   )
 }
