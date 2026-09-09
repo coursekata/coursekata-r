@@ -118,8 +118,8 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
   stat <- switch(im$kind,
     line = ggplot2::StatSmooth,
     segment = ggplot2::StatSummary,
-    hline = stat_dist_mean("y"),
-    vline = stat_dist_mean("x")
+    hline = new_stat_dist_mean("y"),
+    vline = new_stat_dist_mean("x")
   )
   params <- switch(im$kind,
     # `formula` is named here, not left for StatSmooth's own default, so that

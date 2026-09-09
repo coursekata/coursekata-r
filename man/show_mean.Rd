@@ -4,16 +4,24 @@
 \alias{show_mean}
 \title{Mark a Distribution's Mean}
 \usage{
-show_mean(plot, color = "#E60000", linetype = "longdash", linewidth = 0.7)
+show_mean(
+  object = NULL,
+  color = "#E60000",
+  linetype = "longdash",
+  linewidth = 0.7,
+  plot = lifecycle::deprecated()
+)
 }
 \arguments{
-\item{plot}{A plot of one distribution.}
+\item{object}{A plot of one distribution.}
 
 \item{color}{Line color. Default \code{"#E60000"}.}
 
 \item{linetype}{Line type. Default \code{"longdash"}.}
 
 \item{linewidth}{Line width. Default \code{0.7}.}
+
+\item{plot}{Deprecated alias for \code{object}.}
 }
 \value{
 The plot, with a tagged mean line added.
@@ -34,10 +42,6 @@ A plot with a variable on each axis is refused. The middle of a
 two-variable plot is a model, and \code{\link[=gf_model]{gf_model()}} draws models -- an hline at
 the mean of the outcome for the empty model. Averaging the x variable of a
 scatterplot would draw a line nobody asked for.
-
-Facet the plot before calling \code{show_mean()}, not after: each panel's top is
-measured once, from the plot as it stands when \code{show_mean()} is called, so
-a panel added later has no top to draw against and is left without a line.
 }
 \examples{
 gf_histogram(~Thumb, data = Fingers, binwidth = 5) \%>\% show_mean()
