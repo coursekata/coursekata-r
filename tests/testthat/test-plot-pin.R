@@ -100,6 +100,36 @@ test_that("a deterministic mapping is pinned to exactly the numbers it already d
   expect_equal(q$labels$x, "log(Height)")
 })
 
+test_that("pinning a first-layer mapping does not promote it to sibling layers", {
+  points <- data.frame(x = 1:3, y = c(1, 4, 9))
+  rug <- data.frame(x = 4:6)
+  p <- ggplot2::ggplot() +
+    ggplot2::geom_point(
+      data = points, mapping = ggplot2::aes(x = x, y = log(y))
+    ) +
+    ggplot2::geom_rug(data = rug, mapping = ggplot2::aes(x = x))
+
+  expect_no_error(ggplot2::ggplot_build(p))
+  q <- pin_plot_values(p)$plot
+
+  expect_null(q$mapping$y)
+  expect_equal(
+    rlang::quo_get_expr(q$layers[[1]]$mapping$y), quote(.coursekata_pin_y)
+  )
+  expect_equal(q$layers[[1]]$data$.coursekata_pin_y, log(points$y))
+  expect_false(".coursekata_pin_y" %in% names(q$layers[[2]]$data))
+  expect_null(q$layers[[2]]$mapping$y)
+  resolved <- plot_spec(q)$resolve_aes("y")
+  expect_identical(resolved$label, "log(y)")
+  expect_identical(resolved$owner, "layer")
+  expect_identical(resolved$layer_index, 1L)
+  expect_no_error(ggplot2::ggplot_build(q))
+
+  expect_null(p$mapping$y)
+  expect_equal(rlang::as_label(p$layers[[1]]$mapping$y), "log(y)")
+  expect_false(".coursekata_pin_y" %in% names(p$layers[[1]]$data))
+})
+
 test_that("a symbol mapping and an after_stat() mapping are left alone", {
   # MUTATION: dropping the symbol and after_stat() guards, which pins the
   # function `stats::density` as if it were data

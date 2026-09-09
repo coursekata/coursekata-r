@@ -19,9 +19,10 @@
 #'   is recorded, `as_label()` of the mapped quosure otherwise), `variables`
 #'   (`labels` merged with `facets`), `aesthetics` and `axes` (both narrowed
 #'   from `variables`), `facets`, `pins`
-#'   (the recorded originals, from `plot_pins()`) and `resolve_aes` (looks
-#'   up an aesthetic's quosure and source data). Which axis carries a
-#'   model's outcome is not here -- that belongs to the plan.
+#'   (the recorded originals, from `plot_pins()`) and `resolve_aes` (returns a
+#'   resolved aesthetic descriptor with `quo`, `data`, reader-facing `label`,
+#'   `owner` and `layer_index`). Which axis carries a model's outcome is not
+#'   here -- that belongs to the plan.
 #'
 #' @noRd
 plot_spec <- function(p) {
@@ -49,11 +50,21 @@ plot_spec <- function(p) {
 
   resolve_aes <- function(aes) {
     if (!is.null(p$mapping[[aes]])) {
-      return(list(quo = p$mapping[[aes]], data = p$data))
+      source_data <- p$data
+      if (!is.data.frame(source_data) && is.data.frame(layer$data)) {
+        source_data <- layer$data
+      }
+      return(list(
+        quo = p$mapping[[aes]], data = source_data, label = labels[[aes]],
+        owner = "plot", layer_index = NA_integer_
+      ))
     }
     if (!is.null(layer$mapping[[aes]])) {
       layer_data <- if (is.data.frame(layer$data)) layer$data else p$data
-      return(list(quo = layer$mapping[[aes]], data = layer_data))
+      return(list(
+        quo = layer$mapping[[aes]], data = layer_data, label = labels[[aes]],
+        owner = "layer", layer_index = 1L
+      ))
     }
     NULL
   }
@@ -68,50 +79,5 @@ plot_spec <- function(p) {
     axes = axes,
     pins = pins,
     resolve_aes = resolve_aes
-  )
-}
-
-#' Read the rendered positions and panel ranges out of a built plot
-#'
-#' Reads the first layer, which is where the observations live in every
-#' documented pipeline.
-#'
-#' @param p A ggplot object.
-#'
-#' @return A list with `x`, `y`, `x_range` and `y_range`, the `x_limits` and
-#'   `y_limits` those ranges expand,
-#'   plus the `x_transform` and `y_transform` they are expressed in. A scale
-#'   that has no transformation, such as a discrete one, reports `NULL`.
-#'
-#' @noRd
-plot_geometry <- function(p) {
-  geometry_from_build(ggplot2::ggplot_build(p))
-}
-
-#' Extract `plot_geometry()`'s fields from an already-built plot
-#'
-#' Split out of `plot_geometry()` so a caller that also needs something else
-#' off the same build -- `overlay_spec()` needs the plot's labels -- can read
-#' both off one `ggplot_build()` rather than paying for a second one, which
-#' re-runs every stat and repeats any warning the build emits.
-#'
-#' @param built The return value of `ggplot2::ggplot_build()`.
-#'
-#' @noRd
-geometry_from_build <- function(built) {
-  panel <- built$layout$panel_params[[1]]
-
-  list(
-    x = built$data[[1]]$x,
-    y = built$data[[1]]$y,
-    x_range = panel$x.range,
-    y_range = panel$y.range,
-    # the ranges above carry ggplot2's expansion; the limits are what the data
-    # and any expand_limits() trained, which is where an overlay's own headroom
-    # has to be measured from
-    x_limits = built$layout$panel_scales_x[[1]]$get_limits(),
-    y_limits = built$layout$panel_scales_y[[1]]$get_limits(),
-    x_transform = built$layout$panel_scales_x[[1]]$get_transformation(),
-    y_transform = built$layout$panel_scales_y[[1]]$get_transformation()
   )
 }

@@ -105,8 +105,8 @@ cutoff_spec <- function(fill, source = "fill", call = caller_env()) {
 #' @param values The x values the plot was built from.
 #' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `tail_prop`, `label`, `lower`, `upper`, and the
-#'   `data_range` the values span. Every position in it is a data value.
+#' @return A list with `tail_prop`, `label`, `lower`, and `upper`. Every
+#'   position in it is a data value.
 #'
 #' @noRd
 cutoff_plan <- function(cspec, values, call = caller_env()) {
@@ -144,8 +144,7 @@ cutoff_plan <- function(cspec, values, call = caller_env()) {
 
   list(
     tail_prop = tail_prop,
-    label = cutoff_label(tail_prop), lower = lower, upper = upper,
-    data_range = x[c(1, n)]
+    label = cutoff_label(tail_prop), lower = lower, upper = upper
   )
 }
 

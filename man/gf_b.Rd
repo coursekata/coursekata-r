@@ -96,7 +96,12 @@ drawn, because each would otherwise produce a picture that looks right. A
 formula is refused too -- \code{gf_b()}'s whole output is a set of labeled
 numbers, and there is no fit to read them from. May be given positionally
 or as \verb{model =}. Omitted, the model the plot implies is fit and annotated
-instead.}
+instead.
+
+Coefficient marks require Cartesian coordinates. Reversed position scales,
+\code{coord_cartesian(reverse = )}, and \code{coord_flip()} are supported; polar and
+other non-Cartesian coordinates are refused because rise, run, and label
+sides lack a linear coefficient interpretation there.}
 
 \item{color, label_color}{The arrows/lines and the label text. \code{colour} and
 \code{label_colour} are accepted too. Each is a single value, not a mapping --
@@ -119,9 +124,13 @@ ignored -- its coefficients are group differences, not a rate.}
 
 \item{b0_alpha}{The transparency of the categorical b0 reference line.}
 
-\item{arrow_nudge, label_nudge}{A categorical arrow's x position, and its
-label's offset from it, in level units (1 = one group apart). Not used on
-the empty model, whose one axis is a count, not a level, and whose b0
+\item{arrow_nudge}{A categorical arrow's x position in level units (1 = one
+group apart).}
+
+\item{label_nudge}{The predictor-axis clearance for coefficient labels. It
+uses level units for a categorical predictor and adjusts the physical gap
+beside the b0 and rise marks for a continuous predictor. Not used on the
+empty model, whose one axis is a count rather than a predictor and whose b0
 label is placed at the panel's edge instead.}
 
 \item{xlab, ylab, title, subtitle, caption}{Labels for the plot.}
@@ -157,7 +166,7 @@ under that name.
 \strong{A continuous predictor}: a vertical rise arrow from \code{fit(run_x)} to
 \code{fit(run_x + run)}, a horizontal run segment at its tip, a rise label
 (plotmath b1 when \code{run} is 1, otherwise \code{run} times b1), a run-distance
-label under the run segment (over it, for a negative rise), and a hollow
+label on the triangle's interior side of the run segment, and a hollow
 dot at \verb{(0, b0)} with a b0 label.
 
 \strong{A categorical predictor}: one horizontal reference line at \code{b0} (the

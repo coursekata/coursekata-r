@@ -2,42 +2,82 @@
 % Please edit documentation in R/stat-cutoff.R
 \name{StatCutoff}
 \alias{StatCutoff}
-\title{Compute a distribution part's empirical quantile cutoffs, per panel}
+\alias{stat_cutoff}
+\title{Compute a distribution part's empirical cutoffs, per panel}
 \format{
-A \link[ggplot2:Stat]{ggplot2::Stat} object.
+\code{StatCutoff} is a \link[ggplot2:Stat]{ggplot2::Stat} object.
 }
 \usage{
 StatCutoff
+
+stat_cutoff(
+  mapping = NULL,
+  data = NULL,
+  geom = "cutoff",
+  position = "identity",
+  ...,
+  part = "middle",
+  prop = 0.95,
+  greedy = TRUE,
+  func = lifecycle::deprecated(),
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+}
+\arguments{
+\item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.}
+
+\item{data}{The data to be displayed in this layer.}
+
+\item{geom}{The geometric object used to display the data. Defaults to
+\code{"cutoff"}.}
+
+\item{position}{A position adjustment. Defaults to \code{"identity"}.}
+
+\item{...}{Other arguments passed to \code{\link[ggplot2:layer]{ggplot2::layer()}}.}
+
+\item{part}{The distribution part to mark: \code{"middle"}, \code{"tails"},
+\code{"upper"}, \code{"lower"}, or \code{"outer"}.}
+
+\item{prop}{The requested proportion. The endpoints \code{0} and \code{1} are valid
+for this lower-level stat.}
+
+\item{greedy}{Whether a fractional observation is included in the selected
+region.}
+
+\item{func}{Deprecated alias for \code{part}.}
+
+\item{na.rm}{If \code{FALSE}, the default, missing values are removed with a
+warning. If \code{TRUE}, missing values are silently removed.}
+
+\item{show.legend}{Logical. Should this layer be included in the legends?}
+
+\item{inherit.aes}{If \code{FALSE}, override the default aesthetics rather than
+combining with them.}
+}
+\value{
+\code{stat_cutoff()} returns a ggplot2 layer.
 }
 \description{
-Calls \code{cutoff_plan()}, the same function \code{show_cutoffs()} calls, so there is
-exactly one implementation of the cutoff rule and the two consumers cannot
-drift apart.
+\code{StatCutoff} calls the same \code{cutoff_plan()} used by \code{\link[=show_cutoffs]{show_cutoffs()}}, but the
+two interfaces deliberately operate at different scopes. ggplot2 supplies a
+stat with one panel's rows at a time, so this stat computes panel-local
+cutoffs. \code{show_cutoffs()} plans once from the whole resolved distribution and
+repeats those global marks across facets.
 }
 \details{
-The difference between the two is deliberate, not an oversight: \code{show_cutoffs()}
-marks the \emph{whole} distribution, because that is what a \code{middle()} fill shades --
-every value in the plot's data is either inside or outside the shaded region,
-regardless of which facet panel it lands in. This stat computes \strong{per panel},
-because that is what a stat does with the rows ggplot2 hands it: a faceted plot
-gets one set of cutoffs per panel, each drawn from that panel's own rows. Pair it
-with \link[ggplot2:GeomVline]{ggplot2::GeomVline} to draw the intercepts it emits -- one for \code{upper()} or
-\code{lower()}, two for \code{middle()}, \code{tails()}, or \code{outer()}.
+The stat accepts \code{"middle"}, \code{"tails"}, \code{"upper"}, \code{"lower"}, and
+\code{"outer"}. It selects cutoffs in the data's original space: transformed
+position values are inverted before \code{cutoff_plan()} runs, and the selected
+cutoffs are transformed forward again for ggplot2. This preserves the
+requested distribution part on increasing, decreasing, and transformed
+scales.
 
-\code{show_cutoffs()} keeps its own \code{annotate()}-based rendering rather than being
-rebuilt on this stat: its markers and labels are placed against the panel's npc
-range in \code{draw_panel()}-adjacent code that a stat's \code{compute_panel()} has no
-access to, and moving to a stat would silently turn its whole-distribution
-marking into this per-panel one on any faceted plot -- disagreeing with the
-whole-data fill it marks.
-}
-\examples{
-gf_histogram(~Thumb, data = Fingers, binwidth = 5) \%>\%
-  gf_refine(ggplot2::layer(
-    stat = coursekata::StatCutoff, geom = ggplot2::GeomVline, position = "identity",
-    params = list(func = "middle", prop = .95, na.rm = TRUE)
-  ))
+\code{stat_cutoff()} is the conventional layer constructor. Its default geom is
+\code{"cutoff"}; use \code{geom = "vline"} when a full-height reference line is
+wanted instead.
 }
 \seealso{
-\code{\link[=show_cutoffs]{show_cutoffs()}}, which marks the same cutoffs by a different route.
+\code{\link[=show_cutoffs]{show_cutoffs()}}, which marks whole-distribution cutoffs.
 }

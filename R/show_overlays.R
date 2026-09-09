@@ -8,10 +8,11 @@
 #' @param fn The calling function's name, for error messages.
 #' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `values`, `label`, `data`, `quo`, and `facets`.
+#' @return A list with the resolved x mapping, its values and scale, and the
+#'   underlying `plot_spec()`.
 #'
 #' @noRd
-distribution_overlay_spec <- function(plot, fn, call = caller_env()) {
+distribution_plot_spec <- function(plot, fn, call = caller_env()) {
   if (!inherits(plot, "ggplot")) {
     abort(glue("`{fn}()` needs a ggplot object"), call = call)
   }
@@ -72,9 +73,57 @@ distribution_overlay_spec <- function(plot, fn, call = caller_env()) {
   }
 
   list(
-    values = values, label = as_label(x$quo), data = x$data, quo = x$quo,
-    facets = spec$facets
+    values = values, label = x$label, data = x$data, quo = x$quo,
+    plot = spec, x_scale = plot$scales$get_scales("x")
   )
+}
+
+#' Require a distribution to come from one data column
+#'
+#' Means can follow an expression through ggplot2's stat lifecycle. Empirical
+#' cutoffs instead identify observations in the original column, so their
+#' high-level helper deliberately requires a bare column mapping.
+#'
+#' @param spec A `distribution_plot_spec()` list.
+#' @param fn The calling function's name, for error messages.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return The mapped column name.
+#'
+#' @noRd
+distribution_plot_column <- function(spec, fn, call = caller_env()) {
+  if (!is_symbol(quo_get_expr(spec$quo))) {
+    abort(
+      c(
+        glue("`{fn}()` needs the plot's x aesthetic to be a single variable"),
+        glue("found: {deparse1(quo_get_expr(spec$quo))}"),
+        "compute the variable first, then plot it"
+      ),
+      call = call
+    )
+  }
+
+  column <- as_name(spec$quo)
+  if (!column %in% names(spec$data)) {
+    abort(glue("Can't find `{spec$label}` in the plot's data"), call = call)
+  }
+  column
+}
+
+#' Require a continuous distribution position scale
+#'
+#' @param spec A `distribution_plot_spec()` list.
+#' @param fn The calling function's name, for error messages.
+#' @param call The calling environment, for error reporting.
+#'
+#' @return `NULL`, invisibly. Called for its refusal.
+#'
+#' @noRd
+check_distribution_x_scale <- function(spec, fn, call = caller_env()) {
+  if (!is.null(spec$x_scale) && isTRUE(spec$x_scale$is_discrete())) {
+    abort(glue("`{fn}()` needs a continuous x position scale"), call = call)
+  }
+  invisible(NULL)
 }
 
 #' Mark a Distribution's Mean
@@ -117,7 +166,7 @@ show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
   object <- normalize_plot_argument(
     object, plot, missing(object), missing(plot), "show_mean"
   )
-  spec <- distribution_overlay_spec(object, "show_mean")
+  spec <- distribution_plot_spec(object, "show_mean")
 
   # x is mapped from the distribution's own quosure, not a precomputed value,
   # so StatDistMean sees exactly the rows ggplot2 assigned to each panel and
@@ -184,7 +233,7 @@ show_dgp <- function(object = NULL, color = "#003d70", null_color = "#E60000",
   object <- normalize_plot_argument(
     object, plot, missing(object), missing(plot), "show_dgp"
   )
-  distribution_overlay_spec(object, "show_dgp")
+  spec <- distribution_plot_spec(object, "show_dgp")
 
   if (inherits(object$coordinates, "CoordFlip")) {
     abort(c(
@@ -192,10 +241,8 @@ show_dgp <- function(object = NULL, color = "#003d70", null_color = "#E60000",
       "*" = "its guides describe a horizontal parameter axis above a vertical count axis"
     ))
   }
-  x_scale <- object$scales$get_scales("x")
-  if (!is.null(x_scale) && isTRUE(x_scale$is_discrete())) {
-    abort("`show_dgp()` needs a continuous x position scale")
-  }
+  check_distribution_x_scale(spec, "show_dgp")
+  x_scale <- spec$x_scale
   guide_sources <- c(
     position_guide_matches(x_scale$guide %||% ggplot2::waiver(), "GuideDgp"),
     if (is.null(x_scale)) list() else {
