@@ -77,11 +77,17 @@ test_that("it un-maps dynamic aesthetics from underlying layers that are not in 
   # default instead of inheriting the mapping
   expect_equal(unique(model$colour), ggplot2::GeomLine$default_aes$colour)
 
-  # the grid is still built across the plot's aesthetics, so the line is drawn
-  # once per provider -- overlapping copies of one line, not a line per group
+  # An ignored inherited aesthetic gets one representative value so ggplot2 can
+  # evaluate it without multiplying the grid into redundant overlapping traces.
   traces <- split(model[order(model$x), c("x", "y")], model$group[order(model$x)])
-  expect_length(traces, 3)
-  for (trace in traces[-1]) expect_equal(trace$y, traces[[1]]$y)
+  expect_length(traces, 1L)
+  expect_equal(
+    traces[[1]]$y,
+    unname(predict(
+      lm(later_anxiety ~ base_anxiety, data = er),
+      newdata = data.frame(base_anxiety = traces[[1]]$x)
+    ))
+  )
 })
 
 test_that("the three-color decomposition: reduction plus residual squares to the same page", {
