@@ -766,6 +766,57 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
   invisible(NULL)
 }
 
+# Generate both public coefficient names from one recipe. They must remain two
+# distinct closures: a forwarder would move `environment = parent.frame()` one
+# frame inward, while sharing one closure would leave helper diagnostics with no
+# stable literal name. `named_layer_factory()` preserves both properties.
+gf_b_layer_factory <- function(function_name) {
+  named_layer_factory(
+    function_name = function_name,
+    geom = ggplot2::GeomSegment, stat = "identity", position = "identity",
+    aes_form = NULL,
+    extras = alist(
+      model = , color = "#b599ed", label_color = "black", label_size = 3.5,
+      arrow_linewidth = 0.5, show_b0 = TRUE, run = NULL, run_x = NULL,
+      b0_alpha = 0.3, b0_linewidth = 0.8, b0_size = 4,
+      arrow_nudge = 0.18, label_nudge = 0.08
+    ),
+    .pre_bindings = alist(
+      gf_b_warn_unreachable = gf_b_warn_unreachable,
+      gf_b_spec = gf_b_spec,
+      gf_b_layer_fun = gf_b_layer_fun
+    ),
+    note = "the model whose coefficients to annotate: a fit from lm() or aov()",
+    pre = quote({
+      if (!missing(gformula) && missing(model)) {
+        model <- gformula
+        gformula <- NULL
+      }
+
+      if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
+        dots <- list(...)
+        color <- dots$colour %||% color
+        label_color <- dots$label_colour %||% label_color
+        unreachable_dots <- dots[setdiff(names(dots), c("colour", "label_colour"))]
+        args <- list(
+          color = color, label_color = label_color, label_size = label_size,
+          arrow_linewidth = arrow_linewidth, show_b0 = show_b0, run = run, run_x = run_x,
+          b0_alpha = b0_alpha, b0_linewidth = b0_linewidth, b0_size = b0_size,
+          arrow_nudge = arrow_nudge, label_nudge = label_nudge
+        )
+        gf_b_warn_unreachable(
+          unreachable_dots, show.legend, .coursekata_function_name
+        )
+        spec <- gf_b_spec(
+          object, if (missing(model)) NULL else model, args, .coursekata_function_name
+        )
+        object <- spec$plot
+        layer_fun <- gf_b_layer_fun(spec$marks)
+      }
+    })
+  )
+}
+
 #' Annotate a model's coefficients on a plot
 #'
 #' Draws the intercept and slope (or group differences) of a fitted model as
@@ -882,7 +933,6 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #' @seealso [gf_model()] draws the fit itself.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' # continuous: b1 as a rise-over-run triangle, b0 where the line meets x = 0
 #' height_model <- lm(Thumb ~ Height, data = Fingers)
@@ -908,51 +958,7 @@ gf_b_warn_unreachable <- function(dots, show_legend, fn) {
 #' flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins)
 #' gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
 #'   gf_coef(flipper_model)
-gf_b <- ggformula::layer_factory(
-  geom = ggplot2::GeomSegment, stat = "identity", position = "identity",
-  aes_form = NULL,
-  extras = alist(
-    model = , color = "#b599ed", label_color = "black", label_size = 3.5,
-    arrow_linewidth = 0.5, show_b0 = TRUE, run = NULL, run_x = NULL,
-    b0_alpha = 0.3, b0_linewidth = 0.8, b0_size = 4,
-    arrow_nudge = 0.18, label_nudge = 0.08
-  ),
-  note = "the model whose coefficients to annotate: a fit from lm() or aov()",
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
-  pre = {
-    # `layer_factory()` binds the second positional argument to `gformula`, but
-    # `gf_b()` takes a model there, not an aesthetic formula. See `gf_model()`
-    # for the full reasoning; the move is unconditional.
-    if (!missing(gformula) && missing(model)) {
-      model <- gformula
-      gformula <- NULL
-    }
-
-    # `pre` runs ahead of the help gate on every supported release, so a bare
-    # `gf_b()` has to fall straight through to it. Base `missing()`, never
-    # `rlang::is_missing()`, which forces the promise and kills that path;
-    # `isTRUE()` because `show.help` is NULL, not FALSE, until ggformula
-    # decides one. See `gf_resid()` for the full reasoning.
-    if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      dots <- list(...)
-      color <- dots$colour %||% color
-      label_color <- dots$label_colour %||% label_color
-      unreachable_dots <- dots[setdiff(names(dots), c("colour", "label_colour"))]
-      args <- list(
-        color = color, label_color = label_color, label_size = label_size,
-        arrow_linewidth = arrow_linewidth, show_b0 = show_b0, run = run, run_x = run_x,
-        b0_alpha = b0_alpha, b0_linewidth = b0_linewidth, b0_size = b0_size,
-        arrow_nudge = arrow_nudge, label_nudge = label_nudge
-      )
-      coursekata:::gf_b_warn_unreachable(unreachable_dots, show.legend, "gf_b")
-      spec <- coursekata:::gf_b_spec(
-        object, if (missing(model)) NULL else model, args, "gf_b"
-      )
-      object <- spec$plot
-      layer_fun <- coursekata:::gf_b_layer_fun(spec$marks)
-    }
-  }
-)
+gf_b <- gf_b_layer_factory("gf_b")
 
 #' @rdname gf_b
 #' @description
@@ -962,55 +968,6 @@ gf_b <- ggformula::layer_factory(
 #' under that name.
 #' @export
 #
-# Generated, not forwarded, and not a second binding of the same closure.
-#
-# A forwarder loses the caller's name: measured elsewhere in this package
-# (`gf_squaresid()`'s comment, `R/gf_resid_gf_squaresid.R`), a forwarder
-# reports the wrong function name in every refusal and in the bare-call help
-# header, and its `environment = parent.frame()` resolves to the forwarder's
-# own frame, so a mapped aesthetic written from inside a function stops
-# resolving. Generating the alias instead needs no stack introspection at
-# all, and keeps this file's two refusal names literal the way `gf_resid()`'s
-# is.
-#
-# THE PRICE IS DRIFT, AND IT IS PAID BY A TEST. Everything below is
-# `gf_b()`'s factory call with one string changed, and `test-gf_b.R` asserts
-# exactly that by comparing every argument `layer_factory()` stored on the
-# two closures, `pre` included, after a mechanical rename -- so an edit made
-# to one and not the other fails the suite rather than reaching a reader.
-gf_coef <- ggformula::layer_factory(
-  geom = ggplot2::GeomSegment, stat = "identity", position = "identity",
-  aes_form = NULL,
-  extras = alist(
-    model = , color = "#b599ed", label_color = "black", label_size = 3.5,
-    arrow_linewidth = 0.5, show_b0 = TRUE, run = NULL, run_x = NULL,
-    b0_alpha = 0.3, b0_linewidth = 0.8, b0_size = 4,
-    arrow_nudge = 0.18, label_nudge = 0.08
-  ),
-  note = "the model whose coefficients to annotate: a fit from lm() or aov()",
-  pre = {
-    if (!missing(gformula) && missing(model)) {
-      model <- gformula
-      gformula <- NULL
-    }
-
-    if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      dots <- list(...)
-      color <- dots$colour %||% color
-      label_color <- dots$label_colour %||% label_color
-      unreachable_dots <- dots[setdiff(names(dots), c("colour", "label_colour"))]
-      args <- list(
-        color = color, label_color = label_color, label_size = label_size,
-        arrow_linewidth = arrow_linewidth, show_b0 = show_b0, run = run, run_x = run_x,
-        b0_alpha = b0_alpha, b0_linewidth = b0_linewidth, b0_size = b0_size,
-        arrow_nudge = arrow_nudge, label_nudge = label_nudge
-      )
-      coursekata:::gf_b_warn_unreachable(unreachable_dots, show.legend, "gf_coef")
-      spec <- coursekata:::gf_b_spec(
-        object, if (missing(model)) NULL else model, args, "gf_coef"
-      )
-      object <- spec$plot
-      layer_fun <- coursekata:::gf_b_layer_fun(spec$marks)
-    }
-  }
-)
+# Generated from the same recipe, not forwarded and not bound to `gf_b`'s
+# closure. Its own name and caller frame therefore survive unchanged.
+gf_coef <- gf_b_layer_factory("gf_coef")
