@@ -22,19 +22,35 @@ test_that("the empty model draws a vertical line when the outcome is on x", {
 
 test_that("a continuous predictor on the axis draws a fit line", {
   p <- gf_point(later_anxiety ~ base_anxiety, data = er)
-  plan <- plan_for(p, lm(later_anxiety ~ base_anxiety, data = er))
+  model <- lm(later_anxiety ~ base_anxiety, data = er)
+  plan <- plan_for(p, model)
 
   expect_equal(plan$kind, "line")
   expect_true(all(c("base_anxiety", "later_anxiety") %in% names(plan$grid)))
-  expect_equal(nrow(plan$grid), nrow(er))
+  expect_equal(range(plan$grid$base_anxiety), range(er$base_anxiety))
+  expect_equal(
+    plan$grid$later_anxiety,
+    unname(predict(model, newdata = data.frame(base_anxiety = plan$grid$base_anxiety)))
+  )
 })
 
-test_that("the fit line is drawn from at least 80 points however small the data", {
+test_that("the fit line keeps a useful floor and a bounded maximum resolution", {
   er20 <- er[1:20, ]
-  p <- gf_point(later_anxiety ~ base_anxiety, data = er20)
-  plan <- plan_for(p, lm(later_anxiety ~ base_anxiety, data = er20))
+  er_many <- er[rep(seq_len(nrow(er)), each = 10L), ]
 
-  expect_equal(nrow(plan$grid), 80L)
+  small <- plan_for(
+    gf_point(later_anxiety ~ base_anxiety, data = er20),
+    lm(later_anxiety ~ base_anxiety, data = er20)
+  )
+  large <- plan_for(
+    gf_point(later_anxiety ~ base_anxiety, data = er_many),
+    lm(later_anxiety ~ base_anxiety, data = er_many)
+  )
+
+  expect_equal(nrow(small$grid), 80L)
+  expect_equal(nrow(large$grid), 256L)
+  expect_equal(range(small$grid$base_anxiety), range(er20$base_anxiety))
+  expect_equal(range(large$grid$base_anxiety), range(er_many$base_anxiety))
 })
 
 test_that("a categorical predictor on the axis draws a mark at each group mean", {
@@ -94,17 +110,15 @@ test_that("a continuous predictor on an aesthetic is split at the mean and +-1 S
   )
 })
 
-test_that("the grid crosses every plot aesthetic, not only the model's predictors", {
-  # A plot aesthetic the model ignores still enters the prediction grid, so
-  # the same line is drawn once per level of it.
+test_that("an ignored plot aesthetic does not multiply the prediction grid", {
+  # The inherited mapping still needs a value so ggplot2 can evaluate it, but
+  # it has no role in prediction or grouping and must not duplicate the line.
   p <- gf_point(later_anxiety ~ base_anxiety, shape = ~provider, data = er)
   plan <- plan_for(p, lm(later_anxiety ~ base_anxiety, data = er))
 
   expect_true("provider" %in% names(plan$grid))
-  expect_equal(
-    nrow(plan$grid),
-    length(unique(plan$grid$base_anxiety)) * nlevels(factor(er$provider))
-  )
+  expect_length(unique(plan$grid$provider), 1L)
+  expect_equal(nrow(plan$grid), length(unique(plan$grid$base_anxiety)))
 })
 
 test_that("it refuses a model whose variables are not on the plot", {
@@ -465,7 +479,6 @@ test_that("a plot of the raw column takes a model of a transformation of it", {
   expect_equal(plan$kind, "line")
   expect_equal(names(plan$grid), c("age", "later_anxiety", ".model_outcome"))
   expect_equal(range(plan$grid$age), range(er$age))
-  expect_equal(nrow(plan$grid), max(nrow(er), 80L))
   expect_equal(
     plan$grid$later_anxiety,
     unname(predict(model, newdata = data.frame(age = plan$grid$age)))
@@ -489,10 +502,11 @@ test_that("a plot of the transformation takes the model written the same way", {
 
 test_that("a transformed axis is drawn at the transformed positions", {
   model <- lm(later_anxiety ~ log(age), data = er)
-  p <- gf_point(later_anxiety ~ log(age), data = er) %>% gf_model(model)
+  base <- gf_point(later_anxiety ~ log(age), data = er)
+  grid_age <- plan_for(base, model)$grid$age
+  p <- base %>% gf_model(model)
   d <- ggplot2::ggplot_build(p)$data[[layer_index(p, "model")]]
 
-  grid_age <- seq(min(er$age), max(er$age), length.out = nrow(er))
   expect_equal(d$x, log(grid_age))
   expect_equal(d$y, unname(predict(model, newdata = data.frame(age = grid_age))))
 })
