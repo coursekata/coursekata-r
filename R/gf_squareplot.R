@@ -455,7 +455,8 @@ squareplot_check <- function(object, gformula, na.rm, dots = character(),
 #'   levels = 1:5
 #' ))
 #' gf_squareplot(~rating, data = ratings)
-gf_squareplot <- ggformula::layer_factory(
+gf_squareplot <- named_layer_factory(
+  function_name = "gf_squareplot",
   # `layer_factory()` captures `geom`/`stat` unevaluated and stores them as the
   # generated closure's own defaults, resolved with `rlang::eval_tidy()` at call
   # time inside that closure -- whose lexical scope is ggformula's namespace, not
@@ -470,11 +471,14 @@ gf_squareplot <- ggformula::layer_factory(
     binwidth = NULL, bins = NULL, center = NULL, boundary = NULL,
     closed = NULL, breaks = NULL, bars = "none", na.rm = TRUE
   ),
+  .pre_bindings = alist(
+    squareplot_check = squareplot_check,
+    squareplot_layer = squareplot_layer
+  ),
   note = "each observation is drawn as its own square, so a bin can be counted",
   layer_fun = ggplot2::layer,
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
   pre = {
-    coursekata:::squareplot_check(object, gformula, na.rm, dots = ...names())
-    layer_fun <- coursekata:::squareplot_layer(object)
+    squareplot_check(object, gformula, na.rm, dots = ...names())
+    layer_fun <- squareplot_layer(object)
   }
 )

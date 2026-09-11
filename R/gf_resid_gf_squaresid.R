@@ -32,7 +32,6 @@
 #' @return A ggplot object with residual lines added.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' # residuals can be drawn on a full data set, but with hundreds of points
 #' # the plot gets hard to read
@@ -62,7 +61,8 @@
 #' gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
 #'   gf_model(sample_flipper_model) %>%
 #'   gf_resid(sample_flipper_model, color = "firebrick")
-gf_resid <- ggformula::layer_factory(
+gf_resid <- named_layer_factory(
+  function_name = "gf_resid",
   # A bare ggproto symbol here only resolves through the search path -- see the
   # note above `gf_squareplot()`'s `layer_factory()` call -- so both are
   # package-qualified, which `::` resolves the same whether or not `coursekata`
@@ -84,8 +84,12 @@ gf_resid <- ggformula::layer_factory(
   # geom has no formals at all, so `names(extras)` is the only thing protecting
   # it -- and a formal's default is the only default the factory ever applies.
   extras = alist(model = , linewidth = 0.2),
+  .pre_bindings = alist(
+    resid_jitter = resid_jitter,
+    resid_spec = resid_spec,
+    resid_layer_fun = resid_layer_fun
+  ),
   note = "the model to measure: a fit from lm() or aov()",
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
   pre = {
     # `layer_factory()` binds the second positional argument to `gformula`, but
     # `gf_resid()` takes a model there, not an aesthetic formula, and every
@@ -113,14 +117,14 @@ gf_resid <- ggformula::layer_factory(
       # than replaying the plot's: two layers sharing a seed land identically.
       # An unseeded jitter has no offsets to share, so it is pinned here -- on
       # the plot this returns, never on the one the caller still holds.
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
+      jitter <- resid_jitter(if (missing(object)) NULL else object)
       object <- jitter$plot
 
       # One call, so the order the refusals fire in lives in one place: not a
       # plot, no model, no x/y on the plot, then the prediction, then the axis
       # the outcome is on. That is the order the bespoke function's lazy
       # arguments forced, and the recorded refusal messages depend on it.
-      resid <- coursekata:::resid_spec(
+      resid <- resid_spec(
         object, if (missing(model)) NULL else model, "gf_resid"
       )
       # only when the caller left it alone: a stray positional argument lands
@@ -144,10 +148,59 @@ gf_resid <- ggformula::layer_factory(
       # needs the mapping this call computed and because a factory-level
       # `layer_fun` is called while the package is being built, which would tie
       # this file's collation order to `geom-resid.R`'s
-      layer_fun <- coursekata:::resid_layer_fun("resid", resid$aesthetics)
+      layer_fun <- resid_layer_fun("resid", resid$aesthetics)
     }
   }
 )
+
+# Generate the two squared-residual names from one configuration while keeping
+# separate closures, literal diagnostics, and direct caller environments.
+gf_square_resid_layer_factory <- function(function_name) {
+  named_layer_factory(
+    function_name = function_name,
+    geom = coursekata::GeomSquareResid,
+    stat = coursekata::StatResid,
+    position = "identity",
+    aes_form = NULL,
+    inherit.aes = FALSE,
+    extras = alist(model = , aspect = 4 / 6, alpha = 0.1),
+    .pre_bindings = alist(
+      resid_jitter = resid_jitter,
+      resid_spec = resid_spec,
+      resid_layer_fun = resid_layer_fun
+    ),
+    note = "the model to measure: a fit from lm() or aov()",
+    pre = quote({
+      if (!missing(gformula) && missing(model)) {
+        model <- gformula
+        gformula <- NULL
+      }
+
+      if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
+        lifecycle::signal_stage(
+          "experimental", paste0(.coursekata_function_name, "()")
+        )
+
+        jitter <- resid_jitter(if (missing(object)) NULL else object)
+        object <- jitter$plot
+
+        resid <- resid_spec(
+          object,
+          if (missing(model)) NULL else model,
+          .coursekata_function_name
+        )
+        if (missing(data)) data <- resid$data
+        aesthetics <- resid$aesthetics
+
+        geom <- coursekata::GeomSquareResid
+        stat <- coursekata::StatResid
+        position <- jitter$position
+
+        layer_fun <- resid_layer_fun("square_resid", resid$aesthetics)
+      }
+    })
+  )
+}
 
 #' Add Squared Residual Visualization to a Plot
 #'
@@ -192,7 +245,6 @@ gf_resid <- ggformula::layer_factory(
 #' @return A ggplot object with squared residual polygons added.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' # squared residuals can be drawn on a full data set, but with hundreds of
 #' # points the plot gets hard to read
@@ -222,87 +274,7 @@ gf_resid <- ggformula::layer_factory(
 #' gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
 #'   gf_model(sample_flipper_model) %>%
 #'   gf_square_resid(sample_flipper_model, color = "firebrick")
-gf_square_resid <- ggformula::layer_factory(
-  # package-qualified so `::` resolves it whether or not coursekata is attached;
-  # see the note above `gf_squareplot()`'s `layer_factory()` call
-  geom = coursekata::GeomSquareResid,
-  stat = coursekata::StatResid,
-  # a placeholder; `pre` swaps in the position the observations are already drawn with
-  position = "identity",
-  # `gf_square_resid()` measures a model, not an aesthetic formula. See
-  # `gf_resid()` above; NULL is what makes a bare call print
-  # "gf_square_resid() does not require a formula."
-  aes_form = NULL,
-  # FALSE, where `gf_resid()` is TRUE, and this is a measured difference rather
-  # than a copied one. Built over `gf_point(Thumb ~ Height, color = ~Sex)`,
-  # `inherit = FALSE` gives every square `colour = NA` over the geom's own
-  # `fill`; `inherit = TRUE` gives them the two point colors, so each square is
-  # outlined in its group's color rather than reading as one neutral area.
-  # `alpha` is unaffected either way -- it is set as an aes_param, which wins
-  # over an inherited mapping -- so the outline is the whole of it. The bespoke
-  # function passed FALSE for exactly this reason, and `resid_mapping()` names
-  # it: the axes are stated outright because the squares take the geom's own
-  # fill and colour. Left as the default rather than pinned in `pre` the way
-  # geom/stat/position are: an outlined square is a coherent picture, just not
-  # the released one.
-  inherit.aes = FALSE,
-  # no default on the model/function so `missing()` can tell "not supplied" from
-  # "supplied as NULL"; the rest must be extras to survive the factory -- see
-  # `gf_resid()` for why `...` would drop them
-  extras = alist(model = , aspect = 4 / 6, alpha = 0.1),
-  note = "the model to measure: a fit from lm() or aov()",
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
-  pre = {
-    # the second positional argument binds to `gformula`, but this function takes
-    # a model there; take it back before anything reads it. NULL is gformula's real
-    # default. See `gf_resid()` for what happens if either half is skipped
-    if (!missing(gformula) && missing(model)) {
-      model <- gformula
-      gformula <- NULL
-    }
-
-    # a bare call has to reach the help gate untouched, and `show.help` is NULL
-    # until ggformula decides -- see `gf_resid()` for the full reasoning
-    if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      # Behind the help gate, because asking a function what it takes is not
-      # using it, and first inside it, because a call that is about to be
-      # refused for its plot or its model is still a call -- which is where the
-      # bespoke function fired it.
-      lifecycle::signal_stage("experimental", "gf_square_resid()")
-
-      # The residual has to start where its point is drawn, and the point may be
-      # jittered. Read that jitter and declare the same one on this layer rather
-      # than replaying the plot's: two layers sharing a seed land identically.
-      # An unseeded jitter has no offsets to share, so it is pinned here -- on
-      # the plot this returns, never on the one the caller still holds.
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
-      object <- jitter$plot
-
-      # One call, so the order the refusals fire in lives in one place: not a
-      # plot, no model, no x/y on the plot, then the prediction, then the axis
-      # the outcome is on. `resid_spec()` returns only the data and the mapping
-      # precisely so this function states its own geom, inherit and tag below.
-      resid <- coursekata:::resid_spec(
-        object, if (missing(model)) NULL else model, "gf_square_resid"
-      )
-      # only when the caller left it alone: a stray positional argument lands
-      # here, and overwriting it is what would swallow the refusal ggformula
-      # already makes for one
-      if (missing(data)) data <- resid$data
-      aesthetics <- resid$aesthetics
-
-      # a residual is these three or it is a different picture, so state them
-      # rather than leave the caller a way to swap them (see `gf_resid()`)
-      geom <- coursekata::GeomSquareResid
-      stat <- coursekata::StatResid
-      position <- jitter$position
-
-      # here rather than at the factory: it needs this call's mapping, and a
-      # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's
-      layer_fun <- coursekata:::resid_layer_fun("square_resid", resid$aesthetics)
-    }
-  }
-)
+gf_square_resid <- gf_square_resid_layer_factory("gf_square_resid")
 
 #' @rdname gf_square_resid
 #' @description
@@ -312,68 +284,6 @@ gf_square_resid <- ggformula::layer_factory(
 #' visualizations and who requested this function by that name.
 #' @export
 #
-# Generated, not forwarded, and not a second binding of the same closure.
-#
-# A forwarder loses the caller's name: measured, `function(...)
-# gf_square_resid(...)` reports `gf_square_resid()` in all six refusals, in the
-# bare-call help header and in the experimental signal, and its
-# `environment = parent.frame()` resolves to the forwarder's own frame, so
-# `gf_squaresid(p, m, color = ~local_variable)` written inside a function fails
-# to build.
-#
-# `gf_squaresid <- gf_square_resid` -- one closure, two names -- does behave
-# identically, because `layer_factory()`'s body already reads the help header
-# off `match.call()`. Making the refusals name the alias too then needs the
-# call's own frame read out of `sys.frames()` inside `pre`, and the natural
-# spelling for that, `environment()`, is a trap: R resolves a call to
-# `environment()` by forcing the formal of the same name, whose default
-# `parent.frame()` then evaluates inside ggformula's `eval(pre)` and answers
-# with the wrong frame. Measured, that silently moves every mapped aesthetic's
-# lookup into ggformula's internals -- `color = ~local_variable` stops
-# resolving -- with no error until the plot is built. Generating the alias
-# instead needs no stack introspection at all, and keeps this file's two
-# refusal names literal the way `gf_resid()`'s is.
-#
-# THE PRICE IS DRIFT, AND IT IS PAID BY A TEST. Everything below is
-# `gf_square_resid()`'s factory call with one string changed, and
-# `test-gf_resid_gf_squaresid.R` asserts exactly that by comparing every
-# argument `layer_factory()` stored on the two closures, `pre` included, after
-# a mechanical rename -- so an edit made to one and not the other fails the
-# suite rather than reaching a reader.
-gf_squaresid <- ggformula::layer_factory(
-  geom = coursekata::GeomSquareResid,
-  stat = coursekata::StatResid,
-  position = "identity",
-  aes_form = NULL,
-  inherit.aes = FALSE,
-  extras = alist(model = , aspect = 4 / 6, alpha = 0.1),
-  note = "the model to measure: a fit from lm() or aov()",
-  pre = {
-    if (!missing(gformula) && missing(model)) {
-      model <- gformula
-      gformula <- NULL
-    }
-
-    if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      lifecycle::signal_stage("experimental", "gf_squaresid()")
-
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
-      object <- jitter$plot
-
-      resid <- coursekata:::resid_spec(
-        object, if (missing(model)) NULL else model, "gf_squaresid"
-      )
-      # only when the caller left it alone: a stray positional argument lands
-      # here, and overwriting it is what would swallow the refusal ggformula
-      # already makes for one
-      if (missing(data)) data <- resid$data
-      aesthetics <- resid$aesthetics
-
-      geom <- coursekata::GeomSquareResid
-      stat <- coursekata::StatResid
-      position <- jitter$position
-
-      layer_fun <- coursekata:::resid_layer_fun("square_resid", resid$aesthetics)
-    }
-  }
-)
+# Generated from the shared recipe rather than forwarded or rebound, preserving
+# the alias's literal name and the caller frame used for mapped aesthetics.
+gf_squaresid <- gf_square_resid_layer_factory("gf_squaresid")

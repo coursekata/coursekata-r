@@ -240,7 +240,8 @@ sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
 #'
 #' # one ruler per panel
 #' gf_sd_ruler(Thumb ~ Height | Sex, data = Fingers)
-gf_sd_ruler <- ggformula::layer_factory(
+gf_sd_ruler <- named_layer_factory(
+  function_name = "gf_sd_ruler",
   geom = "segment",
   # A bare ggproto symbol here only resolves through the search path -- see the
   # matching note above `gf_squareplot`'s `layer_factory()` call. Here `::`
@@ -249,11 +250,15 @@ gf_sd_ruler <- ggformula::layer_factory(
   position = "identity",
   aes_form = list(NULL, ~x, y ~ x),
   extras = alist(where = "middle", na.rm = TRUE),
+  .pre_bindings = alist(
+    check_ruler_where = check_ruler_where,
+    sd_ruler_inherited = sd_ruler_inherited
+  ),
   pre = {
     lifecycle::signal_stage("experimental", "gf_sd_ruler()")
-    coursekata:::check_ruler_where(where)
+    check_ruler_where(where)
     if (!missing(object) && inherits(object, "ggplot") && missing(gformula)) {
-      inherited <- coursekata:::sd_ruler_inherited(object)
+      inherited <- sd_ruler_inherited(object)
       if (!is.null(inherited)) {
         gformula <- inherited$gformula
         if (missing(data)) data <- inherited$data

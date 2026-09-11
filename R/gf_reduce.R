@@ -45,7 +45,6 @@
 #' @return A ggplot object with reduction lines added.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' set.seed(1)
 #' penguins_20 <- sample(penguins, 20)
@@ -69,7 +68,8 @@
 #'   gf_model(flipper_model) %>%
 #'   gf_resid(flipper_model, color = "firebrick") %>%
 #'   gf_reduce(flipper_model, color = "blue")
-gf_reduce <- ggformula::layer_factory(
+gf_reduce <- named_layer_factory(
+  function_name = "gf_reduce",
   # A bare ggproto symbol here only resolves through the search path -- see the
   # note above `gf_squareplot()`'s `layer_factory()` call -- so both are
   # package-qualified, which `::` resolves the same whether or not `coursekata`
@@ -87,8 +87,12 @@ gf_reduce <- ggformula::layer_factory(
   # `model` is declared with no default so that base `missing(model)` in `pre`
   # can tell "not supplied" from "supplied as NULL" -- see `gf_resid()`
   extras = alist(model = , linewidth = 0.2),
+  .pre_bindings = alist(
+    reduce_spec = reduce_spec,
+    resid_jitter = resid_jitter,
+    resid_layer_fun = resid_layer_fun
+  ),
   note = "the complex model to measure: a fit from lm() or aov()",
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
   pre = {
     # `layer_factory()` binds the second positional argument to `gformula`, but
     # `gf_reduce()` takes a model there -- see `gf_resid()` for the full
@@ -105,7 +109,7 @@ gf_reduce <- ggformula::layer_factory(
       # `reduce_spec()` for what that order is and why it matches `resid_spec()`'s.
       # It does not read the points layer's position, so calling it before the
       # jitter below is decided is safe.
-      reduce <- coursekata:::reduce_spec(
+      reduce <- reduce_spec(
         if (missing(object)) NULL else object, if (missing(model)) NULL else model, "gf_reduce"
       )
 
@@ -117,7 +121,7 @@ gf_reduce <- ggformula::layer_factory(
       # draws first, exactly as the points layer's, so its offsets stay
       # identical to the points layer's on either orientation.
       axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object, outcome = axis)
+      jitter <- resid_jitter(if (missing(object)) NULL else object, outcome = axis)
       object <- jitter$plot
 
       # only when the caller left it alone: a stray positional argument lands
@@ -132,10 +136,64 @@ gf_reduce <- ggformula::layer_factory(
       position <- jitter$position
 
       # set here rather than at the factory -- see `gf_resid()` for why
-      layer_fun <- coursekata:::resid_layer_fun("reduce", reduce$aesthetics)
+      layer_fun <- resid_layer_fun("reduce", reduce$aesthetics)
     }
   }
 )
+
+# The squared-reduction names share one recipe but remain independently
+# generated front doors so their diagnostics and caller environments stay
+# literal to the name used at the call site.
+gf_square_reduce_layer_factory <- function(function_name) {
+  named_layer_factory(
+    function_name = function_name,
+    geom = coursekata::GeomSquareResid,
+    stat = coursekata::StatResid,
+    position = "identity",
+    aes_form = NULL,
+    inherit.aes = FALSE,
+    extras = alist(model = , aspect = 4 / 6, alpha = 0.1),
+    .pre_bindings = alist(
+      reduce_spec = reduce_spec,
+      resid_jitter = resid_jitter,
+      resid_layer_fun = resid_layer_fun
+    ),
+    note = "the complex model to measure: a fit from lm() or aov()",
+    pre = quote({
+      if (!missing(gformula) && missing(model)) {
+        model <- gformula
+        gformula <- NULL
+      }
+
+      if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
+        lifecycle::signal_stage(
+          "experimental", paste0(.coursekata_function_name, "()")
+        )
+
+        reduce <- reduce_spec(
+          if (missing(object)) NULL else object,
+          if (missing(model)) NULL else model,
+          .coursekata_function_name
+        )
+
+        axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
+        jitter <- resid_jitter(
+          if (missing(object)) NULL else object, outcome = axis
+        )
+        object <- jitter$plot
+
+        if (missing(data)) data <- reduce$data
+        aesthetics <- reduce$aesthetics
+
+        geom <- coursekata::GeomSquareResid
+        stat <- coursekata::StatResid
+        position <- jitter$position
+
+        layer_fun <- resid_layer_fun("square_reduce", reduce$aesthetics)
+      }
+    })
+  )
+}
 
 #' Add Squared Reduction Visualization to a Plot
 #'
@@ -191,7 +249,6 @@ gf_reduce <- ggformula::layer_factory(
 #' @return A ggplot object with squared reduction polygons added.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' set.seed(1)
 #' penguins_20 <- sample(penguins, 20)
@@ -210,78 +267,7 @@ gf_reduce <- ggformula::layer_factory(
 #' gf_jitter(body_mass_kg ~ gentoo, data = penguins_20, width = .1) %>%
 #'   gf_model(gentoo_model) %>%
 #'   gf_square_reduce(gentoo_model, color = "blue")
-gf_square_reduce <- ggformula::layer_factory(
-  # package-qualified so `::` resolves it whether or not coursekata is attached;
-  # see the note above `gf_squareplot()`'s `layer_factory()` call
-  geom = coursekata::GeomSquareResid,
-  stat = coursekata::StatResid,
-  # a placeholder; `pre` swaps in the outcome-holding jitter the points layer
-  # is already drawn with
-  position = "identity",
-  # `gf_square_reduce()` measures a model, not an aesthetic formula. See
-  # `gf_reduce()` above; NULL is what makes a bare call print
-  # "gf_square_reduce() does not require a formula."
-  aes_form = NULL,
-  # FALSE, where `gf_reduce()` is TRUE -- see `gf_square_resid()` for why this
-  # is a measured difference rather than a copied one
-  inherit.aes = FALSE,
-  # no default on the model so `missing()` can tell "not supplied" from
-  # "supplied as NULL"; the rest must be extras to survive the factory -- see
-  # `gf_resid()` for why `...` would drop them
-  extras = alist(model = , aspect = 4 / 6, alpha = 0.1),
-  note = "the complex model to measure: a fit from lm() or aov()",
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
-  pre = {
-    # the second positional argument binds to `gformula`, but this function takes
-    # a model there; take it back before anything reads it. See `gf_resid()`
-    if (!missing(gformula) && missing(model)) {
-      model <- gformula
-      gformula <- NULL
-    }
-
-    # a bare call has to reach the help gate untouched -- see `gf_resid()`
-    if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      # Behind the help gate, because asking a function what it takes is not
-      # using it, and first inside it, because a call that is about to be
-      # refused for its plot or its model is still a call -- see
-      # `gf_square_resid()`, which fires it the same way.
-      lifecycle::signal_stage("experimental", "gf_square_reduce()")
-
-      # One call, so the order the refusals fire in lives in one place --
-      # `reduce_spec()` returns only the data and the mapping precisely so
-      # this function states its own geom, inherit and tag below. It does not
-      # read the points layer's position, so calling it before the jitter
-      # below is decided is safe.
-      reduce <- coursekata:::reduce_spec(
-        if (missing(object)) NULL else object, if (missing(model)) NULL else model,
-        "gf_square_reduce"
-      )
-
-      # See `gf_reduce()`: the grand mean is a single repeated number, so
-      # there is nothing for the OUTCOME axis to gain from jittering, and
-      # `outcome` holds that axis still on whichever physical axis the
-      # plot's orientation puts it on.
-      axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object, outcome = axis)
-      object <- jitter$plot
-
-      # only when the caller left it alone: a stray positional argument lands
-      # here, and overwriting it is what would swallow the refusal ggformula
-      # already makes for one
-      if (missing(data)) data <- reduce$data
-      aesthetics <- reduce$aesthetics
-
-      # a reduction is these three or it is a different picture -- see `gf_resid()`
-      geom <- coursekata::GeomSquareResid
-      stat <- coursekata::StatResid
-      position <- jitter$position
-
-      # here rather than at the factory: it needs this call's mapping, and a
-      # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's
-      layer_fun <- coursekata:::resid_layer_fun("square_reduce", reduce$aesthetics)
-    }
-  }
-)
+gf_square_reduce <- gf_square_reduce_layer_factory("gf_square_reduce")
 
 #' @rdname gf_square_reduce
 #' @description
@@ -289,54 +275,6 @@ gf_square_reduce <- ggformula::layer_factory(
 #' the way the classroom that asked for it says it.
 #' @export
 #
-# Generated, not forwarded, for the reasons set out at length above
-# `gf_squaresid()` in gf_resid_gf_squaresid.R -- this is the same decision, so
-# the argument is not repeated here. In short: a forwarder makes every refusal
-# name `gf_square_reduce()` when the reader wrote `gf_squareduce()`, and its
-# `environment = parent.frame()` resolves to the forwarder's own frame, so
-# `gf_squareduce(p, m, color = ~local_variable)` written inside a function stops
-# resolving with no error until the plot is built.
-#
-# THE PRICE IS DRIFT, AND IT IS PAID BY A TEST. Everything below is
-# `gf_square_reduce()`'s factory call with its own name in place of that one, so
-# `test-gf_reduce.R` compares every argument the factory stored on the two
-# closures, `pre` included, after a mechanical rename. Comments are not stored
-# on a closure and so are not repeated; the reasoning above the original stands
-# for both.
-gf_squareduce <- ggformula::layer_factory(
-  geom = coursekata::GeomSquareResid,
-  stat = coursekata::StatResid,
-  position = "identity",
-  aes_form = NULL,
-  inherit.aes = FALSE,
-  extras = alist(model = , aspect = 4 / 6, alpha = 0.1),
-  note = "the complex model to measure: a fit from lm() or aov()",
-  pre = {
-    if (!missing(gformula) && missing(model)) {
-      model <- gformula
-      gformula <- NULL
-    }
-
-    if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      lifecycle::signal_stage("experimental", "gf_squareduce()")
-
-      reduce <- coursekata:::reduce_spec(
-        if (missing(object)) NULL else object, if (missing(model)) NULL else model,
-        "gf_squareduce"
-      )
-
-      axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object, outcome = axis)
-      object <- jitter$plot
-
-      if (missing(data)) data <- reduce$data
-      aesthetics <- reduce$aesthetics
-
-      geom <- coursekata::GeomSquareResid
-      stat <- coursekata::StatResid
-      position <- jitter$position
-
-      layer_fun <- coursekata:::resid_layer_fun("square_reduce", reduce$aesthetics)
-    }
-  }
-)
+# Generated from the shared recipe rather than forwarded, so the alias retains
+# its own diagnostic name and its caller's mapping environment.
+gf_squareduce <- gf_square_reduce_layer_factory("gf_squareduce")

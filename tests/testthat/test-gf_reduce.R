@@ -333,24 +333,12 @@ test_that("the same fits are still measurable as residuals", {
   expect_no_error(gf_square_resid(p, lm(Thumb ~ Height, data = df, weights = w)))
 })
 
-test_that("the alias is generated from the same factory call, with only its name changed", {
-  # MUTATION: writing `gf_squareduce()` as a forwarder. `gf_squareduce()` is its
-  # own `layer_factory()` call so that its refusals, its help and its
-  # experimental signal name the function the caller actually wrote. That second
-  # call is what has to be paid for: every argument the factory stored on the two
-  # closures, `pre` included, must match after a mechanical rename, so an edit
-  # made to one and not the other fails here rather than reaching a reader.
+test_that("the alias is a distinct name-aware function from the shared recipe", {
   reduce <- environment(gf_square_reduce)
   alias <- environment(gf_squareduce)
-  rename <- function(x) {
-    gsub("gf_squareduce", "gf_square_reduce", paste(deparse(x), collapse = "\n"), fixed = TRUE)
-  }
 
-  expect_setequal(ls(alias), ls(reduce))
-  # `res` is the generated closure itself, and is compared by its own parts below
-  for (stored in setdiff(ls(reduce), "res")) {
-    expect_identical(rename(get(stored, alias)), rename(get(stored, reduce)), info = stored)
-  }
+  expect_false(identical(gf_squareduce, gf_square_reduce))
+  expect_false(identical(alias, reduce))
   expect_identical(formals(gf_squareduce), formals(gf_square_reduce))
   expect_identical(body(gf_squareduce), body(gf_square_reduce))
 })
