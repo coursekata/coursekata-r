@@ -14,8 +14,8 @@ This function is called at package start-up and should rarely be needed by the u
 exception is when the user has called \code{\link[=coursekata_unload_theme]{coursekata_unload_theme()}} and wants to go back to the
 CourseKata look and feel. When run, this function sets the CourseKata color palettes
 \code{\link[=coursekata_palette]{coursekata_palette()}}, sets the default theme to \code{\link[=theme_coursekata]{theme_coursekata()}}, and tweaks some
-default settings for specific plots. To restore the original \code{ggplot2} settings, run
-\code{\link[=coursekata_unload_theme]{coursekata_unload_theme()}}.
+default settings for specific plots. To restore the plotting settings that
+were active before this function first changed them, run \code{\link[=coursekata_unload_theme]{coursekata_unload_theme()}}.
 }
 \seealso{
 coursekata_palette theme_coursekata scale_discrete_coursekata coursekata_unload_theme

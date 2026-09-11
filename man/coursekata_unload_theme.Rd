@@ -2,7 +2,7 @@
 % Please edit documentation in R/theme.R
 \name{coursekata_unload_theme}
 \alias{coursekata_unload_theme}
-\title{Restore \code{ggplot2} default settings}
+\title{Restore the caller's plotting settings}
 \usage{
 coursekata_unload_theme()
 }
@@ -10,8 +10,9 @@ coursekata_unload_theme()
 No return value, called to restore the global state of \code{ggplot2}.
 }
 \description{
-This function will restore all of the tweaks to themes and plotting to the original \code{ggplot2}
-defaults. If you want to go back to the CourseKata look and feel, run
+This function restores the theme, options, and geom defaults that were active
+before \code{\link[=coursekata_load_theme]{coursekata_load_theme()}} first changed them. Calling it again before
+another load has no effect. To go back to the CourseKata look and feel, run
 \code{\link[=coursekata_load_theme]{coursekata_load_theme()}}.
 }
 \seealso{

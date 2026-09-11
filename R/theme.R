@@ -32,6 +32,69 @@ theme_coursekata <- function() {
 }
 
 
+# The theme helper changes process-wide state owned by ggplot2 and base R. Keep
+# the state from the first load in an active load/unload cycle so calling
+# coursekata_load_theme() twice does not replace the caller's restoration point.
+.coursekata_theme_state <- new.env(parent = emptyenv())
+.coursekata_theme_state$active <- FALSE
+.coursekata_theme_state$snapshot <- NULL
+
+coursekata_theme_option_names <- function() {
+  c(
+    "repr.plot.width", "repr.plot.height",
+    "ggplot2.discrete.fill", "ggplot2.discrete.colour",
+    "ggplot2.continuous.fill", "ggplot2.continuous.colour"
+  )
+}
+
+coursekata_theme_option_state <- function() {
+  current <- options()
+  option_names <- coursekata_theme_option_names()
+  current[intersect(option_names, names(current))]
+}
+
+restore_coursekata_options <- function(saved) {
+  option_names <- coursekata_theme_option_names()
+  options(stats::setNames(
+    rep(list(NULL), length(option_names)), option_names
+  ))
+  if (length(saved) > 0L) options(saved)
+  invisible()
+}
+
+coursekata_theme_geom_defaults <- function() {
+  list(
+    bar = ggplot2::aes(
+      colour = "black", fill = coursekata_palette(1), linewidth = 0.1,
+      alpha = 0.7
+    ),
+    boxplot = ggplot2::aes(
+      colour = "black", fill = coursekata_palette(1), alpha = 0.6
+    ),
+    hline = ggplot2::aes(
+      colour = coursekata_palette("blue80"), linewidth = 1
+    ),
+    line = ggplot2::aes(colour = "black", linewidth = 1),
+    lm = ggplot2::aes(
+      colour = coursekata_palette("blue80"), linewidth = 1
+    ),
+    point = ggplot2::aes(colour = "black", size = 2, alpha = 0.6),
+    segment = ggplot2::aes(
+      colour = coursekata_palette("blue80"), linewidth = 1
+    ),
+    smooth = ggplot2::aes(
+      colour = coursekata_palette("blue80"), linewidth = 1
+    ),
+    violin = ggplot2::aes(
+      colour = "black", fill = coursekata_palette(1), alpha = 0.6
+    ),
+    vline = ggplot2::aes(
+      colour = coursekata_palette("blue80"), linewidth = 1
+    )
+  )
+}
+
+
 #' The color palettes used in our theme system
 #'
 #' @param indices The indices of the colors to pull (or all colors if no indices are given).
@@ -156,68 +219,33 @@ scale_discrete_coursekata <- function(...) {
 #' exception is when the user has called [`coursekata_unload_theme()`] and wants to go back to the
 #' CourseKata look and feel. When run, this function sets the CourseKata color palettes
 #' [`coursekata_palette()`], sets the default theme to [`theme_coursekata()`], and tweaks some
-#' default settings for specific plots. To restore the original `ggplot2` settings, run
-#' [`coursekata_unload_theme()`].
+#' default settings for specific plots. To restore the plotting settings that
+#' were active before this function first changed them, run [`coursekata_unload_theme()`].
 #'
 #' @return No return value, called to adjust the global state of `ggplot2`.
 #'
 #' @seealso coursekata_palette theme_coursekata scale_discrete_coursekata coursekata_unload_theme
 #' @export
 coursekata_load_theme <- function() {
-  ggplot2::update_geom_defaults("bar", ggplot2::aes(
-    `colour` = "black",
-    `fill` = coursekata_palette(1),
-    `linewidth` = 0.1,
-    `alpha` = 0.7
-  ))
+  first_load <- !isTRUE(.coursekata_theme_state$active)
+  if (first_load) {
+    .coursekata_theme_state$snapshot <- list(
+      theme = ggplot2::theme_get(),
+      options = coursekata_theme_option_state(),
+      geom_defaults = list()
+    )
+    .coursekata_theme_state$active <- TRUE
+  }
 
-  ggplot2::update_geom_defaults("boxplot", ggplot2::aes(
-    `colour` = "black",
-    `fill` = coursekata_palette(1),
-    `alpha` = .6
-  ))
-
-  ggplot2::update_geom_defaults("hline", ggplot2::aes(
-    `colour` = coursekata_palette("blue80"),
-    `linewidth` = 1
-  ))
-
-  ggplot2::update_geom_defaults("line", ggplot2::aes(
-    `colour` = "black",
-    `linewidth` = 1
-  ))
-
-  ggplot2::update_geom_defaults("lm", ggplot2::aes(
-    `colour` = coursekata_palette("blue80"),
-    `linewidth` = 1
-  ))
-
-  ggplot2::update_geom_defaults("point", ggplot2::aes(
-    `colour` = "black",
-    `size` = 2,
-    `alpha` = 0.6
-  ))
-
-  ggplot2::update_geom_defaults("segment", ggplot2::aes(
-    `colour` = coursekata_palette("blue80"),
-    `linewidth` = 1
-  ))
-
-  ggplot2::update_geom_defaults("smooth", ggplot2::aes(
-    `colour` = coursekata_palette("blue80"),
-    `linewidth` = 1
-  ))
-
-  ggplot2::update_geom_defaults("violin", ggplot2::aes(
-    `colour` = "black",
-    `fill` = coursekata_palette(1),
-    `alpha` = .6
-  ))
-
-  ggplot2::update_geom_defaults("vline", ggplot2::aes(
-    `colour` = coursekata_palette("blue80"),
-    `linewidth` = 1
-  ))
+  defaults <- coursekata_theme_geom_defaults()
+  for (geom in names(defaults)) {
+    previous <- ggplot2::update_geom_defaults(geom, defaults[[geom]])
+    if (first_load) {
+      saved <- .coursekata_theme_state$snapshot
+      saved$geom_defaults[[geom]] <- previous
+      .coursekata_theme_state$snapshot <- saved
+    }
+  }
 
   ggplot2::theme_set(theme_coursekata())
 
@@ -234,10 +262,11 @@ coursekata_load_theme <- function() {
 }
 
 
-#' Restore `ggplot2` default settings
+#' Restore the caller's plotting settings
 #'
-#' This function will restore all of the tweaks to themes and plotting to the original `ggplot2`
-#' defaults. If you want to go back to the CourseKata look and feel, run
+#' This function restores the theme, options, and geom defaults that were active
+#' before [`coursekata_load_theme()`] first changed them. Calling it again before
+#' another load has no effect. To go back to the CourseKata look and feel, run
 #' [`coursekata_load_theme()`].
 #'
 #' @return No return value, called to restore the global state of `ggplot2`.
@@ -245,91 +274,17 @@ coursekata_load_theme <- function() {
 #' @seealso coursekata_load_theme
 #' @export
 coursekata_unload_theme <- function() {
-  # find these values by creating a plot, storing it to a variable, and, e.g.
-  # p$layers[[1]]$geom$default_aes
-  ggplot2::update_geom_defaults("bar", ggplot2::aes(
-    `colour` = NA,
-    `fill` = "grey35",
-    `linewidth` = 0.5,
-    `linetype` = 1,
-    `alpha` = NA,
-  ))
+  if (!isTRUE(.coursekata_theme_state$active)) return(invisible())
 
-  ggplot2::update_geom_defaults("boxplot", ggplot2::aes(
-    `weight` = 1,
-    `colour` = "grey20",
-    `fill` = "white",
-    `linewidth` = 0.5,
-    `alpha` = NA,
-    `shape` = 19,
-    `linetype` = "solid"
-  ))
+  saved <- .coursekata_theme_state$snapshot
+  for (geom in names(saved$geom_defaults)) {
+    ggplot2::update_geom_defaults(geom, saved$geom_defaults[[geom]])
+  }
+  ggplot2::theme_set(saved$theme)
+  restore_coursekata_options(saved$options)
 
-  ggplot2::update_geom_defaults("hline", ggplot2::aes(
-    `colour` = "black",
-    `linewidth` = 0.5,
-    `linetype` = 1,
-    `alpha` = NA
-  ))
-
-  ggplot2::update_geom_defaults("line", ggplot2::aes(
-    `colour` = "black",
-    `linewidth` = 0.5,
-    `linetype` = 1,
-    `alpha` = NA
-  ))
-
-  ggplot2::update_geom_defaults("point", ggplot2::aes(
-    `shape` = 19,
-    `colour` = "black",
-    `size` = 1.5,
-    `fill` = NA,
-    `alpha` = NA,
-    `stroke` = 0.5,
-  ))
-
-  ggplot2::update_geom_defaults("segment", ggplot2::aes(
-    `colour` = "black",
-    `linewidth` = 0.5,
-    `linetype` = 1,
-    `alpha` = NA
-  ))
-
-  ggplot2::update_geom_defaults("smooth", ggplot2::aes(
-    `colour` = "#3366FF",
-    `fill` = "grey60",
-    `linewidth` = 1,
-    `linetype` = 1,
-    `weight` = 1,
-    `alpha` = 0.4
-  ))
-
-  ggplot2::update_geom_defaults("violin", ggplot2::aes(
-    `weight` = 1,
-    `colour` = "grey20",
-    `fill` = "white",
-    `linewidth` = 0.5,
-    `alpha` = NA,
-    `linetype` = "solid"
-  ))
-
-  ggplot2::update_geom_defaults("vline", ggplot2::aes(
-    `colour` = "black",
-    `linewidth` = 0.5,
-    `linetype` = 1,
-    `alpha` = NA
-  ))
-
-  ggplot2::theme_set(ggplot2::theme_grey())
-
-  options(
-    repr.plot.width = NULL,
-    repr.plot.height = NULL,
-    ggplot2.discrete.fill = NULL,
-    ggplot2.discrete.colour = NULL,
-    ggplot2.continuous.fill = NULL,
-    ggplot2.continuous.colour = NULL
-  )
+  .coursekata_theme_state$active <- FALSE
+  .coursekata_theme_state$snapshot <- NULL
 
   invisible()
 }
