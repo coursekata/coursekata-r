@@ -41,7 +41,6 @@
 #' @return A ggplot object with squared residual polygons added.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(X = 1:10, Y = 2 + 3 * (1:10) + rnorm(10))
@@ -50,7 +49,8 @@
 #' gf_point(Y ~ X, data = df) %>%
 #'   gf_function(my_fun) %>%
 #'   gf_square_resid_fun(my_fun, color = "red", alpha = 0.3)
-gf_square_resid_fun <- ggformula::layer_factory(
+gf_square_resid_fun <- named_layer_factory(
+  function_name = "gf_square_resid_fun",
   # package-qualified so `::` resolves it whether or not coursekata is attached;
   # see the note above `gf_squareplot()`'s `layer_factory()` call
   geom = coursekata::GeomSquareResid,
@@ -69,8 +69,12 @@ gf_square_resid_fun <- ggformula::layer_factory(
   # "supplied as NULL"; the rest must be extras to survive the factory -- see
   # `gf_resid()` for why `...` would drop them
   extras = alist(fun = , aspect = 4 / 6, alpha = 0.1),
+  .pre_bindings = alist(
+    resid_jitter = resid_jitter,
+    resid_fun_spec = resid_fun_spec,
+    resid_layer_fun = resid_layer_fun
+  ),
   note = "the function to measure: a function of x returning predicted y",
-  # `pre` is evaluated in the ggformula namespace, so a coursekata helper needs :::
   pre = {
     # the second positional argument binds to `gformula`, but this function takes
     # a function there; take it back before anything reads it. The move is
@@ -92,7 +96,7 @@ gf_square_resid_fun <- ggformula::layer_factory(
       # than replaying the plot's: two layers sharing a seed land identically.
       # An unseeded jitter has no offsets to share, so it is pinned here -- on
       # the plot this returns, never on the one the caller still holds.
-      jitter <- coursekata:::resid_jitter(if (missing(object)) NULL else object)
+      jitter <- resid_jitter(if (missing(object)) NULL else object)
       object <- jitter$plot
 
       # One call, so the order the refusals fire in lives in one place: not a
@@ -101,7 +105,7 @@ gf_square_resid_fun <- ggformula::layer_factory(
       # `resid_end()` never runs and the end aesthetic is "yend" outright.
       # `resid_fun_spec()` returns only the data and the mapping precisely so
       # this function states its own geom, inherit and tag below.
-      resid <- coursekata:::resid_fun_spec(
+      resid <- resid_fun_spec(
         object, if (missing(fun)) NULL else fun, "gf_square_resid_fun"
       )
       # fill it only when the caller left it alone: overwriting swallows the
@@ -117,7 +121,7 @@ gf_square_resid_fun <- ggformula::layer_factory(
 
       # here rather than at the factory: it needs this call's mapping, and a
       # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's
-      layer_fun <- coursekata:::resid_layer_fun("square_resid", resid$aesthetics)
+      layer_fun <- resid_layer_fun("square_resid", resid$aesthetics)
     }
   }
 )

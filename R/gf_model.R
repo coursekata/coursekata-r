@@ -80,7 +80,6 @@
 #'   and everything else about how it reads keep your own words. The plot passed IN is untouched.
 #'
 #' @export
-#' @importFrom ggformula layer_factory
 #' @examples
 #' # the empty model predicts the same value (the mean) for every observation
 #' empty_model <- lm(body_mass_kg ~ NULL, data = penguins)
@@ -140,12 +139,19 @@
 #' # a plot that draws only its outcome implies the grand mean
 #' gf_histogram(~body_mass_kg, data = penguins, binwidth = 0.25) %>%
 #'   gf_model()
-gf_model <- ggformula::layer_factory(
+gf_model <- named_layer_factory(
+  function_name = "gf_model",
   geom = "line",
   stat = "identity",
   position = "identity",
   aes_form = NULL,
   extras = alist(model = ),
+  .pre_bindings = alist(
+    implied_model_spec = implied_model_spec,
+    model_layer_spec = model_layer_spec,
+    implied_layer_fun = implied_layer_fun,
+    model_layer_fun = model_layer_fun
+  ),
   note = "the model to draw: a fit from lm() or aov(), or the formula for one",
   pre = {
     # `layer_factory()` binds the second positional argument to `gformula`, but
@@ -171,9 +177,9 @@ gf_model <- ggformula::layer_factory(
     if (!missing(object) && !isTRUE(show.help)) {
       inferred <- missing(model) || is.null(model)
       spec <- if (inferred) {
-        coursekata:::implied_model_spec(object, rlang::list2(...))
+        implied_model_spec(object, rlang::list2(...))
       } else {
-        coursekata:::model_layer_spec(object, model, rlang::list2(...))
+        model_layer_spec(object, model, rlang::list2(...))
       }
       object <- spec$plot %||% object # only the inferred path pins
       geom <- spec$geom
@@ -183,9 +189,9 @@ gf_model <- ggformula::layer_factory(
       aesthetics <- spec$aesthetics
       inherit <- spec$inherit
       layer_fun <- if (inferred) {
-        coursekata:::implied_layer_fun(spec$params, spec$tag)
+        implied_layer_fun(spec$params, spec$tag)
       } else {
-        coursekata:::model_layer_fun(spec$params, spec$tag)
+        model_layer_fun(spec$params, spec$tag)
       }
     }
   }

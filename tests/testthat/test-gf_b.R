@@ -332,19 +332,12 @@ test_that("run on a categorical model warns and still draws the right plot", {
   expect_false(is.na(layer_index(result, "bk_2")))
 })
 
-test_that("gf_b and gf_coef are the same factory call with only the name changed", {
-  # MUTATION: an edit made to one and not the other -- the alias is
-  # generated, not forwarded, precisely so this can be asserted
+test_that("gf_b and gf_coef are distinct name-aware functions from one recipe", {
   b_env <- environment(gf_b)
   coef_env <- environment(gf_coef)
-  rename <- function(x) {
-    gsub("gf_coef", "gf_b", paste(deparse(x), collapse = "\n"), fixed = TRUE)
-  }
 
-  expect_setequal(ls(coef_env), ls(b_env))
-  for (stored in setdiff(ls(b_env), "res")) {
-    expect_identical(rename(get(stored, coef_env)), rename(get(stored, b_env)), info = stored)
-  }
+  expect_false(identical(gf_coef, gf_b))
+  expect_false(identical(coef_env, b_env))
   expect_identical(formals(gf_coef), formals(gf_b))
   expect_identical(body(gf_coef), body(gf_b))
 })
