@@ -81,7 +81,8 @@ gf_histogram(~b1, data = sdob1, fill = ~ middle(b1, .95), binwidth = 1) %>%
 
 Two calls put two sets on one plot, which is how you see what changing alpha
 costs you. `show_labels = TRUE` puts each call's explanation in its own measured
-guide row, outside both the histogram and the numeric axis.
+callout inside the panel. The callouts are placed together so their boxes and
+leaders stay separate when the panel has room.
 
 ```{r}
 gf_histogram(~b1, data = sdob1, binwidth = 1) %>%
@@ -114,7 +115,9 @@ model on the top axis, the sample estimate on the bottom, and a marker at the
 null hypothesis. Both overlays take a plot and give one back, so the same
 frame goes just as readily on a `gf_histogram()` of the same shuffles.
 The frame is measured guide content outside the data panel, so it does not
-change the count range or the size of the squares.
+change the count range or the size of the squares. An x position scale can come
+before or after `show_dgp()`; the final scale supplies the guides' limits and
+breaks.
 
 With only ten shuffles the mean of the distribution can land well away from the
 null.

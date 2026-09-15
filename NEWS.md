@@ -7,10 +7,10 @@
 - Resolve ggplot2's themed defaults when drawing models, including when
   CourseKata is used through namespace-qualified calls without attaching it.
 - Add the conventional `StatDistMean`/`stat_dist_mean()` ggplot2 extension
-  surface beneath `show_mean()`. Rebuild `show_dgp()` with scale-owned position
-  guides, keeping its population and estimate frames outside the data panel so
-  fixed, transformed, zoomed, and free count axes no longer need special
-  handling.
+  surface beneath `show_mean()`. Rebuild `show_dgp()` with plot-level position
+  guides, keeping its population and estimate frames outside the data panel and
+  preserving them when an x position scale is added later. Fixed, transformed,
+  zoomed, and free count axes no longer need special handling.
 - Complete the cutoff extension surface with `StatCutoff`/`stat_cutoff()`,
   `GeomCutoff`/`geom_cutoff()`, and `GuideCutoff`/`guide_cutoff()`.
   `show_cutoffs()` now leaves ggplot2's numeric axis intact and draws its

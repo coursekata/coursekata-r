@@ -199,6 +199,9 @@ show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
 #' with fixed, zoomed, transformed, and free count axes. The ordinary numeric x
 #' guide stays in place as the estimate scale. Zero is omitted when it is not a
 #' finite visible value on that scale; it is never moved to a boundary.
+#' An x position scale can be added before or after `show_dgp()`; the final scale
+#' supplies the limits and breaks for both guides. A later [ggplot2::guides()]
+#' call can replace either guide in the usual ggplot2 way.
 #'
 #' @param object A plot of one distribution of estimates.
 #' @param color Color of the axes, equations and titles. Default `"#003d70"`.

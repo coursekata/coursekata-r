@@ -40,6 +40,9 @@ panel. They therefore do not change the count range and remain compatible
 with fixed, zoomed, transformed, and free count axes. The ordinary numeric x
 guide stays in place as the estimate scale. Zero is omitted when it is not a
 finite visible value on that scale; it is never moved to a boundary.
+An x position scale can be added before or after \code{show_dgp()}; the final scale
+supplies the limits and breaks for both guides. A later \code{\link[ggplot2:guides]{ggplot2::guides()}}
+call can replace either guide in the usual ggplot2 way.
 }
 \examples{
 # with only ten shuffles the mean of the distribution can land well away
