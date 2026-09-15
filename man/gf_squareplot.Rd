@@ -156,8 +156,8 @@ gf_squareplot(~Thumb, data = Fingers) \%>\% show_mean()
 
 # frame a sampling distribution with its data generating process: with only
 # 10 shuffles, the mean of the distribution can land far from the null.
-# Position-scale limits come before show_dgp() when its guides should remain;
-# the helper itself does not alter the count range.
+# Position-scale limits and show_dgp() compose in either order; neither
+# changes the count range.
 shuffled_b1 <- function(n) {
   data.frame(b1 = replicate(n, {
     shuffled_tip <- base::sample(TipExperiment$Tip)

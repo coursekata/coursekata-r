@@ -218,17 +218,15 @@ test_that("show_dgp() reserves guide space without changing the panel", {
   expect_equal(panel_top(p), panel_top(base))
   expect_equal(count_top(p), count_top(base))
 
-  scale <- p$scales$get_scales("x")
-  expect_s3_class(scale$guide, "GuideAxisStack")
-  expect_length(position_guide_matches(scale$guide, "GuideDgp", "estimate"), 1)
-  expect_length(position_guide_matches(scale$secondary.axis, "GuideDgp", "population"), 1)
+  expect_s3_class(p$guides$guides$x, "GuideAxisStack")
+  expect_length(position_guide_matches(p$guides$guides$x, "GuideDgp", "estimate"), 1)
+  expect_length(position_guide_matches(p$guides$guides$x.sec, "GuideDgp", "population"), 1)
 })
 
 test_that("the population and estimate narratives keep their teaching roles", {
   p <- show_dgp(framed())
-  scale <- p$scales$get_scales("x")
-  estimate <- position_guide_matches(scale$guide, "GuideDgp", "estimate")[[1]]
-  population <- position_guide_matches(scale$secondary.axis, "GuideDgp", "population")[[1]]
+  estimate <- position_guide_matches(p$guides$guides$x, "GuideDgp", "estimate")[[1]]
+  population <- position_guide_matches(p$guides$guides$x.sec, "GuideDgp", "population")[[1]]
 
   expect_identical(population$params$heading, "Population Parameter (DGP)")
   expect_identical(estimate$params$heading, "Parameter Estimate")
@@ -244,17 +242,45 @@ test_that("the two overlays compose in either order", {
   expect_equal(tagged(a, "distribution_mean")$yend, tagged(b, "distribution_mean")$yend)
   expect_equal(count_top(a), count_top(b))
   expect_equal(
-    length(position_guide_matches(a$scales$get_scales("x")$guide, "GuideDgp")),
-    length(position_guide_matches(b$scales$get_scales("x")$guide, "GuideDgp"))
+    length(position_guide_matches(a$guides$guides$x, "GuideDgp")),
+    length(position_guide_matches(b$guides$guides$x, "GuideDgp"))
   )
+})
+
+test_that("show_dgp and position-scale limits compose in either order", {
+  limits_first <- framed() %>%
+    gf_lims(x = c(-100, 100)) %>%
+    show_dgp()
+  dgp_first <- suppressMessages(
+    framed() %>%
+      show_dgp() %>%
+      gf_lims(x = c(-100, 100))
+  )
+
+  for (plot in list(limits_first, dgp_first)) {
+    expect_equal(
+      ggplot2::ggplot_build(plot)$layout$panel_scales_x[[1]]$get_limits(),
+      c(-100, 100)
+    )
+    expect_length(
+      position_guide_matches(plot$guides$guides$x, "GuideDgp", "estimate"),
+      1L
+    )
+    expect_length(
+      position_guide_matches(
+        plot$guides$guides$x.sec, "GuideDgp", "population"
+      ),
+      1L
+    )
+    expect_s3_class(suppressWarnings(ggplot2::ggplotGrob(plot)), "gtable")
+  }
 })
 
 test_that("the DGP null remains zero when the distribution mean is not", {
   p <- framed() %>% show_mean() %>% show_dgp()
-  scale <- p$scales$get_scales("x")
   expect_false(isTRUE(all.equal(tagged(p, "distribution_mean")$xintercept, 0)))
   expect_identical(
-    position_guide_matches(scale$guide, "GuideDgp", "estimate")[[1]]$params$value,
+    position_guide_matches(p$guides$guides$x, "GuideDgp", "estimate")[[1]]$params$value,
     0
   )
 })

@@ -5,9 +5,12 @@ annotation_histogram <- function() {
 }
 
 primary_guide_children <- function(plot) {
-  scale <- plot$scales$get_scales("x")
-  if (is.null(scale)) return(list())
-  guide <- scale$guide
+  guide <- plot$guides$guides$x
+  if (is.null(guide)) {
+    scale <- plot$scales$get_scales("x")
+    if (is.null(scale)) return(list())
+    guide <- scale$guide
+  }
   if (inherits(guide, "GuideAxisStack")) guide$params$guides else list(guide)
 }
 
@@ -68,15 +71,13 @@ test_that("cutoff and DGP guide order is independent of helper order", {
   expect_identical(coursekata_child_signature(dgp_then_cutoff), expected)
   expect_length(
     position_guide_matches(
-      cutoff_then_dgp$scales$get_scales("x")$secondary.axis,
-      "GuideDgp", "population"
+      cutoff_then_dgp$guides$guides$x.sec, "GuideDgp", "population"
     ),
     1
   )
   expect_length(
     position_guide_matches(
-      dgp_then_cutoff$scales$get_scales("x")$secondary.axis,
-      "GuideDgp", "population"
+      dgp_then_cutoff$guides$guides$x.sec, "GuideDgp", "population"
     ),
     1
   )
@@ -109,8 +110,6 @@ test_that("mean, DGP, and cutoff helpers retain their separate meanings", {
     callout_layers <- Filter(
       function(layer) inherits(layer$geom, "GeomCutoffCallout"), plot$layers
     )
-    scale <- plot$scales$get_scales("x")
-
     expect_length(mean_layer, 1L)
     expect_equal(
       ggplot2::layer_data(plot, mean_layer)$xintercept,
@@ -125,11 +124,11 @@ test_that("mean, DGP, and cutoff helpers retain their separate meanings", {
     )
     expect_length(callout_layers, 1L)
     expect_length(
-      position_guide_matches(scale$guide, "GuideDgp", "estimate"), 1L
+      position_guide_matches(plot$guides$guides$x, "GuideDgp", "estimate"), 1L
     )
     expect_length(
       position_guide_matches(
-        scale$secondary.axis, "GuideDgp", "population"
+        plot$guides$guides$x.sec, "GuideDgp", "population"
       ),
       1L
     )
