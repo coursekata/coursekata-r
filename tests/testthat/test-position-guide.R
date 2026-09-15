@@ -28,16 +28,18 @@ test_that("scale and plot guide objects are detached before composition", {
     base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
   )
   out_scale <- out$scales$get_scales("x")
+  out_guide <- out$guides$guides$x
 
   expect_identical(base$scales$get_scales("x"), original_scale)
   expect_identical(base$guides, original_guides)
   expect_true("x" %in% names(base$guides$guides))
-  expect_false("x" %in% names(out$guides$guides))
+  expect_setequal(names(out$guides$guides), c("x", "x.sec"))
   expect_s3_class(original_scale$guide, "waiver")
-  expect_s3_class(out_scale$guide, "GuideAxisStack")
+  expect_s3_class(out_scale$guide, "waiver")
+  expect_s3_class(out_guide, "GuideAxisStack")
   expect_identical(out_scale$limits, c(1, 6))
   expect_identical(out_scale$breaks, c(2, 4, 6))
-  expect_identical(out_scale$guide$params$guides[[1]]$params$angle, 17)
+  expect_identical(out_guide$params$guides[[1]]$params$angle, 17)
 })
 
 test_that("a named NULL guide override remains explicit suppression", {
@@ -49,13 +51,13 @@ test_that("a named NULL guide override remains explicit suppression", {
   out <- add_dgp_position_guides(
     base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
   )
-  guide <- out$scales$get_scales("x")$guide
+  guide <- out$guides$guides$x
 
   expect_s3_class(guide, "GuideDgp")
   expect_true("x" %in% names(base$guides$guides))
 })
 
-test_that("moving a position override preserves unrelated caller guides", {
+test_that("recomposing a position override preserves unrelated caller guides", {
   legend <- ggplot2::guide_legend(reverse = TRUE)
   base <- ggplot2::ggplot(
     mtcars, ggplot2::aes(wt, mpg, colour = factor(cyl))
@@ -68,7 +70,7 @@ test_that("moving a position override preserves unrelated caller guides", {
   )
 
   expect_setequal(names(base$guides$guides), c("x", "colour"))
-  expect_identical(names(out$guides$guides), "colour")
+  expect_setequal(names(out$guides$guides), c("x", "x.sec", "colour"))
   expect_true(out$guides$guides$colour$params$reverse)
   expect_no_error(ggplot2::ggplotGrob(out))
 })
@@ -85,7 +87,7 @@ test_that("an existing axis stack is rebuilt flat with its settings", {
   out <- add_dgp_position_guides(
     base, guide_dgp(role = "estimate"), guide_dgp(role = "population")
   )
-  stack <- out$scales$get_scales("x")$guide
+  stack <- out$guides$guides$x
 
   expect_s3_class(stack, "GuideAxisStack")
   expect_length(stack$params$guides, 3)
@@ -97,22 +99,34 @@ test_that("an existing axis stack is rebuilt flat with its settings", {
   expect_identical(stack$params$position, "bottom")
 })
 
-test_that("DGP guides are scale-owned and a later scale replacement wins", {
+test_that("DGP guides survive a later position-scale replacement", {
   base <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) + ggplot2::geom_point()
   estimate <- dgp_upright_guide(guide_dgp(role = "estimate"))
   population <- dgp_upright_guide(guide_dgp(role = "population"))
   out <- add_dgp_position_guides(base, estimate, population)
-  scale <- out$scales$get_scales("x")
+  guide <- out$guides$guides$x
+  secondary <- out$guides$guides$x.sec
 
-  expect_s3_class(scale$guide, "GuideAxisStack")
-  expect_length(position_guide_matches(scale$guide, "GuideDgp", "estimate"), 1)
-  expect_s3_class(scale$secondary.axis, "AxisSecondary")
-  expect_length(position_guide_matches(scale$secondary.axis, "GuideDgp", "population"), 1)
+  expect_s3_class(guide, "GuideAxisStack")
+  expect_length(position_guide_matches(guide, "GuideDgp", "estimate"), 1)
+  expect_s3_class(secondary, "GuideDgp")
+  expect_length(position_guide_matches(secondary, "GuideDgp", "population"), 1)
 
-  replaced <- suppressMessages(out + ggplot2::scale_x_continuous())
+  replaced <- suppressMessages(out + ggplot2::scale_x_continuous(
+    limits = c(1, 6), breaks = c(2, 4, 6)
+  ))
   replacement <- replaced$scales$get_scales("x")
   expect_s3_class(replacement$guide, "waiver")
   expect_s3_class(replacement$secondary.axis, "waiver")
+  expect_length(
+    position_guide_matches(replaced$guides$guides$x, "GuideDgp", "estimate"),
+    1
+  )
+  expect_length(
+    position_guide_matches(replaced$guides$guides$x.sec, "GuideDgp", "population"),
+    1
+  )
+  expect_no_error(ggplot2::ggplotGrob(replaced))
 })
 
 test_that("DGP installation refuses reversed teaching sides", {
@@ -143,7 +157,7 @@ test_that("repeated builds neither expand scales nor accumulate guide children",
     guide_dgp(value = 0, role = "population")
   )
   before <- ggplot2::ggplot_build(base)$layout$panel_params[[1]]$x.range
-  expected_children <- length(out$scales$get_scales("x")$guide$params$guides)
+  expected_children <- length(out$guides$guides$x$params$guides)
 
   invisible(ggplot2::ggplotGrob(out))
   invisible(ggplot2::ggplotGrob(out))
@@ -152,7 +166,7 @@ test_that("repeated builds neither expand scales nor accumulate guide children",
     ggplot2::ggplot_build(out)$layout$panel_params[[1]]$x.range,
     before
   )
-  expect_length(out$scales$get_scales("x")$guide$params$guides, expected_children)
+  expect_length(out$guides$guides$x$params$guides, expected_children)
 })
 
 test_that("flipped guide state reads suppression from the physical aesthetic", {

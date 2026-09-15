@@ -4,7 +4,8 @@
 #' plot would therefore let a guide edit leak back into the plot the caller
 #' still holds. This helper clones the scale collection, materializes an
 #' ordinary continuous position scale when none is explicit, and copies the
-#' guide collection before removing an override that is moved onto the scale.
+#' guide collection before removing an override that will be recomposed at the
+#' plot level.
 #'
 #' @param plot A ggplot object.
 #' @param aesthetic The mapped position aesthetic, `"x"` or `"y"`.
@@ -249,7 +250,7 @@ resolved_position_guide_side <- function(guide, scale_position) {
   if (is.null(position) || inherits(position, "waiver")) scale_position else position
 }
 
-#' Install the two scale-owned guides used by `show_dgp()`
+#' Install the two plot-level guides used by `show_dgp()`
 #'
 #' @param plot A ggplot object.
 #' @param estimate,population `GuideDgp` instances.
@@ -285,7 +286,8 @@ add_dgp_position_guides <- function(plot, estimate, population,
 
   children <- position_guide_children(state$guide)
   children <- order_coursekata_position_guides(c(children, list(estimate)))
-  state$scale$guide <- new_position_guide_stack(children, state$guide)
-  state$scale$secondary.axis <- ggplot2::dup_axis(guide = population)
-  state$plot
+  state$plot + ggplot2::guides(
+    x = new_position_guide_stack(children, state$guide),
+    x.sec = clone_position_guide(population)
+  )
 }

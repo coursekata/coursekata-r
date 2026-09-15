@@ -121,13 +121,12 @@ test_that("show_dgp does not change panel ranges or confuse zero with the mean",
     built_base$layout$panel_params[[1]]$y.range
   )
   expect_equal(ggplot2::layer_data(out, 2)$xintercept, mean(values$x))
-  scale <- out$scales$get_scales("x")
   expect_equal(
-    position_guide_matches(scale$guide, "GuideDgp", "estimate")[[1]]$params$value,
+    position_guide_matches(out$guides$guides$x, "GuideDgp", "estimate")[[1]]$params$value,
     0
   )
   expect_equal(
-    position_guide_matches(scale$secondary.axis, "GuideDgp", "population")[[1]]$params$value,
+    position_guide_matches(out$guides$guides$x.sec, "GuideDgp", "population")[[1]]$params$value,
     0
   )
 })
@@ -161,8 +160,8 @@ test_that("show_dgp follows ggplot2 coordinate composition", {
     "upright cartesian"
   )
 
-  # Polar coordinates do not train Cartesian position guides. If they are
-  # added later, ggplot2 therefore drops the DGP guides as part of replacing
-  # the coordinate system instead of asking GuideDgp to draw them.
-  expect_no_error(ggplot2::ggplotGrob(show_dgp(base) + ggplot2::coord_polar()))
+  expect_warning(
+    ggplot2::ggplotGrob(show_dgp(base) + ggplot2::coord_polar()),
+    "cannot render guides"
+  )
 })
