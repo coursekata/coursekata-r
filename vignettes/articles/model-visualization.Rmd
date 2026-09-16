@@ -69,6 +69,30 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
   gf_model(flipper_model, color = "firebrick")
 ```
 
+## The ggplot2 front door
+
+`geom_model()` draws the same model layer on an ordinary ggplot2 plot. Supply a
+fitted model or a two-sided formula.
+
+```{r}
+ggplot(penguins, aes(flipper_length_m, body_mass_kg)) +
+  geom_point() +
+  geom_model(model = flipper_model)
+```
+
+Leave `model` out to fit the model represented by the layer's mappings. As with
+other ggplot2 stats, this is computed separately in each panel and group.
+
+```{r}
+ggplot(penguins, aes(species, body_mass_kg)) +
+  geom_jitter(width = .1) +
+  geom_model()
+```
+
+`stat_model()` exposes the same calculation when you want to choose the drawing
+geom separately. `gf_model()` provides the same model behavior with ggformula
+syntax.
+
 ## Residuals
 
 A residual is the observed value minus the model's prediction. `gf_resid()`

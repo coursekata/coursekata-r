@@ -1,5 +1,9 @@
 # coursekata (development version)
 
+- Add `geom_model()` and `stat_model()` as the ggplot2-native model layers,
+  backed by exported `GeomModel` and `StatModel` extensions. They draw fitted
+  models or infer the model represented by the layer's mappings. `gf_model()`
+  now uses the same stat, geom, and layer builder.
 - Add conventional ggplot2 layer functions for model residuals and reductions:
   `geom_resid()`, `geom_square_resid()`, `geom_reduce()`,
   `geom_square_reduce()`, `stat_resid()`, and `stat_reduce()`. They predict from
