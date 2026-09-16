@@ -67,10 +67,13 @@ answer, exactly as it is for any other \code{gf_} layer.}
 \item{model}{A model already fit by \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}. The plot supplies
 the observations' position on the other axis; the model supplies what it
 predicted for each of them. May be given positionally or as \verb{model =}. A
-fit without an intercept, or one fit with weights, is refused: a reduction
-is only a reduction because total, error and reduction add up, and that
-identity is what an unweighted intercept guarantees. \code{\link[=gf_resid]{gf_resid()}} measures
-either of those fits happily, needing no such identity.}
+fit without an intercept, or one fit with weights, is refused. For an
+unweighted least-squares fit with an intercept, the sum of squared total
+deviations equals the sum of squared residuals plus the sum of squared
+reductions. That identity need not hold without an intercept. Weighted
+least squares instead guarantees a weighted identity based on a weighted
+mean, which the plot's plain areas do not represent. \code{\link[=gf_resid]{gf_resid()}} can
+measure either fit because it does not rely on the decomposition.}
 
 \item{aspect}{The square's aspect ratio. Default is \code{4/6}. Must be named.}
 
@@ -107,25 +110,24 @@ the way the classroom that asked for it says it.
 }
 \details{
 Draws squared reduction polygons between the grand mean and the values a
-fitted model predicts, so the model's share of the sum of squares is an
-area you can see. The square is built on the reduction itself and turns
-with it: a model of the variable the plot puts on x squares the horizontal
-distance. Its side is scaled to stay square on the page rather than in data
-units.
+fitted model predicts. Each polygon shows one observation's squared
+reduction; together, their areas represent the model sum of squares. The
+square is built on the reduction itself and turns with it: a model of the
+variable the plot puts on x squares the horizontal distance. Its side is
+scaled to stay square on the page rather than in data units.
 
-\code{aspect} belongs to all three square layers or to none of them. The squared
-reduction plus the squared residual equaling the squared total is a claim
-about areas on the page, and it only holds while \code{\link[=gf_square_resid]{gf_square_resid()}},
-\code{\link[=gf_square_reduce]{gf_square_reduce()}} and any squared total drawn alongside them all read the
-same \code{aspect}.
+Use the same \code{aspect} for all three square layers. Across observations, the
+reduction areas and residual areas sum to the total areas. The equality is
+between those sums, not between the three squares for any one observation.
+\code{\link[=gf_square_resid]{gf_square_resid()}}, \code{\link[=gf_square_reduce]{gf_square_reduce()}}, and any squared total drawn beside
+them must use the same \code{aspect} for their areas to share a scale.
 }
 \examples{
 set.seed(1)
 penguins_20 <- sample(penguins, 20)
 
-# two squares of one decomposition: the squared residual (firebrick) and the
-# squared reduction (blue), both reading the same aspect so the areas mean
-# what they say
+# two collections of squares in one sample-level decomposition: squared
+# residuals (firebrick) and squared reductions (blue), drawn at one aspect
 flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins_20)
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) \%>\%
   gf_model(flipper_model) \%>\%

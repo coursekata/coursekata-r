@@ -141,6 +141,10 @@ A jittered point layer and its model layer must use the same
 \code{\link[ggplot2:position_jitter]{ggplot2::position_jitter()}} object with a numeric seed. The model layer keeps
 the fitted endpoint fixed while moving the observed endpoint by the same
 amount as its point.
+
+Reduction layers express the ordinary least-squares sum-of-squares identity.
+They require an unweighted model with an intercept. The identity holds across
+the sums of the square areas, not separately for each observation.
 }
 \examples{
 model <- lm(Thumb ~ Height, data = Fingers)

@@ -1,8 +1,9 @@
 #' Add Reduction Lines to a Plot
 #'
-#' Draws reduction lines from the grand mean to the values a fitted model
-#' predicts for each observation -- the third side of the sum-of-squares
-#' decomposition, alongside [gf_resid()]'s residuals and the model's own fit.
+#' Draws reduction lines from the grand mean to the value a fitted model
+#' predicts for each observation. Squaring and summing those lengths across
+#' observations gives the model sum of squares; [gf_resid()] supplies the error
+#' term in the same decomposition.
 #' Each line runs along whichever axis the plot puts the model's outcome on,
 #' so a model of the variable drawn on x is measured across x rather than
 #' down y.
@@ -17,10 +18,13 @@
 #' @param model A model already fit by [`lm()`] or [`aov()`]. The plot supplies
 #'   the observations' position on the other axis; the model supplies what it
 #'   predicted for each of them. May be given positionally or as `model =`. A
-#'   fit without an intercept, or one fit with weights, is refused: a reduction
-#'   is only a reduction because total, error and reduction add up, and that
-#'   identity is what an unweighted intercept guarantees. [gf_resid()] measures
-#'   either of those fits happily, needing no such identity.
+#'   fit without an intercept, or one fit with weights, is refused. For an
+#'   unweighted least-squares fit with an intercept, the sum of squared total
+#'   deviations equals the sum of squared residuals plus the sum of squared
+#'   reductions. That identity need not hold without an intercept. Weighted
+#'   least squares instead guarantees a weighted identity based on a weighted
+#'   mean, which the plot's plain areas do not represent. [gf_resid()] can
+#'   measure either fit because it does not rely on the decomposition.
 #' @param linewidth The width of the reduction lines. Default is `0.2`. Must be named.
 #' @param gformula Not used. `gf_reduce()` measures a model, not an aesthetic
 #'   formula; a model given positionally lands here and is moved to `model`.
@@ -62,30 +66,23 @@
 #'   gf_model(gentoo_model) %>%
 #'   gf_reduce(gentoo_model, color = "blue")
 #'
-#' # residual (firebrick) and reduction (blue) together decompose each
-#' # observation's distance from the grand mean
+#' # each observation's signed deviation from the grand mean is its residual
+#' # (firebrick) plus its reduction (blue)
 #' gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
 #'   gf_model(flipper_model) %>%
 #'   gf_resid(flipper_model, color = "firebrick") %>%
 #'   gf_reduce(flipper_model, color = "blue")
 gf_reduce <- named_layer_factory(
   function_name = "gf_reduce",
-  # A bare ggproto symbol here only resolves through the search path -- see the
-  # note above `gf_squareplot()`'s `layer_factory()` call -- so both are
-  # package-qualified, which `::` resolves the same whether or not `coursekata`
-  # is attached.
+  # Generated functions may run without coursekata attached, so qualify the
+  # ggproto objects they capture.
   geom = coursekata::GeomResid,
   stat = coursekata::StatReduce,
-  # a placeholder: `pre` replaces this with the outcome-holding jitter the
-  # points layer is already drawn with
+  # `pre` replaces this with the point layer's endpoint-preserving jitter.
   position = "identity",
-  # `gf_reduce()` measures a model, not an aesthetic formula: the axes come off
-  # the plot and the end aesthetic is chosen by `resid_end()`. NULL is what
-  # `gf_resid()` uses for the same reason, and what makes a bare call print
-  # "gf_reduce() does not require a formula."
+  # Axes come from the plot; this layer has no aesthetic formula of its own.
   aes_form = NULL,
-  # `model` is declared with no default so that base `missing(model)` in `pre`
-  # can tell "not supplied" from "supplied as NULL" -- see `gf_resid()`
+  # No default: `pre` distinguishes an omitted model from an explicit `NULL`.
   extras = alist(model = , linewidth = 0.2),
   .pre_bindings = alist(
     reduce_spec = reduce_spec,
@@ -94,56 +91,38 @@ gf_reduce <- named_layer_factory(
   ),
   note = "the complex model to measure: a fit from lm() or aov()",
   pre = {
-    # `layer_factory()` binds the second positional argument to `gformula`, but
-    # `gf_reduce()` takes a model there -- see `gf_resid()` for the full
-    # reasoning, word for word the same here
+    # `layer_factory()` binds the second positional argument to `gformula`.
     if (!missing(gformula) && missing(model)) {
       model <- gformula
       gformula <- NULL
     }
 
-    # `pre` runs ahead of the help gate on every supported release, so a bare
-    # `gf_reduce()` has to fall straight through to it -- see `gf_resid()`
     if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
-      # One call, so the order the refusals fire in lives in one place -- see
-      # `reduce_spec()` for what that order is and why it matches `resid_spec()`'s.
-      # It does not read the points layer's position, so calling it before the
-      # jitter below is decided is safe.
       reduce <- reduce_spec(
         if (missing(object)) NULL else object, if (missing(model)) NULL else model, "gf_reduce"
       )
 
-      # A reduction's segments start at the grand mean, a single repeated
-      # number, so there is nothing for the OUTCOME axis to gain from
-      # jittering -- but which physical axis that is depends on the plot's
-      # orientation (a model of x is measured across x, per this function's
-      # own docs). `outcome` holds that axis still while the other axis still
-      # draws first, exactly as the points layer's, so its offsets stay
-      # identical to the points layer's on either orientation.
+      # Keep the grand-mean axis fixed while reproducing the point layer's
+      # jitter on the other axis.
       axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
       jitter <- resid_jitter(if (missing(object)) NULL else object, outcome = axis)
       object <- jitter$plot
 
-      # only when the caller left it alone: a stray positional argument lands
-      # here, and overwriting it is what would swallow the refusal ggformula
-      # already makes for one
+      # Preserve a caller-supplied data argument so ggformula can validate it.
       if (missing(data)) data <- reduce$data
       aesthetics <- reduce$aesthetics
 
-      # a reduction is these three or it is a different picture -- see `gf_resid()`
       geom <- coursekata::GeomResid
       stat <- coursekata::StatReduce
       position <- jitter$position
 
-      # set here rather than at the factory -- see `gf_resid()` for why
       layer_fun <- resid_layer_fun("reduce", reduce$aesthetics)
     }
   }
 )
 
-# The squared-reduction names share one recipe but remain independently
-# generated front doors so their diagnostics and caller environments stay
-# literal to the name used at the call site.
+# Generate each squared-reduction name independently so diagnostics name the
+# function called and mappings keep the caller's environment.
 gf_square_reduce_layer_factory <- function(function_name) {
   named_layer_factory(
     function_name = function_name,
@@ -200,26 +179,29 @@ gf_square_reduce_layer_factory <- function(function_name) {
 #' `r lifecycle::badge("experimental")`
 #'
 #' Draws squared reduction polygons between the grand mean and the values a
-#' fitted model predicts, so the model's share of the sum of squares is an
-#' area you can see. The square is built on the reduction itself and turns
-#' with it: a model of the variable the plot puts on x squares the horizontal
-#' distance. Its side is scaled to stay square on the page rather than in data
-#' units.
+#' fitted model predicts. Each polygon shows one observation's squared
+#' reduction; together, their areas represent the model sum of squares. The
+#' square is built on the reduction itself and turns with it: a model of the
+#' variable the plot puts on x squares the horizontal distance. Its side is
+#' scaled to stay square on the page rather than in data units.
 #'
-#' `aspect` belongs to all three square layers or to none of them. The squared
-#' reduction plus the squared residual equaling the squared total is a claim
-#' about areas on the page, and it only holds while [gf_square_resid()],
-#' [gf_square_reduce()] and any squared total drawn alongside them all read the
-#' same `aspect`.
+#' Use the same `aspect` for all three square layers. Across observations, the
+#' reduction areas and residual areas sum to the total areas. The equality is
+#' between those sums, not between the three squares for any one observation.
+#' [gf_square_resid()], [gf_square_reduce()], and any squared total drawn beside
+#' them must use the same `aspect` for their areas to share a scale.
 #'
 #' @param object A ggformula plot object, typically created with `gf_point()`.
 #' @param model A model already fit by [`lm()`] or [`aov()`]. The plot supplies
 #'   the observations' position on the other axis; the model supplies what it
 #'   predicted for each of them. May be given positionally or as `model =`. A
-#'   fit without an intercept, or one fit with weights, is refused: a reduction
-#'   is only a reduction because total, error and reduction add up, and that
-#'   identity is what an unweighted intercept guarantees. [gf_resid()] measures
-#'   either of those fits happily, needing no such identity.
+#'   fit without an intercept, or one fit with weights, is refused. For an
+#'   unweighted least-squares fit with an intercept, the sum of squared total
+#'   deviations equals the sum of squared residuals plus the sum of squared
+#'   reductions. That identity need not hold without an intercept. Weighted
+#'   least squares instead guarantees a weighted identity based on a weighted
+#'   mean, which the plot's plain areas do not represent. [gf_resid()] can
+#'   measure either fit because it does not rely on the decomposition.
 #' @param aspect The square's aspect ratio. Default is `4/6`. Must be named.
 #' @param alpha The transparency of the square's fill. Default is `0.1`. Must be named.
 #' @param gformula Not used. `gf_square_reduce()` measures a model, not an
@@ -253,9 +235,8 @@ gf_square_reduce_layer_factory <- function(function_name) {
 #' set.seed(1)
 #' penguins_20 <- sample(penguins, 20)
 #'
-#' # two squares of one decomposition: the squared residual (firebrick) and the
-#' # squared reduction (blue), both reading the same aspect so the areas mean
-#' # what they say
+#' # two collections of squares in one sample-level decomposition: squared
+#' # residuals (firebrick) and squared reductions (blue), drawn at one aspect
 #' flipper_model <- lm(body_mass_kg ~ flipper_length_m, data = penguins_20)
 #' gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
 #'   gf_model(flipper_model) %>%

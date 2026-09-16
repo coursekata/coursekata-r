@@ -1,10 +1,7 @@
 #' Which axis a residual arrived measured on
 #'
-#' Exactly one of `xend`/`yend` is mapped -- the terminal companion of the axis
-#' the plot put the model's outcome on -- so the column that is there is what
-#' says which way the residual runs. Reading it back off the data is what keeps
-#' every draw-time step (the segment, the square, the missing-value drop) in
-#' agreement with that one call-time decision.
+#' Exactly one of `xend` and `yend` is present. Its name identifies the axis
+#' carrying the model's outcome.
 #'
 #' @param data A layer's data.
 #'
@@ -32,8 +29,7 @@ resid_axis <- function(data) {
 #'
 #' @noRd
 square_vertices <- function(data, x_range, y_range, aspect) {
-  # the residual runs along the axis the prediction arrived on; the square is
-  # drawn out from it along the other one
+  # The residual defines one side; the square extends along the other axis.
   along <- resid_axis(data)
   across <- if (identical(along, "y")) "x" else "y"
   along_range <- if (identical(along, "y")) y_range else x_range
@@ -99,21 +95,10 @@ StatReduce <- ggplot2::ggproto(
 
 #' Jitter a residual's observed end the way its point was jittered
 #'
-#' A residual has to start where its point is drawn, and its point may have been
-#' jittered. The grammar's answer to two layers agreeing is a seed: two layers
-#' that each declare `position_jitter(width, height, seed)` land on identical
-#' offsets without knowing about each other, because the offsets are a function
-#' of the seed and the rows. So the residual declares its own jitter rather than
-#' capturing the points layer's position and replaying it.
-#'
-#' Delegate to [ggplot2::PositionJitter] with only `x` and `y`, so fitted
-#' endpoints are not moved. Its panel splitting, default widths and heights,
-#' seeds, and draw order then match the points layer's own implementation.
-#'
-#' A reduction starts at the grand mean, so its outcome axis must stay fixed.
-#' `outcome` names that axis (`"x"` or `"y"`). Both jitter draws still run,
-#' but only the other axis is copied back, preserving its offsets in either
-#' orientation.
+#' Seeded jitter gives the observation the same offset as its point. Running
+#' [ggplot2::PositionJitter] on `x` and `y` alone leaves fitted endpoints fixed.
+#' For reductions, `outcome` also holds the grand-mean axis fixed; the parent
+#' position still computes both axes so the other offset remains unchanged.
 #'
 #' @format A [ggplot2::Position] object.
 #'
@@ -132,7 +117,6 @@ PositionResidJitter <- ggplot2::ggproto(
   }
 )
 
-#' @noRd
 position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcome = NULL) {
   ggplot2::ggproto(
     NULL, PositionResidJitter, width = width, height = height, seed = seed, outcome = outcome
@@ -141,17 +125,13 @@ position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcom
 
 #' The position a residual has to be drawn with, and the plot to draw it on
 #'
-#' An unseeded jitter draws different offsets on every render, so nothing can
-#' attach to it -- not by replay and not by declaration. The residual therefore
-#' pins it, on the plot it returns rather than on the caller's: adding a
-#' residual to a jittered plot gives back a plot whose jitter is fixed, which is
-#' what makes the segment land on the point in the first place.
+#' An unseeded jitter cannot be reproduced by another layer. When needed, this
+#' function gives the plot's first layer a seed and returns the matching
+#' endpoint-preserving position for the residual layer.
 #'
 #' @param plot The plot the residual is being drawn on.
 #' @param outcome The aesthetic (`"x"` or `"y"`) to hold at its pre-jitter
-#'   value, or `NULL` to jitter both -- see `PositionResidJitter`'s own docs
-#'   for why holding rather than skipping a draw is what keeps the other
-#'   axis's offsets identical to the points layer's.
+#'   value, or `NULL` to jitter both.
 #'
 #' @return A list with `plot` and `position`.
 #'
@@ -191,7 +171,7 @@ resid_jitter <- function(plot, outcome = NULL) {
 #'
 #' @format A [ggplot2::Geom] object.
 #'
-#' @seealso [gf_resid()], the ggformula front door for the same layer.
+#' @seealso [gf_resid()], the ggformula function for the same layer.
 #' @export
 GeomResid <- ggplot2::ggproto(
   "GeomResid", ggplot2::GeomSegment,
@@ -255,9 +235,8 @@ GeomSquareResid <- ggplot2::ggproto(
 
 #' What the model predicts for every row the plot holds
 #'
-#' Predicting over the plot's own data, rather than reading the model's fitted
-#' values, is what keeps the two aligned when `lm()` has dropped rows: the
-#' rows it dropped for missingness are the rows the plot does not draw either.
+#' Prediction over the plot data preserves row alignment when model fitting
+#' omitted observations.
 #'
 #' @noRd
 resid_fitted <- function(model, data, call = caller_env()) {
@@ -284,12 +263,9 @@ resid_fitted <- function(model, data, call = caller_env()) {
 
 #' Which end aesthetic a model's residuals are measured on
 #'
-#' The plot has already put the model's outcome on an axis; the residual is the
-#' distance along that axis, so the prediction is named on that axis's terminal
-#' companion. If the outcome is on neither axis there is no such distance: the
-#' segment would run from an observation of one variable to a prediction of
-#' another, which is a plausible picture of nothing. `gf_model()` refuses that
-#' pairing and so does this.
+#' The prediction belongs on the end aesthetic for the axis carrying the
+#' model's outcome. A residual is undefined for this plot if neither axis maps
+#' that outcome.
 #'
 #' @noRd
 resid_end <- function(spec, model, call = caller_env()) {
@@ -310,26 +286,19 @@ resid_end <- function(spec, model, call = caller_env()) {
   if (identical(outcome_axis, "x")) "xend" else "yend"
 }
 
-#' @param from `NULL` for today's behavior: both axes are the plot's own
-#'   quosures. A column name to replace the positional aesthetic on the
-#'   outcome's axis with a `.data`-pronoun read of that column instead --
-#'   what `reduce_spec()` uses to start a reduction's segments at `.grand`
-#'   rather than at the plot's own observed values, while the other axis
-#'   still reads what the plot reads.
+#' Build the positional mapping for a residual-family layer
+#'
+#' @param from `NULL` to use the plot's observed value as the starting point,
+#'   or a column name such as `.grand` to replace that value.
 #'
 #' @noRd
 resid_mapping <- function(spec, end, from = NULL) {
   mapping <- ggplot2::aes(yend = .data$.fitted)
   names(mapping) <- end
-  # state the axes rather than inherit them: a plot built with ggplot2 directly
-  # carries them on its first layer, where there is nothing to inherit from,
-  # and the squares take the geom's own fill and colour so they cannot inherit
-  # at all. spec$mapping is the pinned quosures -- this draws what the plot
-  # draws, so leave it be; anything read here has to evaluate, not print.
+  # Keep the plot's quosures and their environments. Square layers cannot rely
+  # on inherited positional mappings.
   mapping[c("x", "y")] <- spec$mapping[c("x", "y")]
   if (!is.null(from)) {
-    # the outcome's axis is the one `end` names the terminal companion of
-    # ("yend" -> "y", "xend" -> "x"); the other axis is left alone
     axis <- sub("end$", "", end)
     mapping[[axis]] <- rlang::quo(.data[[from]])
   }
@@ -338,26 +307,10 @@ resid_mapping <- function(spec, end, from = NULL) {
 
 #' Refuse a fit whose squares would not add up
 #'
-#' The whole claim of a reduction is an identity: the error the empty model
-#' leaves, the error this model leaves, and the distance between the two
-#' predictions are three areas that add up. A reader is being shown PRE as a
-#' ratio of areas they can count, so an area that does not belong to the
-#' identity is not a rough picture of the right idea -- it is a picture that
-#' teaches an arithmetic that does not hold.
-#'
-#' The identity needs `sum((y - fitted) * (fitted - grand))` to vanish, which
-#' ordinary least squares gives for free BECAUSE it fits an intercept: the
-#' residuals come out orthogonal to a constant, so they are orthogonal to the
-#' grand mean. Two fits break it. Without an intercept there is no such
-#' guarantee -- measured on `lm(Thumb ~ Height - 1, data = Fingers)`, the two
-#' parts come to 11700.01 against a total of 11880.21, so about 180 of the
-#' total belongs to neither square. With weights the residuals are orthogonal
-#' in the weighted inner product instead, while the squares on the page are
-#' plain areas; measured, the parts overshoot the total by about 11.
-#'
-#' A refusal rather than a warning, and rather than a weighted baseline: this
-#' package's reductions are drawn to be counted, and there is no reading of a
-#' drawn square that is right for a fit whose own arithmetic is different.
+#' The area identity requires the residuals to be orthogonal to the fitted
+#' values' reduction from the grand mean. Unweighted least squares with an
+#' intercept guarantees that orthogonality. Weighted fits use a weighted inner
+#' product instead, so their unweighted areas do not satisfy the identity.
 #'
 #' @param model A model fit by `lm()` or `aov()`.
 #' @param fn The name to refuse in, e.g. `"gf_reduce"`.
@@ -383,8 +336,8 @@ check_decomposable <- function(model, fn, call = caller_env()) {
         "this model was fit with weights"
       },
       "*" = paste(
-        "total, error and reduction only add up to each other when a model's residuals",
-        "are orthogonal to the grand mean, and it is the intercept that guarantees that"
+        "the sums of the total, error and reduction squares only add up when residuals",
+        "are orthogonal to the model's reduction from the grand mean"
       ),
       i = paste(
         if (no_intercept) "fit the model with its intercept" else "fit the model unweighted",
@@ -395,20 +348,12 @@ check_decomposable <- function(model, fn, call = caller_env()) {
   )
 }
 
-#' Warn when a reduction is measured from the empty model
-#'
-#' @param model A model fit by `lm()` or `aov()`.
-#' @param fn The public function named in the warning.
-#'
-#' @return `model`, invisibly.
-#'
-#' @noRd
 warn_empty_reduction <- function(model, fn) {
   if (ncol(model$model) <= 1) {
     warn(
       c(
         glue("`{fn}()` was given the empty model, so every reduction is zero"),
-        "*" = "the empty model IS the grand mean; there is nothing for it to reduce",
+        "*" = "the empty model is the grand mean; there is nothing for it to reduce",
         "*" = "pass the model whose predictor you want to see the work of"
       ),
       class = "coursekata_reduce_empty"
@@ -430,13 +375,8 @@ reduction_grand <- function(model) {
 
 #' Refuse a plot that does not draw both of the axes a residual spans
 #'
-#' Lives apart from the spec functions because each one needs it and each has to
-#' fire it at the same moment: after the plot has been read, and before anything
-#' is predicted, so that a plot with no y is reported as a plot rather than as a
-#' model that could not be predicted or a function that could not be called. One
-#' guard, one message, three callers -- `resid_spec()`, `resid_fun_spec()` and
-#' `reduce_spec()`. `call` is threaded through so the refusal names the function
-#' the reader wrote rather than the helper it landed in.
+#' Run this check before prediction so a missing axis is reported as a plot
+#' problem, not as a model or function failure.
 #'
 #' @param spec A `plot_spec()`.
 #' @param call The calling environment, for error reporting.
@@ -447,9 +387,7 @@ reduction_grand <- function(model) {
 check_resid_axes <- function(spec, call = caller_env()) {
   absent <- c("x", "y")[purrr::map_lgl(c("x", "y"), ~ is.null(spec$mapping[[.x]]))]
   if (length(absent) > 0) {
-    # the reader's own spelling -- spec$mapping's quosures are pinned, and
-    # printing `.coursekata_pin_y` at a reader is exactly the refusal this
-    # guards against
+    # Labels retain the expressions the user wrote; pinned quosures do not.
     mapped <- purrr::imap_chr(spec$labels, function(label, aes) glue("{aes} = {label}"))
     abort(
       c(
@@ -463,20 +401,6 @@ check_resid_axes <- function(spec, call = caller_env()) {
   invisible(spec)
 }
 
-#' Refuse anything but a plot to layer a residual onto
-#'
-#' The first refusal all three spec functions make, and the only line of the
-#' three that is word for word the same, so it lives here rather than three
-#' times over. `fn` is the name the caller wrote: a helper naming itself would
-#' name a function the reader never called.
-#'
-#' @param object The plot the layer is being added to.
-#' @param fn The name to refuse in, e.g. `"gf_resid"`.
-#' @param call The calling environment, for error reporting.
-#'
-#' @return `object`, invisibly.
-#'
-#' @noRd
 check_resid_plot <- function(object, fn, call = caller_env()) {
   if (!inherits(object, c("gg", "ggplot"))) {
     abort(glue("`{fn}()` needs to be layered on top of a plot."), call = call)
@@ -484,16 +408,10 @@ check_resid_plot <- function(object, fn, call = caller_env()) {
   invisible(object)
 }
 
-#' The two things a residual layer is built from, once its prediction is known
+#' Assemble residual data and mappings
 #'
-#' The tail both spec functions share: the plot's own whole data frame with the
-#' prediction carried alongside it as `.fitted`, and the mapping that states the
-#' axes and names the end aesthetic. Keeping the plot's whole data frame is what
-#' lets facets partition it and lets ggplot2 drop missing rows from the overlay
-#' exactly as it does from the points.
-#'
-#' It is handed `end` rather than deriving it, because deriving it is precisely
-#' what the two callers do differently.
+#' Keep the complete plot data so facet variables and omitted rows stay aligned
+#' with the point layer.
 #'
 #' @param spec A `plot_spec()`.
 #' @param fitted One prediction per row of `spec$data`.
@@ -509,21 +427,10 @@ resid_pieces <- function(spec, fitted, end) {
   list(data = data, aesthetics = resid_mapping(spec, end))
 }
 
-#' Translate a plot and a model into the pieces a residual layer is built from
+#' Build a residual specification from a model
 #'
-#' The counterpart of `model_layer_spec()`: everything `layer_factory()`'s `pre`
-#' has to shadow, decided in a function rather than in a quoted block. It
-#' returns only `data` and `aesthetics` because which geom draws the residual,
-#' whether it inherits, and what it is tagged are per-function facts the factory
-#' call already states -- so all three model entry points call this and state
-#' their own.
-#'
-#' The refusals fire in the order the bespoke helper's lazy arguments forced
-#' them, and that order is what the recorded messages depend on: not a
-#' plot, then no model, then no x/y on the plot, then the prediction, then the
-#' axis the outcome is on. A histogram of `Thumb` measured against
-#' `Thumb ~ Height` has to say "needs both an x and a y", not "the axis carrying
-#' the model's outcome", so the axis guard has to precede `resid_end()`.
+#' Validation order is part of the error contract: plot, model, axes,
+#' prediction, then outcome axis.
 #'
 #' @param object The plot the layer is being added to.
 #' @param model A model fit by `lm()` or `aov()`.
@@ -551,30 +458,12 @@ resid_spec <- function(object, model, fn = "gf_resid", call = caller_env()) {
   resid_pieces(spec, fitted, resid_end(spec, model, call = call))
 }
 
-#' Translate a plot and a function of x into the pieces a residual layer is built from
+#' Build a residual specification from a function of x
 #'
-#' The sibling of `resid_spec()`, and a sibling rather than a mode of it, because
-#' the two compute different things. A model is asked what it predicts through
-#' `stats::predict()`, and which axis its residuals run along has to be
-#' discovered: `resid_end()` looks for the axis the plot put the outcome on and
-#' refuses a model whose outcome the plot does not draw. A function of x predicts
-#' y by definition -- there is no outcome to look for, `resid_end()` never runs,
-#' and the end aesthetic is stated here as `"yend"`. Folding the two together
-#' would put a branch on the very thing the fold claims to unify, and it would
-#' cost the refusal its wording: this argument has to be named `fun`, because R
-#' resolves the call `fun(...)` by searching the lexical chain for a function of
-#' that name, and `could not find function "fun"` is what a caller who writes a
-#' model or a formula here has always been told.
-#'
-#' What the two do share is everything around that difference, and they share it
-#' through `check_resid_plot()`, `check_resid_axes()` and `resid_pieces()` rather
-#' than by copy: the price of two entry points is that they must not drift, and
-#' the drift has nowhere to happen if the common half is only written once.
-#'
-#' The refusals fire in the same order `resid_spec()`'s do: not a plot, then
-#' nothing to measure, then no x/y on the plot, then the prediction. The axis
-#' guard has to precede the call to `fun`, so that a histogram measured against a
-#' function that cannot be called reports the plot rather than the function.
+#' A function of x predicts y by definition, so this path always uses `yend`.
+#' Keep the argument named `fun`: the resulting base R error is part of the
+#' existing interface. As with `resid_spec()`, validate the axes before calling
+#' user code.
 #'
 #' @param object The plot the layer is being added to.
 #' @param fun A function of the plot's x values returning a predicted y for each.
@@ -598,39 +487,16 @@ resid_fun_spec <- function(object, fun, fn = "gf_resid_fun", call = caller_env()
   }
   spec <- plot_spec(object)
   check_resid_axes(spec, call = call)
-  # `plot_x_values()` is the whole of "a function of x": the x quosure evaluated
-  # in the plot's own data, which is what a caller who wrote `gf_function(f)`
-  # above this line already drew `f` over
   fitted <- fun(plot_x_values(spec))
-  # stated, not derived: a function of x predicts y, so there is no outcome to
-  # look for and `resid_end()` never runs here
   resid_pieces(spec, fitted, "yend")
 }
 
-#' Translate a plot and a model into the pieces a reduction layer is built from
+#' Build a reduction specification from a model
 #'
-#' A SIBLING of `resid_spec()`, not a mode of it, because the two measure
-#' different distances. A residual runs from an observation to a prediction; a
-#' reduction runs from one model's prediction to another's -- the empty
-#' model's, always -- and the observation itself never enters the picture
-#' except to say where along the other axis the segment sits. That is why the
-#' segment's start is `.grand`, a single number repeated down every row,
-#' rather than anything read off `spec$data`.
-#'
-#' It shares `check_resid_plot()`, `plot_spec()`, `check_resid_axes()`,
-#' `resid_fitted()` and `resid_end()` with `resid_spec()`, called in that exact
-#' order, because the refusals a reader sees have to fire in the same sequence
-#' whichever of the two functions found the problem: not a plot, then no model,
-#' then no x/y on the plot, then the prediction, then the axis the outcome is
-#' on.
-#'
-#' The grand mean is the mean of `model`'s own model frame's first column --
-#' the outcome the model itself was fit on -- rather than `mean(fitted(model))`.
-#' The two agree for any model with an intercept, which is every model this
-#' package ever hands back, but only one of them is still the empty model's
-#' prediction if that ever changes, and only one of them is correct for a model
-#' fit on data narrower than the plot's own (a dropped-row model, or a model fit
-#' on a sample the plot was not built from).
+#' A reduction starts at the grand mean in the model frame and ends at the
+#' fitted value. Using the model frame matters when the model was fit on fewer
+#' rows than the plot contains. Validation follows the same order as
+#' `resid_spec()`.
 #'
 #' @param object The plot the layer is being added to.
 #' @param model A model fit by `lm()` or `aov()`.
@@ -659,12 +525,8 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
 
   check_decomposable(model, fn, call = call)
 
-  # the empty model has no predictors, so model$model (the frame it was fit
-  # on) holds only the outcome column
   warn_empty_reduction(model, fn)
 
-  # the empty model's prediction: the mean of the outcome the model was fit on,
-  # not `mean(fitted(model))` -- see the note above
   grand <- reduction_grand(model)
   data <- spec$data
   data$.fitted <- fitted
@@ -672,50 +534,21 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
   list(data = data, aesthetics = resid_mapping(spec, end, from = ".grand"))
 }
 
-#' Build the layer that draws residuals, the way `layer_factory()` asks for one
+#' Adapt residual layer construction to `layer_factory()`
 #'
-#' Three things `ggplot2::layer` alone cannot do here.
-#'
-#' It cannot tag the layer, and `layer_index()` is how every test and every
-#' example finds the residual.
-#'
-#' It would let `model` or `fun` through. An extra reaches here in `params`
-#' whenever the caller wrote `model =` or `fun =`; given positionally either one
-#' arrives as `gformula` instead, which ggformula drops on its own. Measured:
-#' `gf_resid_fun(p, fun = f)` hands this function `params = fun, linewidth` where
-#' `gf_resid_fun(p, f)` hands it `params = linewidth`. Both name what to draw
-#' rather than how, so both are removed, and that is what makes the two spellings
-#' build the identical layer even when parameter checking is enabled. Unlike
-#' `model_layer_fun()`, everything else the caller wrote is kept:
-#' `linewidth`, `aspect`, `color`, `alpha` and `linetype` are the whole point of
-#' `...` here and there is no plan to supply them instead.
-#'
-#' And it would build the mapping in the wrong environment. `gf_ingredients()`
-#' rewrites every quosure's environment to the caller's frame; the x and y
-#' quosures came from the plot, where the expression may name something only the
-#' plot's own frame has. Putting the plot's quosures back over the copies is
-#' what keeps such a plot measurable; anything mapped on this call keeps the
-#' caller's frame, which is where it was written.
-#'
-#' What it deliberately does NOT do is second-guess `check.param`. The two
-#' families this package extends disagree about a misspelled parameter --
-#' `ggplot2::layer()` defaults to `TRUE` and warns, `layer_factory()` always
-#' passes `FALSE` and discards it in silence -- and each is right within its own
-#' idiom. `gf_resid()` is a `gf_` function, so it takes ggformula's answer and is
-#' silent, the same as `gf_point()` beneath it in the pipe and the same as
-#' `gf_model()` beside it; a reader who misspells `color` in a pipe should not
-#' get a warning on one line and silence on the next. Anyone assembling the
-#' layer the ggplot2 way, with `layer(geom = GeomResid, stat = StatResid, ...)`,
-#' gets ggplot2's warning already, for free, because nothing here is in the way.
-#' Passing `check.param` through is what keeps both true at once.
+#' Named `model` and `fun` arguments arrive in `params` but are inputs to layer
+#' construction, not geom or stat parameters, so they are removed here. The
+#' plot's positional quosures replace ggformula's copies to preserve their
+#' original evaluation environments. `check.param` is passed through because
+#' ggformula and ggplot2 intentionally use different defaults.
 #'
 #' @param tag The tag to name the layer with.
 #' @param aesthetics The mapping `resid_spec()` or `resid_fun_spec()` computed,
 #'   with its own quosures.
 #'
-#' @return A function with the formals `layer_factory()` expects. It must name
-#'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
-#'   all four by `create_formals()` and fails with a missing geom.
+#' @return A function with the formals `layer_factory()` expects. These formals
+#'   must be explicit because `create_formals()` removes arguments hidden in
+#'   `...`.
 #'
 #' @noRd
 resid_layer_fun <- function(tag, aesthetics) {
@@ -746,11 +579,8 @@ resid_layer_fun <- function(tag, aesthetics) {
 
 #' The x values the plot draws, as the caller's function will be handed them
 #'
-#' The x quosure evaluated in the plot's own data, so a plotted expression
-#' (`~log(Height)`) is measured as the expression and a discrete x arrives as the
-#' factor it is drawn as. `resid_fun_spec()` is its only caller. `spec$mapping`
-#' is the pinned quosure -- correct as written, this has to evaluate to the
-#' values the plot draws, not to what the reader wrote.
+#' Evaluating the plot's quosure preserves transformations such as
+#' `~log(Height)` and the factor representation of a discrete x.
 #'
 #' @noRd
 plot_x_values <- function(spec) eval_tidy(spec$mapping$x, spec$data)
