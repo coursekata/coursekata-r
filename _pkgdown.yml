@@ -37,9 +37,13 @@ reference:
   - GeomSquareplot
   - middle
   - show_cutoffs
+  - GeomCutoff
+  - guide_cutoff
   - StatCutoff
   - show_mean
+  - StatDistMean
   - show_dgp
+  - guide_dgp
 
 - title: Visualizing models
   desc: >
