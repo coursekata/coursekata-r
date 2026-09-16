@@ -1,5 +1,12 @@
 # coursekata (development version)
 
+- Add conventional ggplot2 front doors for model residuals and reductions:
+  `geom_resid()`, `geom_square_resid()`, `geom_reduce()`,
+  `geom_square_reduce()`, `stat_resid()`, and `stat_reduce()`. They predict from
+  a fitted model over the layer's complete data, so facets and rows omitted by
+  the model stay aligned. The existing `gf_` functions use the same layer
+  constructor. A normal `position_jitter()` with a fixed seed now works for the
+  ggplot2 layers while keeping fitted endpoints and grand means fixed.
 - Require ggplot2 4.0.2 and ggformula 1.0.0 or later. Remove the compatibility
   paths for the older graphics stack previously used in WebAssembly environments.
 - Keep residuals aligned with jittered points across facets when jitter width

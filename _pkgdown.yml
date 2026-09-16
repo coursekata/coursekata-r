@@ -44,8 +44,14 @@ reference:
 - title: Visualizing models
   desc: >
     Layer models, their coefficients, residuals, reductions, and squares of
-    both onto `ggformula` plots.
+    both onto `ggplot2` or `ggformula` plots.
   contents:
+  - geom_resid
+  - geom_square_resid
+  - geom_reduce
+  - geom_square_reduce
+  - stat_resid
+  - stat_reduce
   - gf_b
   - gf_model
   - gf_reduce
@@ -55,6 +61,7 @@ reference:
   - gf_square_resid
   - gf_square_resid_fun
   - StatResid
+  - StatReduce
   - GeomResid
   - GeomSquareResid
 

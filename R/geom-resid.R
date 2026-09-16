@@ -71,14 +71,30 @@ square_vertices <- function(data, x_range, y_range, aspect) {
 #'
 #' @format A [ggplot2::Stat] object.
 #'
-#' @seealso [gf_resid()] and [gf_square_resid()], which pair this stat and a
-#'   geom for you.
+#' @seealso [stat_resid()], [geom_resid()], and [geom_square_resid()].
 #' @export
 StatResid <- ggplot2::ggproto(
   "StatResid", ggplot2::Stat,
   required_aes = c("x", "y", "xend|yend"),
+  extra_params = c("na.rm", "orientation"),
   compute_layer = function(self, data, params, layout) data,
   compute_panel = function(data, scales, ...) data
+)
+
+#' Carry reduction endpoints alongside their observations
+#'
+#' A reduction uses the same endpoint representation as a residual, but its
+#' starting point is the grand mean rather than the observation. The separate
+#' stat class keeps that statistical meaning visible to ggplot2 users and to
+#' code inspecting the layer. [GeomResid] and [GeomSquareResid] can draw either
+#' stat.
+#'
+#' @format A [ggplot2::Stat] object.
+#'
+#' @seealso [stat_reduce()], [geom_reduce()], and [geom_square_reduce()].
+#' @export
+StatReduce <- ggplot2::ggproto(
+  "StatReduce", StatResid
 )
 
 #' Jitter a residual's observed end the way its point was jittered
@@ -170,12 +186,12 @@ resid_jitter <- function(plot, outcome = NULL) {
 #' The segment is drawn from what the model predicts to what was observed, so
 #' `x`/`y` is the observation and `xend`/`yend` the prediction until the moment
 #' of drawing. Which of the two ends arrives says which axis the residual is
-#' measured on. Pair it with [StatResid] in a `ggplot2::layer()` to draw
-#' residuals in a plot you are assembling yourself.
+#' measured on. [geom_resid()] pairs it with [StatResid] and computes those
+#' endpoints from a fitted model.
 #'
 #' @format A [ggplot2::Geom] object.
 #'
-#' @seealso [gf_resid()], which pairs this geom and [StatResid] for you.
+#' @seealso [gf_resid()], the ggformula front door for the same layer.
 #' @export
 GeomResid <- ggplot2::ggproto(
   "GeomResid", ggplot2::GeomSegment,
@@ -215,7 +231,7 @@ GeomResid <- ggplot2::ggproto(
 #'
 #' @format A [ggplot2::Geom] object.
 #'
-#' @seealso [gf_square_resid()], which pairs this geom and [StatResid] for you.
+#' @seealso [geom_square_resid()] and [gf_square_resid()].
 #' @export
 GeomSquareResid <- ggplot2::ggproto(
   "GeomSquareResid", ggplot2::GeomPolygon,
@@ -377,6 +393,39 @@ check_decomposable <- function(model, fn, call = caller_env()) {
     ),
     call = call
   )
+}
+
+#' Warn when a reduction is measured from the empty model
+#'
+#' @param model A model fit by `lm()` or `aov()`.
+#' @param fn The public function named in the warning.
+#'
+#' @return `model`, invisibly.
+#'
+#' @noRd
+warn_empty_reduction <- function(model, fn) {
+  if (ncol(model$model) <= 1) {
+    warn(
+      c(
+        glue("`{fn}()` was given the empty model, so every reduction is zero"),
+        "*" = "the empty model IS the grand mean; there is nothing for it to reduce",
+        "*" = "pass the model whose predictor you want to see the work of"
+      ),
+      class = "coursekata_reduce_empty"
+    )
+  }
+  invisible(model)
+}
+
+#' The grand mean a model's reductions start from
+#'
+#' @param model A model fit by `lm()` or `aov()`.
+#'
+#' @return One number.
+#'
+#' @noRd
+reduction_grand <- function(model) {
+  mean(model$model[[1]])
 }
 
 #' Refuse a plot that does not draw both of the axes a residual spans
@@ -612,20 +661,11 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
 
   # the empty model has no predictors, so model$model (the frame it was fit
   # on) holds only the outcome column
-  if (ncol(model$model) <= 1) {
-    warn(
-      c(
-        glue("`{fn}()` was given the empty model, so every reduction is zero"),
-        "*" = "the empty model IS the grand mean; there is nothing for it to reduce",
-        "*" = "pass the model whose predictor you want to see the work of"
-      ),
-      class = "coursekata_reduce_empty"
-    )
-  }
+  warn_empty_reduction(model, fn)
 
   # the empty model's prediction: the mean of the outcome the model was fit on,
   # not `mean(fitted(model))` -- see the note above
-  grand <- mean(model$model[[1]])
+  grand <- reduction_grand(model)
   data <- spec$data
   data$.fitted <- fitted
   data$.grand <- grand
@@ -685,14 +725,21 @@ resid_layer_fun <- function(tag, aesthetics) {
            check.param = FALSE, ...) {
     params[["model"]] <- NULL
     params[["fun"]] <- NULL
+    mapping <- mapping %||% ggplot2::aes()
     mapping[names(aesthetics)] <- aesthetics
-    tag_layer(
-      ggplot2::layer(
-        geom = geom, stat = stat, position = position,
-        mapping = mapping, data = data, params = params,
-        check.param = check.param, ...
-      ),
-      tag
+    orientation <- if ("xend" %in% names(aesthetics)) "y" else "x"
+    resid_layer(
+      geom = geom,
+      stat = stat,
+      position = position,
+      mapping = mapping,
+      data = data,
+      params = params,
+      check.param = check.param,
+      tag = tag,
+      orientation = orientation,
+      reduction = tag %in% c("reduce", "square_reduce"),
+      ...
     )
   }
 }

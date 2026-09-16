@@ -17,7 +17,7 @@ gf_reduce(
   subtitle,
   caption,
   geom = coursekata::GeomResid,
-  stat = coursekata::StatResid,
+  stat = coursekata::StatReduce,
   position = "identity",
   show.legend = NA,
   show.help = NULL,

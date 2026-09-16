@@ -25,6 +25,5 @@ here would hand it a different sequence of draws and the segment would land
 away from its point.
 }
 \seealso{
-\code{\link[=gf_resid]{gf_resid()}} and \code{\link[=gf_square_resid]{gf_square_resid()}}, which pair this stat and a
-geom for you.
+\code{\link[=stat_resid]{stat_resid()}}, \code{\link[=geom_resid]{geom_resid()}}, and \code{\link[=geom_square_resid]{geom_square_resid()}}.
 }
