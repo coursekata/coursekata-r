@@ -59,7 +59,6 @@ test_that("a categorical predictor on the axis draws a mark at each group mean",
 
   expect_equal(plan$kind, "segment")
   expect_equal(plan$args$width, .4)
-  expect_equal(plan$args$mark_axis, "x")
   expect_equal(nrow(plan$grid), nlevels(factor(er$condition)))
   expect_equal(
     sort(plan$grid$later_anxiety),
@@ -75,7 +74,6 @@ test_that("the group mark spans the group position and claims one value", {
   expect_equal(rlang::f_rhs(plan$args$x), quote(condition))
   expect_equal(rlang::f_rhs(plan$args$y), quote(.model_outcome))
   expect_equal(plan$args$width, .4)
-  expect_equal(plan$args$mark_axis, "x")
   expect_false(any(c("ymin", "ymax", "xmin", "xmax") %in% names(plan$args)))
 })
 
@@ -90,7 +88,6 @@ test_that("a categorical predictor on y puts the group position on y", {
   expect_equal(plan$kind, "segment")
   expect_equal(rlang::f_rhs(plan$args$y), quote(condition))
   expect_equal(rlang::f_rhs(plan$args$x), quote(.model_outcome))
-  expect_equal(plan$args$mark_axis, "y")
   expect_false(any(c("ymin", "ymax", "xmin", "xmax") %in% names(plan$args)))
 })
 
@@ -393,7 +390,8 @@ test_that("the group mark is drawn as one two-point segment", {
   expect_equal(d$x, c(0.8, 1.8))
   expect_equal(d$xend, c(1.2, 2.2))
   expect_equal(d$y, d$yend)
-  expect_false(any(c("ymin", "ymax", "flipped_aes") %in% names(d)))
+  expect_false(any(c("ymin", "ymax") %in% names(d)))
+  expect_false(unique(d$flipped_aes))
 
   g <- ggplot2::layer_grob(p, i)[[1]]
   expect_s3_class(g, "segments")

@@ -50,6 +50,8 @@ reference:
     Layer models, their coefficients, residuals, reductions, and squares of
     both onto `ggplot2` or `ggformula` plots.
   contents:
+  - geom_model
+  - stat_model
   - geom_resid
   - geom_square_resid
   - geom_reduce
@@ -64,6 +66,8 @@ reference:
   - gf_square_reduce
   - gf_square_resid
   - gf_square_resid_fun
+  - StatModel
+  - GeomModel
   - StatResid
   - StatReduce
   - GeomResid

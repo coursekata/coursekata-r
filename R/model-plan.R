@@ -301,8 +301,6 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
     kind <- "segment"
     geom <- GeomModelMark
     args$width <- args$width %||% .4
-    # internal and authoritative: a caller cannot change which axis holds groups
-    args$mark_axis <- if (facts$flipped) "y" else "x"
   }
 
   # `size` is the pre-3.4 spelling of `linewidth`; leaving it in args sends both to
@@ -331,8 +329,8 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
   }
 
   if (kind == "segment") {
-    # GeomSegment's colour default is themed while GeomErrorbar's was not, so an
-    # unpinned mark would silently turn blue; keep the neutral the fit line uses
+    # Group marks use the same neutral colour as model lines unless the caller
+    # or plot supplies one.
     args$colour <- args$colour %||% ggplot2::get_geom_defaults("line")$colour
   }
 
@@ -457,7 +455,7 @@ model_prediction_grid <- function(spec, mspec, layer, facts, call = caller_env()
 #' @param mspec A `model_spec()` list.
 #' @param args Named list of user arguments (aesthetics and layer parameters).
 #'
-#' @return A list with `kind`, `args`, `grid` and `tag`.
+#' @return A list with `kind`, `args`, `grid`, `orientation`, and `tag`.
 #'
 #' @noRd
 model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
@@ -480,6 +478,7 @@ model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
     kind = layer$kind,
     args = prediction$args,
     grid = prediction$grid,
+    orientation = if (facts$flipped) "y" else "x",
     tag = "model"
   )
 }

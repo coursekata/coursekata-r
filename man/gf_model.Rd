@@ -15,8 +15,8 @@ gf_model(
   title,
   subtitle,
   caption,
-  geom = "line",
-  stat = "identity",
+  geom = "model",
+  stat = "model",
   position = "identity",
   show.legend = NA,
   show.help = NULL,
@@ -73,22 +73,20 @@ one whole-data fit in every panel.}
 
 \item{geom}{Not set by the caller. The geometry is derived from the model.}
 
-\item{stat, position}{With a named \code{model}, reach the layer as given, but \code{gf_model()} already
-computed the model's predictions before the layer is built, so changing these recomputes
-something else on top of that prediction grid (\code{stat = "smooth"} re-smooths it, for example)
-rather than changing how the model's own claim is drawn -- leave them at their defaults. With
-no \code{model}, the inferred shape chooses its own stat (a regression line's is
-\code{\link[ggplot2:stat_smooth]{ggplot2::stat_smooth()}}) and these are not read at all.}
+\item{stat, position}{With a named \code{model}, reach the layer as given, but
+\code{gf_model()} computes the model's predictions before the layer is built.
+Changing the stat recomputes something else on that prediction grid rather
+than changing the model's claim, so leave these at their defaults. With no
+\code{model}, the shared \code{\link[=stat_model]{stat_model()}} is used and these are not read.}
 
 \item{show.legend}{Whether this layer contributes to the legend.}
 
 \item{show.help}{Print the layer's own help instead of drawing.}
 
-\item{inherit}{Not set by the caller. Whether the layer inherits the plot's aesthetics is
-derived per model shape: with a named \code{model}, an intercept states its own position and
-everything else inherits the axis the plot put the outcome on; with no \code{model}, the layer
-always states its own x and y rather than inheriting them, which is what keeps a plot with
-\code{color = ~species} drawing one line rather than one per color.}
+\item{inherit}{Not set by the caller. A named intercept stands alone; other
+named models inherit compatible plot aesthetics while stating their own
+predicted outcome. With no \code{model}, the layer states its own positions and
+does not inherit a color grouping the model never named.}
 
 \item{environment}{The environment mappings are resolved in.}
 }

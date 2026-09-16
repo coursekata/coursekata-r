@@ -29,24 +29,19 @@ test_that("a categorical predictor's group marks agree with the named model, ove
     expect_equal(unname(b_inferred$y), as.numeric(tapply(Fingers$Thumb, predictors[[name]], mean)),
                  info = name)
 
-    # StatSummary also emits ymin/ymax/flipped_aes and its group carries no `n`
-    # attribute, so the comparison is restricted to the columns both frames
-    # agree on; a logical predictor comes back in opposite row order from
-    # StatSummary's x order vs. model_plan()'s level order, so both sides are
-    # sorted the same way before comparing
+    # Compare the position columns that define the marks. Logical groups can
+    # arrive in a different row order, so normalize both sides first.
     cols <- c("x", "xend", "y", "yend", "PANEL")
     expect_equal(sorted_cols(b_inferred, cols), sorted_cols(built(named), cols), info = name)
   }
 })
 
-test_that("the categorical mark is drawn with GeomModelMark and StatSummary", {
+test_that("the categorical mark uses the shared model stat and geom", {
   p <- gf_jitter(Thumb ~ Sex, data = Fingers, width = .1) %>% gf_model()
   layer <- p$layers[[layer_index(p, "model")]]
 
-  # a regression to a precomputed grid, or a swap to GeomSegment, would not
-  # build the mark's width the way GeomModelMark's setup_data does
-  expect_s3_class(layer$geom, "GeomModelMark")
-  expect_s3_class(layer$stat, "StatSummary")
+  expect_s3_class(layer$geom, "GeomModel")
+  expect_s3_class(layer$stat, "StatModel")
 })
 
 test_that("a continuous predictor's line is the regression the plot implies", {

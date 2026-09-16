@@ -29,16 +29,12 @@ diverging_mapping_expressions <- function(object, aes) {
   )
 }
 
-#' Translate the model a plot implies into the pieces a ggformula layer needs
+#' Translate the model a plot implies into the shared model layer
 #'
-#' Reads the shared decision (`implied_model()`) and turns it into a layer: a
-#' geom/stat pair, the axes it draws (stated, never inherited -- see below),
-#' and the params those stats and geoms need as a fallback when the caller's
-#' own `...` does not supply them. The one param decision this makes that a
-#' caller's own value can never override is `mark_axis`/`orientation` on the
-#' `segment` shape: which axis carries the groups is a fact about the plot,
-#' not a style choice, and `model_plan()`'s own comment makes the identical
-#' argument for the explicit path.
+#' Reads the shared decision (`implied_model()`) and supplies [StatModel] and
+#' [GeomModel] with the axes, orientation, and defaults they need. Orientation
+#' comes from the plot rather than from `...`: which axis carries the outcome is
+#' not a style choice.
 #'
 #' The layer states its axes rather than inheriting them, exactly as
 #' `resid_mapping()` does: `inherit = FALSE`, `data` is the pinned plot's own
@@ -59,8 +55,9 @@ diverging_mapping_expressions <- function(object, aes) {
 #' @param call The calling environment, for error reporting.
 #'
 #' @return A list with `plot` (possibly pinned), `geom`, `stat`, `data`,
-#'   `aesthetics`, `params`, `inherit` and `tag`. The layer function is composed
-#'   by the caller in `pre`, because the two paths have opposite param policies.
+#'   `position`, `aesthetics`, `params`, `inherit` and `tag`. The layer function
+#'   is composed by the caller in `pre`, because the two paths have opposite
+#'   param policies.
 #' @noRd
 implied_model_spec <- function(object, args = list(), call = caller_env()) {
   if (!inherits(object, c("gg", "ggplot"))) {
@@ -102,69 +99,36 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
   aesthetics <- ggplot2::aes()
   for (a in axes_needed) aesthetics[[a]] <- spec$mapping[[a]]
 
-  geom <- switch(im$kind,
-    # GeomSmooth, not GeomLine, so that `se = TRUE` draws the band this
-    # function documents. StatSmooth computes `ymin`/`ymax` either way, and
-    # GeomLine has nowhere to put them: the band was being computed and thrown
-    # away, and a reader who asked for it got a plain line and no complaint.
-    # With `se = FALSE` -- the default -- GeomSmooth draws through GeomLine
-    # itself, so nothing about the ordinary picture changes except that its
-    # colour now has to be stated (see `params`).
-    line = ggplot2::GeomSmooth,
-    segment = GeomModelMark,
-    hline = ggplot2::GeomHline,
-    vline = ggplot2::GeomVline
-  )
-  stat <- switch(im$kind,
-    line = ggplot2::StatSmooth,
-    segment = ggplot2::StatSummary,
-    hline = new_stat_dist_mean("y"),
-    vline = new_stat_dist_mean("x")
-  )
+  geom <- GeomModel
+  stat <- StatModel
   params <- switch(im$kind,
-    # `formula` is named here, not left for StatSmooth's own default, so that
-    # default is never inferred at build time -- inferring it is what prints
-    # ggplot2's "`geom_smooth()` using formula = 'y ~ x'" note, naming a
-    # function the caller never called. `implied_layer_fun()`'s modifyList()
-    # still lets a caller's own `formula = y ~ poly(x, 2)` win.
-    # `fullrange` is named rather than left to `stat_smooth()`'s own default,
-    # even though the two agree, so that the choice is a stated one: a model's
-    # line runs across the data it was fit on and no further. Inside that range
-    # every interpolated point has observations bracketing it; outside there
-    # are none, and only a theory or a physical constraint can license the
-    # claim -- which is a judgment a reader makes, not one a plot can reach by
-    # measuring its own axis. `modifyList()` still lets a reader who has made
-    # that judgment pass `fullrange = TRUE` through to [ggplot2::StatSmooth].
+    # Keep the inferred line within the observed data range by default. The
+    # caller can still supply another `formula` or set `fullrange = TRUE`.
     line = list(
-      method = "lm", formula = y ~ x, se = FALSE, fullrange = FALSE, linewidth = 1,
-      # GeomSmooth's own default is a blue that means "a smoother" in ggplot2's
-      # vocabulary; this line means "the model", and the rest of the family
-      # draws that in the neutral GeomLine uses. Same reasoning, same spelling,
-      # as the `segment` branch below.
+      formula = y ~ x, se = FALSE, fullrange = FALSE,
+      orientation = if (im$flipped) "y" else "x", linewidth = 1,
+      # Resolve the themed line default now so every model representation uses
+      # the same neutral colour.
       colour = ggplot2::get_geom_defaults("line")$colour
     ),
     segment = list(
-      fun = mean, na.rm = TRUE, width = .4,
-      # internal and authoritative: a caller cannot change which axis holds
-      # groups, the same reasoning model_plan()'s own comment gives
-      mark_axis = if (im$flipped) "y" else "x",
+      na.rm = TRUE, width = .4,
       orientation = if (im$flipped) "y" else "x",
       colour = ggplot2::get_geom_defaults("line")$colour,
       linewidth = 1
     ),
-    list(linewidth = 1)
+    list(
+      orientation = if (im$flipped) "y" else "x",
+      linewidth = 1
+    )
   )
 
   list(
     plot = im$plot,
     geom = geom,
     stat = stat,
-    # stated, and not a default a caller's `...` can reach. A position moves
-    # what a layer drew, and what this layer drew is a claim: a fitted line
-    # nudged by `position = "jitter"` is a different line every render, and one
-    # the model never made. `gf_model()`'s own documentation already promises
-    # that with no model the position is not read, and until this was stated
-    # the promise was the only thing stopping it.
+    # A positional adjustment would move the fitted claim away from the model,
+    # so inferred layers always use the identity position.
     position = "identity",
     data = im$data,
     aesthetics = aesthetics,
@@ -176,13 +140,9 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
 
 #' The layer function for an inferred model
 #'
-#' Unlike `model_layer_fun()`, which discards ggformula's own params because
-#' `model_plan()` already supplied the whole set, this KEEPS them: `formula`,
-#' `se`, `n`, `colour` and `linewidth` are the whole point of `...` here, and
-#' there is no plan supplying them instead. `defaults` supplies a value only
-#' where the caller did not -- `utils::modifyList()` lets the caller's own
-#' params win -- except for `mark_axis`/`orientation`, which `implied_model_spec()`
-#' computed from the plot itself and which no `...` argument may override.
+#' The inferred path keeps ggformula's params because there is no explicit model
+#' plan supplying them. `defaults` fills only missing values, except that the
+#' orientation resolved from the plot remains authoritative.
 #'
 #' @param defaults The kind-specific fallback params `implied_model_spec()` computed.
 #' @param tag The tag to name the layer with.
@@ -195,7 +155,7 @@ implied_model_spec <- function(object, args = list(), call = caller_env()) {
 implied_layer_fun <- function(defaults, tag) {
   force(defaults)
   force(tag)
-  authoritative <- intersect(c("mark_axis", "orientation"), names(defaults))
+  authoritative <- intersect("orientation", names(defaults))
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL, ...) {
     supplied <- params %||% list()
     # `color` and `colour` are one parameter spelled two ways, and
@@ -209,12 +169,12 @@ implied_layer_fun <- function(defaults, tag) {
     }
     merged <- utils::modifyList(defaults, supplied)
     merged[authoritative] <- defaults[authoritative]
-    tag_layer(
-      ggplot2::layer(
-        geom = geom, stat = stat, position = position,
-        mapping = mapping, data = data, params = merged, ...
-      ),
-      tag
+    orientation <- merged[["orientation"]] %||% NA
+    merged[["orientation"]] <- NULL
+    model_layer(
+      geom = geom, stat = stat, position = position,
+      mapping = mapping, data = data, params = merged,
+      orientation = orientation, tag = tag, prepared = TRUE, ...
     )
   }
 }

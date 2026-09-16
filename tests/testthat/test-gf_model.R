@@ -48,9 +48,9 @@ test_that("the model is accepted positionally, which is how every call site writ
   direct <- gf_model(p, model)
 
   expect_equal(layer_index(piped, "model"), 2L)
-  expect_equal(class(model_layer_of(piped)$geom)[[1]], "GeomLine")
-  expect_equal(class(model_layer_of(named)$geom)[[1]], "GeomLine")
-  expect_equal(class(model_layer_of(direct)$geom)[[1]], "GeomLine")
+  expect_equal(class(model_layer_of(piped)$geom)[[1]], "GeomModel")
+  expect_equal(class(model_layer_of(named)$geom)[[1]], "GeomModel")
+  expect_equal(class(model_layer_of(direct)$geom)[[1]], "GeomModel")
   expect_equal(built_model(piped), built_model(named))
 })
 
@@ -182,14 +182,7 @@ model_shapes <- function() {
   )
 }
 
-test_that("the axis the plot puts the outcome on is named with the layer's own value", {
-  # THE INVARIANT, in the only form that is true of all six shapes. Of the two
-  # positional aesthetics x and y, the model layer always names the one the plot
-  # is using to carry the outcome -- but with a value it computed at call time
-  # (`.model_outcome`), never with the plot's own expression. An intercept is the
-  # one shape with nothing to inherit -- it states xintercept/yintercept outright
-  # and leaves x/y unmapped, as before. xend/yend are the other terminal
-  # companion and are not part of this either way.
+test_that("the model stat receives the outcome on the plot's outcome axis", {
   for (name in names(model_shapes())) {
     shape <- model_shapes()[[name]]
     outcome <- "later_anxiety"
@@ -199,19 +192,17 @@ test_that("the axis the plot puts the outcome on is named with the layer's own v
     is_intercept <- name %in% c("hline", "vline")
 
     if (is_intercept) {
-      expect_false(outcome_axis %in% names(mapping), label = paste(name, "leaves", outcome_axis))
+      expect_equal(
+        rlang::as_label(mapping[[outcome_axis]]), outcome,
+        label = paste(name, "maps", outcome_axis)
+      )
     } else {
       expect_equal(
         rlang::as_label(mapping[[outcome_axis]]), ".model_outcome",
         label = paste(name, "names its own value on", outcome_axis)
       )
     }
-
-    # unchanged: the value named for the outcome axis is never the plot's own
-    # expression -- this is what would fail if shuffle() were re-inherited
-    positional <- mapping[intersect(names(mapping), c("x", "y"))]
-    drawn <- vapply(positional, rlang::as_label, character(1))
-    expect_false(outcome %in% drawn, label = paste(name, "maps the outcome positionally"))
+    expect_equal(rlang::as_label(mapping$.model_kind), ".model_kind")
   }
 })
 

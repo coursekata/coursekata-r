@@ -58,19 +58,17 @@
 #'
 #' @param xlab,ylab,title,subtitle,caption Labels for the plot.
 #' @param geom Not set by the caller. The geometry is derived from the model.
-#' @param stat,position With a named `model`, reach the layer as given, but `gf_model()` already
-#'   computed the model's predictions before the layer is built, so changing these recomputes
-#'   something else on top of that prediction grid (`stat = "smooth"` re-smooths it, for example)
-#'   rather than changing how the model's own claim is drawn -- leave them at their defaults. With
-#'   no `model`, the inferred shape chooses its own stat (a regression line's is
-#'   [ggplot2::stat_smooth()]) and these are not read at all.
+#' @param stat,position With a named `model`, reach the layer as given, but
+#'   `gf_model()` computes the model's predictions before the layer is built.
+#'   Changing the stat recomputes something else on that prediction grid rather
+#'   than changing the model's claim, so leave these at their defaults. With no
+#'   `model`, the shared [stat_model()] is used and these are not read.
 #' @param show.legend Whether this layer contributes to the legend.
 #' @param show.help Print the layer's own help instead of drawing.
-#' @param inherit Not set by the caller. Whether the layer inherits the plot's aesthetics is
-#'   derived per model shape: with a named `model`, an intercept states its own position and
-#'   everything else inherits the axis the plot put the outcome on; with no `model`, the layer
-#'   always states its own x and y rather than inheriting them, which is what keeps a plot with
-#'   `color = ~species` drawing one line rather than one per color.
+#' @param inherit Not set by the caller. A named intercept stands alone; other
+#'   named models inherit compatible plot aesthetics while stating their own
+#'   predicted outcome. With no `model`, the layer states its own positions and
+#'   does not inherit a color grouping the model never named.
 #' @param environment The environment mappings are resolved in.
 #'
 #' @return A ggplot object with the model added. With no `model`, and a plot
@@ -141,8 +139,8 @@
 #'   gf_model()
 gf_model <- named_layer_factory(
   function_name = "gf_model",
-  geom = "line",
-  stat = "identity",
+  geom = "model",
+  stat = "model",
   position = "identity",
   aes_form = NULL,
   extras = alist(model = ),
@@ -191,7 +189,7 @@ gf_model <- named_layer_factory(
       layer_fun <- if (inferred) {
         implied_layer_fun(spec$params, spec$tag)
       } else {
-        model_layer_fun(spec$params, spec$tag)
+        model_layer_fun(spec$params, spec$tag, spec$orientation)
       }
     }
   }
@@ -199,18 +197,11 @@ gf_model <- named_layer_factory(
 
 #' Translate a model into the pieces a ggformula layer is built from
 #'
-#' THE INVARIANT: of the two positional aesthetics `x` and `y`, this always
-#' names the one the plot is using to carry the model's outcome -- with a value
-#' `model_plan()` computed at call time, never with the plot's own expression --
-#' and inherits the other. An inherited outcome expression is re-evaluated
-#' against the prediction grid at build time, which is right for a plain
-#' transformation such as `sqrt()`. The test named "a plot that transforms the
-#' outcome's axis draws the prediction there" is what stops anyone collapsing
-#' that branch to always drawing the raw
-#' prediction -- and catastrophic for `shuffle()`, which draws the right values
-#' in a random order. `xend`/`yend` and the intercepts are terminal companions
-#' ggplot2 cannot inherit, so they are named outright as before; `x` and `y` are
-#' not, except that whichever of the two carries the outcome is now named too.
+#' The prepared prediction owns the outcome position. Lines and group marks may
+#' inherit a compatible predictor mapping and model grouping from the plot;
+#' intercepts stand alone. Plot expressions such as `shuffle()` are evaluated
+#' once while the prediction grid is prepared, so rebuilding the layer cannot
+#' scramble the model claim.
 #'
 #' @param object The plot the layer is being added to.
 #' @param model A model fit by `lm()` or `aov()`, or the formula for one. An
@@ -221,7 +212,8 @@ gf_model <- named_layer_factory(
 #' @param args Named list of user arguments, from `...`.
 #' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `geom`, `data`, `aesthetics`, `params`, `inherit`, `tag`.
+#' @return A list with `geom`, `data`, `aesthetics`, `params`, `inherit`,
+#'   `orientation`, and `tag`.
 #'   The layer function is composed by the caller in `pre`, from `params` and
 #'   `tag`, because the inferred path builds a different one -- see
 #'   `implied_layer_fun()`.
@@ -254,9 +246,9 @@ model_layer_spec <- function(object, model, args = list(), call = caller_env()) 
   mspec <- model_spec(spec$data, model, call = call)
   plan <- model_plan(spec, mspec, args, call = call)
 
-  # the fit line and the group mark both leave the outcome's axis unmapped and
-  # inherit it, so it has to be mapped by the plot rather than by a layer
-  # underneath it; an intercept states its position outright and does not care
+  # The fit line and group mark use the plot's outcome axis to decide where the
+  # prepared predictions belong, so that mapping must live on the plot rather
+  # than on a sibling layer. An intercept spans the panel and does not care.
   inherits_outcome <- plan$kind %in% c("line", "segment")
   # the reader's own spelling, not the pinned quosure's -- a pinned plot's
   # `mapping` reads `.coursekata_pin_y`, which is not what the reader wrote
@@ -275,21 +267,27 @@ model_layer_spec <- function(object, model, args = list(), call = caller_env()) 
     )
   }
 
+  if (identical(plan$kind, "hline")) {
+    plan$args$y <- plan$args$yintercept
+    plan$args$yintercept <- NULL
+  } else if (identical(plan$kind, "vline")) {
+    plan$args$x <- plan$args$xintercept
+    plan$args$xintercept <- NULL
+  }
+  plan$grid$.model_kind <- plan$kind
+  plan$args$.model_kind <- ~.model_kind
   mapped <- purrr::map_lgl(plan$args, ~ is_formula(.x) && length(.x) == 2L)
 
   list(
-    geom = switch(plan$kind,
-      hline = ggplot2::GeomHline,
-      vline = ggplot2::GeomVline,
-      line = ggplot2::GeomLine,
-      segment = GeomModelMark
-    ),
+    geom = GeomModel,
     data = plan$grid,
     aesthetics = do.call(ggplot2::aes, purrr::map(plan$args[mapped], f_rhs)),
     params = plan$args[!mapped],
-    # an intercept carries the whole claim and spans the panel on its own, so
-    # the plot's x and y must not reach it; every other shape needs them
+    # An intercept carries the whole claim and spans the panel on its own.
+    # Lines and group marks still need compatible plot aesthetics, including
+    # the predictor position and any model grouping.
     inherit = !(plan$kind %in% c("hline", "vline")),
+    orientation = plan$orientation,
     tag = plan$tag
   )
 }
@@ -303,22 +301,22 @@ model_layer_spec <- function(object, model, args = list(), call = caller_env()) 
 #'
 #' @param plan_params The plan's static arguments.
 #' @param tag The tag to name the layer with.
+#' @param orientation The orientation resolved from the ggformula plot.
 #'
 #' @return A function with the formals `layer_factory()` expects. It must name
 #'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
 #'   all four by `create_formals()` and fails with a missing geom.
 #'
 #' @noRd
-model_layer_fun <- function(plan_params, tag) {
+model_layer_fun <- function(plan_params, tag, orientation) {
   force(plan_params)
   force(tag)
+  force(orientation)
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL, ...) {
-    tag_layer(
-      ggplot2::layer(
-        geom = geom, stat = stat, position = position,
-        mapping = mapping, data = data, params = plan_params, ...
-      ),
-      tag
+    model_layer(
+      geom = geom, stat = stat, position = position,
+      mapping = mapping, data = data, params = plan_params,
+      orientation = orientation, tag = tag, prepared = TRUE, ...
     )
   }
 }
