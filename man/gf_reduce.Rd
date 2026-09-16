@@ -42,10 +42,13 @@ mapped with \code{attribute = ~ expression}, or (c) attributes of the layer as a
 \item{model}{A model already fit by \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}. The plot supplies
 the observations' position on the other axis; the model supplies what it
 predicted for each of them. May be given positionally or as \verb{model =}. A
-fit without an intercept, or one fit with weights, is refused: a reduction
-is only a reduction because total, error and reduction add up, and that
-identity is what an unweighted intercept guarantees. \code{\link[=gf_resid]{gf_resid()}} measures
-either of those fits happily, needing no such identity.}
+fit without an intercept, or one fit with weights, is refused. For an
+unweighted least-squares fit with an intercept, the sum of squared total
+deviations equals the sum of squared residuals plus the sum of squared
+reductions. That identity need not hold without an intercept. Weighted
+least squares instead guarantees a weighted identity based on a weighted
+mean, which the plot's plain areas do not represent. \code{\link[=gf_resid]{gf_resid()}} can
+measure either fit because it does not rely on the decomposition.}
 
 \item{linewidth}{The width of the reduction lines. Default is \code{0.2}. Must be named.}
 
@@ -70,9 +73,10 @@ instance -- is inherited from the plot.}
 A ggplot object with reduction lines added.
 }
 \description{
-Draws reduction lines from the grand mean to the values a fitted model
-predicts for each observation -- the third side of the sum-of-squares
-decomposition, alongside \code{\link[=gf_resid]{gf_resid()}}'s residuals and the model's own fit.
+Draws reduction lines from the grand mean to the value a fitted model
+predicts for each observation. Squaring and summing those lengths across
+observations gives the model sum of squares; \code{\link[=gf_resid]{gf_resid()}} supplies the error
+term in the same decomposition.
 Each line runs along whichever axis the plot puts the model's outcome on,
 so a model of the variable drawn on x is measured across x rather than
 down y.
@@ -101,8 +105,8 @@ gf_jitter(body_mass_kg ~ gentoo, data = penguins_20, width = .1) \%>\%
   gf_model(gentoo_model) \%>\%
   gf_reduce(gentoo_model, color = "blue")
 
-# residual (firebrick) and reduction (blue) together decompose each
-# observation's distance from the grand mean
+# each observation's signed deviation from the grand mean is its residual
+# (firebrick) plus its reduction (blue)
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) \%>\%
   gf_model(flipper_model) \%>\%
   gf_resid(flipper_model, color = "firebrick") \%>\%

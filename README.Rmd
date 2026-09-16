@@ -102,7 +102,14 @@ In addition to useful functions, many data sets are used by instructors who teac
 
 ## Functions and Theme
 
-This package also comes with a variety of functions useful for teaching statistics and data science: tools for layering models and residuals onto plots (e.g. `gf_model()`, `gf_resid()`), extracting estimates from fitted models for bootstrapping (e.g. `b0()`, `b1()`, `pre()`), sectioning distributions (e.g. `middle()`, `tails()`), and quantifying model fit. It also automatically sets a `ggplot2` theme complete with colorblind-friendly palettes and other improvements to aid perception and clarity of plots.
+The package includes tools for layering models and residuals onto `ggformula`
+plots (for example, `gf_model()` and `gf_resid()`) and ordinary `ggplot2`
+plots (for example, `geom_resid()` and `geom_reduce()`). It also has functions
+for extracting estimates from fitted models for bootstrapping (`b0()`, `b1()`,
+and `pre()`), sectioning distributions (`middle()` and `tails()`), and
+quantifying model fit. Loading the package sets a `ggplot2` theme with
+colorblind-friendly palettes and other changes intended to make plots easier
+to read.
 
 Browse all of the functions and data sets, organized by what they are for, in the [package reference](https://coursekata.github.io/coursekata-r/reference/).
 

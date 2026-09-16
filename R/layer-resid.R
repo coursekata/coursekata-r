@@ -153,7 +153,7 @@ resid_layer_position <- function(position, orientation, reduction = FALSE,
 
 #' Build a residual-family ggplot2 layer
 #'
-#' This is the one layer constructor used by the ggplot2 front doors and by
+#' This is the one layer constructor used by the ggplot2 functions and by
 #' the adapters behind the `gf_` functions.
 #'
 #' @noRd
@@ -185,15 +185,6 @@ resid_layer <- function(mapping = NULL, data = NULL, geom, stat,
   if (is.null(tag)) layer else tag_layer(layer, tag)
 }
 
-#' Apply the visual default for a stat's chosen residual geom
-#'
-#' @param params Layer parameters.
-#' @param geom A geom name or ggproto object.
-#'
-#' @return `params`, with the matching default added only when the caller did
-#'   not supply it.
-#'
-#' @noRd
 resid_geom_defaults <- function(params, geom) {
   is_line <- identical(geom, "resid") || inherits(geom, "GeomResid")
   is_square <- identical(geom, "square_resid") || inherits(geom, "GeomSquareResid")
@@ -206,9 +197,6 @@ resid_geom_defaults <- function(params, geom) {
   params
 }
 
-#' Build one public residual-family layer
-#'
-#' @noRd
 model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
                               model, orientation, reduction, show.legend,
                               inherit.aes, call) {
@@ -263,6 +251,10 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
 #' [ggplot2::position_jitter()] object with a numeric seed. The model layer keeps
 #' the fitted endpoint fixed while moving the observed endpoint by the same
 #' amount as its point.
+#'
+#' Reduction layers express the ordinary least-squares sum-of-squares identity.
+#' They require an unweighted model with an intercept. The identity holds across
+#' the sums of the square areas, not separately for each observation.
 #'
 #' @param mapping,data,position,show.legend,inherit.aes See
 #'   [ggplot2::geom_segment()]. `data` may also be a function or one-sided

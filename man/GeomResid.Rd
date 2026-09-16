@@ -17,5 +17,5 @@ measured on. \code{\link[=geom_resid]{geom_resid()}} pairs it with \link{StatRes
 endpoints from a fitted model.
 }
 \seealso{
-\code{\link[=gf_resid]{gf_resid()}}, the ggformula front door for the same layer.
+\code{\link[=gf_resid]{gf_resid()}}, the ggformula function for the same layer.
 }

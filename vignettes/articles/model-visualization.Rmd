@@ -71,9 +71,9 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins) %>%
 
 ## Residuals
 
-A residual is the distance from what the model predicted to what actually
-happened. `gf_resid()` draws them as segments. With hundreds of points this is
-unreadable, so take a small sample first.
+A residual is the observed value minus the model's prediction. `gf_resid()`
+draws a segment between those two values. With hundreds of points the segments
+are hard to read, so take a small sample first.
 
 ```{r}
 set.seed(1)
@@ -85,7 +85,7 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
   gf_resid(sample_model, color = "firebrick")
 ```
 
-The ggplot2 front door uses the same layer underneath. Give it the fitted model;
+The ggplot2 layer uses the same implementation. Give it the fitted model;
 the plot still supplies the observations and their mappings.
 
 ```{r}
@@ -128,10 +128,10 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
 
 ## Where the error goes
 
-The blue squares are the error the empty model leaves. The red ones are what is
-left once flipper length is accounted for. The difference between them is the
-part the predictor explains, and `gf_reduce()` draws it: for each penguin, the
-distance from the grand mean to the model's prediction.
+The blue squares show the error left by the empty model. The red squares show
+the error left after the model uses flipper length. `gf_reduce()` draws the
+distance between the two predictions: for each penguin, from the grand mean to
+the regression model's prediction.
 
 ```{r}
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
@@ -140,7 +140,9 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
   gf_reduce(sample_model, color = "forestgreen")
 ```
 
-Drawn as squares, the three areas complete each other.
+Across the whole sample, the blue square areas add up to the red areas plus the
+green areas. This identity holds for the sums, not for each penguin's three
+squares on its own.
 
 ```{r}
 gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
@@ -150,9 +152,10 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
   gf_square_reduce(sample_model, color = "forestgreen")
 ```
 
-In ggplot2, the statistical and drawing parts are separate. `stat_resid()` and
-`stat_reduce()` default to segments; set `geom = "square_resid"` to draw the
-same quantities as areas.
+The direct ggplot2 counterparts are `geom_square_resid()`, `geom_reduce()`, and
+`geom_square_reduce()`. The `stat_*()` functions separate the statistical and
+drawing choices: `stat_resid()` and `stat_reduce()` default to segments, while
+`geom = "square_resid"` draws the squared quantities as areas.
 
 ```{r}
 ggplot(penguins_20, aes(flipper_length_m, body_mass_kg)) +
@@ -162,9 +165,10 @@ ggplot(penguins_20, aes(flipper_length_m, body_mass_kg)) +
   stat_reduce(model = sample_model, geom = "square_resid", color = "forestgreen")
 ```
 
-Blue is red plus green: the error you started with is the error you are left
-with plus the error the predictor explained. The green share of the blue is PRE,
-the same number `supernova()` puts in a table.
+The sum of the green areas divided by the sum of the blue areas is PRE, the same
+number `supernova()` puts in a table. Reduction layers require an unweighted
+model with an intercept because that is what makes the three sums of squares
+add up.
 
 ```{r}
 supernova(sample_model)

@@ -1,11 +1,11 @@
 # coursekata (development version)
 
-- Add conventional ggplot2 front doors for model residuals and reductions:
+- Add conventional ggplot2 layer functions for model residuals and reductions:
   `geom_resid()`, `geom_square_resid()`, `geom_reduce()`,
   `geom_square_reduce()`, `stat_resid()`, and `stat_reduce()`. They predict from
   a fitted model over the layer's complete data, so facets and rows omitted by
   the model stay aligned. The existing `gf_` functions use the same layer
-  constructor. A normal `position_jitter()` with a fixed seed now works for the
+  constructor. A seeded `position_jitter()` now works for the
   ggplot2 layers while keeping fitted endpoints and grand means fixed.
 - Require ggplot2 4.0.2 and ggformula 1.0.0 or later. Remove the compatibility
   paths for the older graphics stack previously used in WebAssembly environments.
@@ -65,23 +65,25 @@
   coefficient k is not group k's difference from a reference group, which is the only thing
   an arrow can mean. Choosing a different reference level is still fine: the plot orders its
   groups by the same factor the model coded.
-- New `gf_reduce()` and `gf_square_reduce()`, the latter also spelled `gf_squareduce()`: the
-  third side of the sum-of-squares
-  decomposition. They draw the distance a model's fit moves each prediction away from the
-  grand mean, so the reduction and the residual -- and their squares -- put SS Model and
-  SS Error on one picture as lengths and as areas. Like a residual, a reduction runs along
-  whichever axis the plot puts the model's outcome on, and starts on the x each point is
-  actually drawn at, jitter included. The grand mean is the model's own, taken from the rows
-  it was fit on rather than off the plot's data, so on a faceted plot every panel is
-  measured against the same line and each panel draws a piece of one decomposition rather
-  than a decomposition of its own. `aspect` belongs to every square layer on a plot or to
-  none of them: "the reduction square plus the residual square is the whole square" is a
-  claim about areas on the page, and it holds only while they all read the same one. A fit
-  without an intercept, or one fit with weights, is refused: the areas only add up because
-  an unweighted intercept leaves the residuals orthogonal to the grand mean, and without
-  that a reader counting squares is counting an arithmetic that does not hold. Measured on
-  `lm(Thumb ~ Height - 1)`, error plus reduction comes to 11700.01 against a total of
-  11880.21. `gf_resid()` still measures either fit, needing no such identity.
+- New `gf_reduce()` and `gf_square_reduce()`, the latter also spelled
+  `gf_squareduce()`. They draw the distance from the grand mean to each fitted
+  value. Squaring and summing those distances across observations gives SS
+  Model; doing the same with residuals gives SS Error. The identity is between
+  the three sums of squares, not between the three squares for one observation.
+  Like a residual, a reduction runs along whichever axis holds the model's
+  outcome and starts at the other-axis position where its point is drawn,
+  including jitter. The grand mean comes from the rows used to fit the model.
+  On a faceted plot, every panel is measured against that same mean and shows a
+  piece of one whole-data decomposition. All square layers in the comparison
+  must use the same `aspect` so their areas share a scale. Fits without an
+  intercept and fits with weights are refused. The familiar unweighted identity
+  SS Total = SS Error + SS Model is guaranteed for an unweighted least-squares
+  fit with an intercept. Weighted least squares instead guarantees an identity
+  based on weighted sums and a weighted mean, which the plain areas do not
+  show. Without an intercept, the unweighted identity need not hold. For
+  `lm(Thumb ~ Height - 1)`, SS Error plus SS Model is 11700.01 while SS Total is
+  11880.21. `gf_resid()` still measures either fit because it does not rely on
+  that identity.
 - `gf_model()` called with no model draws the model the plot implies. A numeric predictor
   draws the regression line, a categorical predictor draws one mark at each group's mean,
   and a plot of an outcome alone draws the grand mean. `ggformula::gf_lm()` draws nothing at
