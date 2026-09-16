@@ -13,9 +13,9 @@ GeomResid
 The segment is drawn from what the model predicts to what was observed, so
 \code{x}/\code{y} is the observation and \code{xend}/\code{yend} the prediction until the moment
 of drawing. Which of the two ends arrives says which axis the residual is
-measured on. Pair it with \link{StatResid} in a \code{ggplot2::layer()} to draw
-residuals in a plot you are assembling yourself.
+measured on. \code{\link[=geom_resid]{geom_resid()}} pairs it with \link{StatResid} and computes those
+endpoints from a fitted model.
 }
 \seealso{
-\code{\link[=gf_resid]{gf_resid()}}, which pairs this geom and \link{StatResid} for you.
+\code{\link[=gf_resid]{gf_resid()}}, the ggformula front door for the same layer.
 }

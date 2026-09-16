@@ -16,5 +16,5 @@ It is also the only place the panel's final ranges are known, and the
 square is a square on the page rather than in data units.
 }
 \seealso{
-\code{\link[=gf_square_resid]{gf_square_resid()}}, which pairs this geom and \link{StatResid} for you.
+\code{\link[=geom_square_resid]{geom_square_resid()}} and \code{\link[=gf_square_resid]{gf_square_resid()}}.
 }

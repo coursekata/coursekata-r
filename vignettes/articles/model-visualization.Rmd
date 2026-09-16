@@ -85,6 +85,27 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
   gf_resid(sample_model, color = "firebrick")
 ```
 
+The ggplot2 front door uses the same layer underneath. Give it the fitted model;
+the plot still supplies the observations and their mappings.
+
+```{r}
+ggplot(penguins_20, aes(flipper_length_m, body_mass_kg)) +
+  geom_point() +
+  geom_resid(model = sample_model, color = "firebrick")
+```
+
+For jittered points, use one seeded position for the points and residuals. The
+points move; the fitted ends of the residuals stay on the model.
+
+```{r}
+jitter <- position_jitter(width = .1, seed = 42)
+gentoo_model <- lm(body_mass_kg ~ gentoo, data = penguins_20)
+
+ggplot(penguins_20, aes(gentoo, body_mass_kg)) +
+  geom_point(position = jitter) +
+  geom_resid(model = gentoo_model, position = jitter, color = "firebrick")
+```
+
 `gf_square_resid()` draws each residual as a square instead of a segment, which
 makes *squared* error visible as area: the quantity least squares is actually
 minimizing.
@@ -127,6 +148,18 @@ gf_point(body_mass_kg ~ flipper_length_m, data = penguins_20) %>%
   gf_square_resid(empty_20, color = "dodgerblue") %>%
   gf_square_resid(sample_model, color = "firebrick") %>%
   gf_square_reduce(sample_model, color = "forestgreen")
+```
+
+In ggplot2, the statistical and drawing parts are separate. `stat_resid()` and
+`stat_reduce()` default to segments; set `geom = "square_resid"` to draw the
+same quantities as areas.
+
+```{r}
+ggplot(penguins_20, aes(flipper_length_m, body_mass_kg)) +
+  geom_point() +
+  stat_resid(model = empty_20, geom = "square_resid", color = "dodgerblue") +
+  stat_resid(model = sample_model, geom = "square_resid", color = "firebrick") +
+  stat_reduce(model = sample_model, geom = "square_resid", color = "forestgreen")
 ```
 
 Blue is red plus green: the error you started with is the error you are left

@@ -75,7 +75,7 @@ gf_reduce <- named_layer_factory(
   # package-qualified, which `::` resolves the same whether or not `coursekata`
   # is attached.
   geom = coursekata::GeomResid,
-  stat = coursekata::StatResid,
+  stat = coursekata::StatReduce,
   # a placeholder: `pre` replaces this with the outcome-holding jitter the
   # points layer is already drawn with
   position = "identity",
@@ -132,7 +132,7 @@ gf_reduce <- named_layer_factory(
 
       # a reduction is these three or it is a different picture -- see `gf_resid()`
       geom <- coursekata::GeomResid
-      stat <- coursekata::StatResid
+      stat <- coursekata::StatReduce
       position <- jitter$position
 
       # set here rather than at the factory -- see `gf_resid()` for why
@@ -148,7 +148,7 @@ gf_square_reduce_layer_factory <- function(function_name) {
   named_layer_factory(
     function_name = function_name,
     geom = coursekata::GeomSquareResid,
-    stat = coursekata::StatResid,
+    stat = coursekata::StatReduce,
     position = "identity",
     aes_form = NULL,
     inherit.aes = FALSE,
@@ -186,7 +186,7 @@ gf_square_reduce_layer_factory <- function(function_name) {
         aesthetics <- reduce$aesthetics
 
         geom <- coursekata::GeomSquareResid
-        stat <- coursekata::StatResid
+        stat <- coursekata::StatReduce
         position <- jitter$position
 
         layer_fun <- resid_layer_fun("square_reduce", reduce$aesthetics)
