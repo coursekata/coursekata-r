@@ -31,14 +31,21 @@ resid_orientation <- function(orientation, call = caller_env()) {
 #' @param model A fitted model.
 #' @param reduction Whether to add the grand mean used by a reduction.
 #' @param call The public call to name in an error raised during a later build.
+#' @param fun An optional function of the mapped x values, instead of a model.
+#' @param mapping The positional mapping used to evaluate `fun`.
 #'
 #' @return A data frame or a function from plot data to a data frame, matching
 #'   the form of `data` that [ggplot2::layer()] accepts.
 #'
 #' @noRd
-resid_layer_data <- function(data, model, reduction = FALSE, call = caller_env()) {
+resid_layer_data <- function(data, model = NULL, reduction = FALSE,
+                             call = caller_env(), fun = NULL, mapping = NULL) {
   add_predictions <- function(rows) {
-    rows$.fitted <- resid_fitted(model, rows, call = call)
+    rows$.fitted <- if (is.null(fun)) {
+      resid_fitted(model, rows, call = call)
+    } else {
+      fun(eval_tidy(mapping$x, rows))
+    }
     if (reduction) {
       rows$.grand <- reduction_grand(model)
     }
@@ -81,6 +88,26 @@ resid_layer_mapping <- function(mapping, orientation, reduction = FALSE) {
   }
   mapping[names(owned)] <- owned
   mapping
+}
+
+#' Prepare the data and mappings shared by every residual-family interface
+#'
+#' The formula adapter supplies the plot's positional quosures and resolves
+#' orientation from its model. The native interface supplies a layer mapping
+#' and orientation directly. Prediction runs before orientation is forced, so
+#' the formula interface reports missing prediction variables before checking
+#' which axis carries the outcome. Function predictions use the same path.
+#'
+#' @noRd
+resid_layer_spec <- function(data, mapping, model = NULL, orientation = "x",
+                             reduction = FALSE, fun = NULL, call = caller_env()) {
+  data <- resid_layer_data(
+    data, model, reduction = reduction, fun = fun, mapping = mapping, call = call
+  )
+  list(
+    data = data,
+    aesthetics = resid_layer_mapping(mapping, orientation, reduction = reduction)
+  )
 }
 
 #' Make a normal jitter safe for model endpoints
@@ -208,10 +235,13 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     check_decomposable(model, fn, call = call)
     warn_empty_reduction(model, fn)
   }
+  spec <- resid_layer_spec(
+    data, mapping, model, orientation, reduction = reduction, call = call
+  )
 
   resid_layer(
-    mapping = resid_layer_mapping(mapping, orientation, reduction = reduction),
-    data = resid_layer_data(data, model, reduction = reduction, call = call),
+    mapping = spec$aesthetics,
+    data = spec$data,
     geom = geom,
     stat = stat,
     position = position,
