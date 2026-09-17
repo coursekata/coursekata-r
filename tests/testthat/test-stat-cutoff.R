@@ -143,6 +143,14 @@ test_that("hard scale limits change the panel input but coordinate zoom does not
   expect_equal(sort(zoomed), sort(planned_intercepts("middle", .5, 1:10)))
 })
 
+test_that("stat_cutoff refuses mapped styling aesthetics", {
+  values <- data.frame(x = 1:6, g = rep(c("a", "b"), each = 3))
+  plot <- ggplot2::ggplot(values, ggplot2::aes(x, colour = g)) +
+    stat_cutoff(geom = "vline", na.rm = TRUE)
+
+  expect_error(ggplot2::ggplot_build(plot), "colour.*can't be mapped")
+})
+
 test_that("func remains a deprecated alias at both public and direct-layer boundaries", {
   values <- data.frame(x = 1:10)
   cache <- get("deprecation_env", asNamespace("lifecycle"))

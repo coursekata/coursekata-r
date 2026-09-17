@@ -56,6 +56,9 @@ change the result.
 \code{stat_dist_mean()} is the conventional layer constructor. It computes from
 \code{x} and defaults to a vertical line; \code{\link[=show_mean]{show_mean()}} is the teaching-oriented
 helper that resolves a distribution plot's mapping and styles this layer.
+Since the stat computes once per panel, styling aesthetics from the source
+data cannot be mapped; set them to one value, or facet the plot to compute
+one mean per group.
 }
 \seealso{
 \code{\link[=show_mean]{show_mean()}} and \code{\link[=gf_model]{gf_model()}}.

@@ -10,6 +10,9 @@
 #' `stat_dist_mean()` is the conventional layer constructor. It computes from
 #' `x` and defaults to a vertical line; [show_mean()] is the teaching-oriented
 #' helper that resolves a distribution plot's mapping and styles this layer.
+#' Since the stat computes once per panel, styling aesthetics from the source
+#' data cannot be mapped; set them to one value, or facet the plot to compute
+#' one mean per group.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
 #' @param data The data to be displayed in this layer.
@@ -32,6 +35,10 @@
 StatDistMean <- ggplot2::ggproto(
   "StatDistMean", ggplot2::Stat,
   required_aes = "x",
+  setup_params = function(self, data, params) {
+    check_panel_stat_aesthetics(data, "stat_dist_mean", self$required_aes)
+    params
+  },
   compute_panel = function(self, data, scales) {
     axis <- self$required_aes
     result <- data.frame(mean(data[[axis]], na.rm = TRUE))
@@ -48,7 +55,7 @@ stat_dist_mean <- function(mapping = NULL, data = NULL, geom = "vline",
   ggplot2::layer(
     stat = StatDistMean, data = data, mapping = mapping, geom = geom,
     position = position, show.legend = show.legend, inherit.aes = inherit.aes,
-    params = list(na.rm = na.rm, ...)
+    params = rlang::list2(na.rm = na.rm, ...)
   )
 }
 
