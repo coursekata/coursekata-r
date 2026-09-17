@@ -221,6 +221,98 @@ GeomSquareplot <- ggplot2::ggproto(
   draw_key = ggplot2::draw_key_rect
 )
 
+#' Draw a countable squareplot layer
+#'
+#' `geom_squareplot()` and `stat_squareplot()` expose [gf_squareplot()] through
+#' ggplot2 syntax. With the default `bars = "none"`, each observation is drawn
+#' as one square. Continuous x values use `ggplot2::stat_bin()`'s binning rules;
+#' factors, characters, and logicals use `ggplot2::stat_count()`'s columns.
+#' Both constructors retain `gf_squareplot()`'s defaults, warnings, factor-level
+#' handling, and count scale.
+#'
+#' A squareplot is x-only, as it is through `gf_squareplot()`. Map the
+#' distribution to x. If the plot already maps y for another layer, set
+#' `inherit.aes = FALSE` and supply this layer's x mapping directly.
+#'
+#' @param mapping Aesthetic mappings created by [ggplot2::aes()].
+#' @param data A data frame for this layer, or `NULL` to inherit the plot's
+#'   data. Function-valued and formula-valued layer data are not supported.
+#' @param position,show.legend,inherit.aes See [ggplot2::geom_histogram()].
+#' @param stat The statistical transformation used by `geom_squareplot()`.
+#' @param geom The geometric object used by `stat_squareplot()`.
+#' @param ... Fixed aesthetics and other layer parameters. These include `pad`
+#'   from [ggplot2::stat_bin()]. `bar_color` and `bar_linewidth` control the bar
+#'   drawn by `bars = "outline"` or `bars = "solid"`.
+#' @param binwidth,bins,center,boundary,closed,breaks Binning parameters with
+#'   the meanings used by [ggplot2::stat_bin()]. They have no effect on a
+#'   discrete x, which is counted instead.
+#' @param bars Display style: `"none"` draws squares, `"outline"` frames them
+#'   with their bars, and `"solid"` draws the bars alone.
+#' @param na.rm Must be `TRUE`. A missing value has no square to draw.
+#'
+#' @return A ggplot2 layer.
+#'
+#' @seealso [gf_squareplot()]
+#'
+#' @examples
+#' ggplot2::ggplot(Fingers, ggplot2::aes(Thumb)) +
+#'   geom_squareplot()
+#'
+#' ratings <- data.frame(rating = factor(c(1, 1, 3), levels = 1:5))
+#' ggplot2::ggplot(ratings, ggplot2::aes(rating)) +
+#'   stat_squareplot()
+#'
+#' @name geom_squareplot
+NULL
+
+#' @rdname geom_squareplot
+#' @export
+geom_squareplot <- function(mapping = NULL, data = NULL, stat = "squareplot",
+                            position = "identity", ..., binwidth = NULL,
+                            bins = NULL, center = NULL, boundary = NULL,
+                            closed = NULL, breaks = NULL, bars = "none",
+                            na.rm = TRUE, show.legend = NA,
+                            inherit.aes = TRUE) {
+  squareplot_check_na_rm(na.rm, "geom_squareplot", call = caller_env())
+  squareplot_check_data(data, "geom_squareplot", call = caller_env())
+  params <- rlang::list2(
+    binwidth = binwidth, bins = bins, center = center,
+    boundary = boundary, closed = closed, breaks = breaks,
+    bars = bars, na.rm = na.rm, ...
+  )
+  if (squareplot_default_stat(stat)) params$orientation <- "x"
+  squareplot_layer(
+    geom = GeomSquareplot, stat = stat, position = position,
+    mapping = mapping, data = data,
+    show.legend = show.legend, inherit.aes = inherit.aes,
+    params = params, .fn = "geom_squareplot"
+  )
+}
+
+#' @rdname geom_squareplot
+#' @export
+stat_squareplot <- function(mapping = NULL, data = NULL, geom = "squareplot",
+                            position = "identity", ..., binwidth = NULL,
+                            bins = NULL, center = NULL, boundary = NULL,
+                            closed = NULL, breaks = NULL, bars = "none",
+                            na.rm = TRUE, show.legend = NA,
+                            inherit.aes = TRUE) {
+  squareplot_check_na_rm(na.rm, "stat_squareplot", call = caller_env())
+  squareplot_check_data(data, "stat_squareplot", call = caller_env())
+  params <- rlang::list2(
+    binwidth = binwidth, bins = bins, center = center,
+    boundary = boundary, closed = closed, breaks = breaks,
+    bars = bars, na.rm = na.rm, ...
+  )
+  params$orientation <- "x"
+  squareplot_layer(
+    geom = geom, stat = StatSquareplot, position = position,
+    mapping = mapping, data = data,
+    show.legend = show.legend, inherit.aes = inherit.aes,
+    params = params, .fn = "stat_squareplot"
+  )
+}
+
 #' Collapse a panel's squares back into the rectangles a bar is drawn from
 #'
 #' @param data A panel's worth of expanded square rows.

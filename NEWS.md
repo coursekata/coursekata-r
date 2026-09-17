@@ -1,5 +1,8 @@
 # coursekata (development version)
 
+- Add `geom_squareplot()` and `stat_squareplot()` as x-only ggplot2 constructors
+  for the same countable squareplot as `gf_squareplot()`. They preserve its
+  binning, discrete counting, scales, warnings, and display behavior.
 - Add `stat_sd_ruler()` as the ggplot2 constructor for `StatSdRuler`. It uses
   the same per-panel calculation as `gf_sd_ruler()`, completing the native
   `stat_*()` surface for distribution means, standard deviations, and cutoffs.
