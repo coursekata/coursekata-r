@@ -34,6 +34,7 @@ reference:
   - stat_sd_ruler
   - StatSdRuler
   - gf_squareplot
+  - geom_squareplot
   - StatSquareplot
   - GeomSquareplot
   - middle

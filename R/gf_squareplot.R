@@ -80,7 +80,7 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
   if (is.null(scale)) return(invisible(NULL))
   if (scale$is_discrete()) {
     abort(c(
-      "`gf_squareplot()` needs a continuous count axis",
+      "a squareplot needs a continuous count axis",
       "*" = paste(
         "each square is exactly one count tall, and a discrete y axis has no",
         "count to be one of"
@@ -94,14 +94,14 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
     what <- if (named) glue('a "{transform$name}" transformation') else "a transformation"
     instead <- if (named) transform$name else "sqrt"
     abort(c(
-      glue("`gf_squareplot()` cannot count squares on a y scale that applies {what}"),
+      glue("a squareplot cannot count squares on a y scale that applies {what}"),
       "*" = paste(
         "a scale transforms the counts before the squares are built, so the",
         "squares would be drawn in one space and labeled in another"
       ),
       "*" = glue(
-        "to draw the same distortion at render, transform the coordinate ",
-        'instead: `%>% gf_refine(coord_transform(y = "{instead}"))`'
+        "to draw the same distortion at render, add ",
+        '`ggplot2::coord_transform(y = "{instead}")` instead'
       ),
       "*" = "each square still spans one count, so the stack thins as it climbs"
     ), call = call)
@@ -111,7 +111,8 @@ squareplot_check_y_scale <- function(scale, call = caller_env()) {
 
 #' Decide which default scales a squareplot is allowed to add
 #'
-#' @param object The object supplied to the generated ggformula function.
+#' @param object A ggplot. Any other object is treated as having no configured
+#'   position scales.
 #'
 #' @return A list with logical `add_x` and `add_y` fields.
 #'
@@ -135,9 +136,8 @@ squareplot_scale_plan <- function(object) {
 #' that misses it merely keeps a default, but a stat that misses it tries to
 #' bin a factor's integer codes.
 #'
-#' @param mapping,data The layer's own mapping and data, as `squareplot_layer()`
-#'   receives them.
-#' @param object The object supplied to the generated ggformula function.
+#' @param mapping,data The squareplot layer's own mapping and data.
+#' @param object The plot that supplies any inherited mapping and data.
 #'
 #' @return The evaluated x values, or `NULL` when they cannot be resolved.
 #'
@@ -155,22 +155,62 @@ squareplot_x_values <- function(mapping, data, object) {
   tryCatch(eval_tidy(x, values_from), error = function(e) NULL)
 }
 
+#' Whether x needs the counted squareplot path
+#'
+#' @param x Evaluated x values.
+#'
+#' @return A logical scalar.
+#'
+#' @noRd
+squareplot_discrete <- function(x) {
+  is.factor(x) || is.character(x) || is.logical(x)
+}
+
+#' Whether a layer uses the package's default squareplot stat
+#'
+#' @param stat A stat name or ggproto object.
+#'
+#' @return A logical scalar.
+#'
+#' @noRd
+squareplot_default_stat <- function(stat) {
+  identical(stat, StatSquareplot) || identical(stat, "squareplot")
+}
+
+#' Whether a layer uses the package's squareplot geom
+#'
+#' @param geom A geom name or ggproto object.
+#'
+#' @return A logical scalar.
+#'
+#' @noRd
+squareplot_default_geom <- function(geom) {
+  identical(geom, GeomSquareplot) || identical(geom, "squareplot")
+}
+
+#' Identify parameters that only apply to a binned x
+#'
+#' @return Parameter names accepted by [ggplot2::StatBin] but not
+#'   [ggplot2::StatCount].
+#'
+#' @noRd
+squareplot_binning_params <- function() {
+  setdiff(ggplot2::StatBin$parameters(TRUE), ggplot2::StatCount$parameters(TRUE))
+}
+
 #' Warn that a binning argument cannot reach a counted x
 #'
-#' `binwidth` is in `gf_squareplot()`'s own signature and the rest of the
-#' binning vocabulary is in its own Rd, so a caller who supplies one alongside
-#' a discrete x is advertised an effect that a counted x cannot honor. The
-#' plot drawn is still the right plot -- only the override is lost -- so this
-#' warns rather than aborts.
+#' The public functions advertise these arguments for a continuous x. A
+#' discrete x is still counted correctly, but cannot honor the override, so
+#' this warns rather than aborts.
 #'
-#' @param params The layer's params, after ggformula's own extras are merged in.
+#' @param params The squareplot layer's parameters.
 #'
 #' @return Invisible `NULL`, or a warning.
 #'
 #' @noRd
 squareplot_warn_binning <- function(params) {
-  binning <- setdiff(ggplot2::StatBin$parameters(TRUE), ggplot2::StatCount$parameters(TRUE))
-  present <- intersect(names(params), binning)
+  present <- intersect(names(params), squareplot_binning_params())
   if (length(present) == 0) {
     return(invisible(NULL))
   }
@@ -181,56 +221,104 @@ squareplot_warn_binning <- function(params) {
   invisible(NULL)
 }
 
-#' Build the squareplot layer together with defaults it is allowed to own
+#' Build the shared squareplot layer
 #'
-#' `layer_factory()` composes whatever the returned closure produces with `+`.
-#' The closure captures scale ownership before the layer is assembled: defaults
-#' are added only for axes the caller has not already configured. The x values
-#' are resolved once, here, and drive both which stat draws the layer and
-#' whether the x scale keeps unobserved factor levels -- one predicate for both,
-#' rather than two that can disagree about what "discrete" means.
+#' The returned object is a ggplot2 layer with the original layer specification
+#' attached. Its `ggplot_add()` method resolves inherited data and mappings from
+#' the destination plot, then reproduces `gf_squareplot()`'s stat and scale
+#' choices. The ggformula wrapper and both ggplot2 constructors therefore go
+#' through this function.
 #'
-#' @param object The object supplied to the generated ggformula function. Also
-#'   the input to `squareplot_scale_plan()`, computed here so the call-time
-#'   y-scale refusal fires at the same moment it always has.
+#' @param geom,stat,position,params,mapping,data,... Passed to
+#'   [ggplot2::layer()].
 #'
-#' @return A layer function for [ggformula::layer_factory()].
+#' @return A squareplot ggplot2 layer.
 #'
 #' @noRd
-squareplot_layer <- function(object) {
-  force(object)
-  scale_plan <- squareplot_scale_plan(object)
-  function(geom, stat, position, params, mapping = NULL, data = NULL, ...) {
-    # `colour` is the separator between two squares, and it may be mapped like
-    # any other aesthetic; `bar_color` is the bar's own. ggformula hands
-    # `color` and `colour` through verbatim, so fold the American spelling into
-    # the one the geom uses, and default the separators to white only when
-    # nothing is mapped to them.
-    params$colour <- params$colour %||% params$color
-    params$color <- NULL
-    if (is.null(mapping$colour)) params$colour <- params$colour %||% "white"
-    if (is.null(mapping$fill)) params$fill <- params$fill %||% "#7fcecc"
-
-    values <- squareplot_x_values(mapping, data, object)
-    discrete <- is.factor(values) || is.character(values) || is.logical(values)
-    if (discrete) {
-      stat <- StatSquareplotCount
-      squareplot_warn_binning(params)
-    }
-
-    parts <- list(ggplot2::layer(
-      geom = geom, stat = stat, position = position, params = params,
-      mapping = mapping, data = data, ...
-    ))
-    if (scale_plan$add_y) parts <- c(parts, list(scale_y_count()))
-
-    # Retain unobserved factor levels only when this new plot owns its x scale.
-    # An existing scale's order, limits and drop policy belong to the caller.
-    if (scale_plan$add_x && discrete) {
-      parts <- c(parts, list(ggplot2::scale_x_discrete(drop = FALSE)))
-    }
-    parts
+squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
+                             data = NULL, ..., .fn = "gf_squareplot") {
+  params <- params[!vapply(params, is.null, logical(1))]
+  square_geom <- squareplot_default_geom(geom)
+  if (!square_geom && identical(params$bars, "none")) params$bars <- NULL
+  # `colour` is the separator between two squares, and it may be mapped like
+  # any other aesthetic; `bar_color` is the bar's own. Fold the American
+  # spelling into the one the geom uses before the layer is built.
+  params$colour <- params$colour %||% params$color
+  params$color <- NULL
+  # Keep gf_squareplot()'s existing rule: only a layer mapping displaces these
+  # fixed defaults; an inherited plot mapping belongs to the plot underneath.
+  if (square_geom && is.null(mapping$colour)) {
+    params$colour <- params$colour %||% "white"
   }
+  if (square_geom && is.null(mapping$fill)) {
+    params$fill <- params$fill %||% "#7fcecc"
+  }
+
+  dots <- list(...)
+  # This provisional object makes the constructor a real LayerInstance. The
+  # add method validates a rebuilt layer once the x type selects the right stat.
+  layer <- suppressWarnings(
+    rlang::exec(
+      ggplot2::layer,
+      geom = geom, stat = stat, position = position, params = params,
+      mapping = mapping, data = data, !!!dots
+    )
+  )
+  attr(layer, "squareplot_spec") <- list(
+    geom = geom, stat = stat, position = position, params = params,
+    mapping = mapping, data = data, dots = dots, fn = .fn
+  )
+  class(layer) <- c("coursekata_squareplot_layer", class(layer))
+  layer
+}
+
+#' Add a squareplot layer with the same defaults as `gf_squareplot()`
+#'
+#' @param object A layer returned by `squareplot_layer()`.
+#' @param plot The destination ggplot.
+#' @param ... Forwarded by [ggplot2::ggplot_add()].
+#'
+#' @return The updated ggplot.
+#'
+#' @noRd
+#' @importFrom ggplot2 ggplot_add
+#' @export
+ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
+  spec <- attr(object, "squareplot_spec")
+  scale_plan <- squareplot_scale_plan(plot)
+  values <- squareplot_x_values(spec$mapping, spec$data, plot)
+  discrete <- squareplot_discrete(values)
+  inherits_mapping <- spec$dots$inherit.aes %||% TRUE
+  has_effective_mapping <- function(aesthetic) {
+    !is.null(spec$mapping[[aesthetic]]) ||
+      (inherits_mapping && !is.null(plot_spec(plot)$mapping[[aesthetic]]))
+  }
+
+  if (!identical(spec$fn, "gf_squareplot") && has_effective_mapping("y")) {
+    abort(c(
+      glue("`{spec$fn}()` draws the distribution mapped to x"),
+      "*" = "remove the y mapping, or set `inherit.aes = FALSE` and map x on this layer"
+    ))
+  }
+
+  if (discrete && squareplot_default_stat(spec$stat)) {
+    squareplot_warn_binning(spec$params)
+    spec$params[intersect(names(spec$params), squareplot_binning_params())] <- NULL
+    spec$stat <- StatSquareplotCount
+  }
+
+  layer <- rlang::exec(
+    ggplot2::layer,
+    geom = spec$geom, stat = spec$stat, position = spec$position,
+    params = spec$params, mapping = spec$mapping, data = spec$data,
+    !!!spec$dots
+  )
+  parts <- list(layer)
+  if (scale_plan$add_y) parts <- c(parts, list(scale_y_count()))
+  if (scale_plan$add_x && discrete) {
+    parts <- c(parts, list(ggplot2::scale_x_discrete(drop = FALSE)))
+  }
+  ggplot2::ggplot_add(parts, plot, ...)
 }
 
 #' The arguments this function used to take, and what draws each one now
@@ -252,6 +340,49 @@ squareplot_retired <- c(
   mincount = "is now `%>% gf_refine(ggplot2::expand_limits(y = ))`",
   auto_subdivide = "is no longer needed: the squares stay countable at any size"
 )
+
+#' Refuse missing-value handling that cannot preserve one-square-per-row
+#'
+#' @param na.rm The requested missing-value policy.
+#' @param fn The front door naming the error.
+#' @param call The environment used for error reporting.
+#'
+#' @return Invisible `NULL`, or an abort.
+#'
+#' @noRd
+squareplot_check_na_rm <- function(na.rm, fn = "gf_squareplot",
+                                   call = caller_env()) {
+  if (!isTRUE(na.rm)) {
+    abort(
+      c(
+        "`na.rm = FALSE` is not supported",
+        "*" = glue("{fn}() draws one square per observation, and a missing value has none"),
+        "*" = "drop the missing values before plotting, or leave `na.rm = TRUE`"
+      ),
+      call = call
+    )
+  }
+  invisible(NULL)
+}
+
+#' Refuse layer-data forms that cannot be dispatched before ggplot2 evaluates them
+#'
+#' @param data The layer data.
+#' @param fn The front door naming the error.
+#' @param call The environment used for error reporting.
+#'
+#' @return Invisible `NULL`, or an abort.
+#'
+#' @noRd
+squareplot_check_data <- function(data, fn, call = caller_env()) {
+  if (is.function(data) || inherits(data, "formula")) {
+    abort(c(
+      glue("`{fn}()` needs `data` to be a data frame or `NULL`"),
+      "*" = "function-valued and formula-valued layer data are not supported"
+    ), call = call)
+  }
+  invisible(NULL)
+}
 
 #' Refuse at call time what the layer would discard in silence
 #'
@@ -284,16 +415,7 @@ squareplot_check <- function(object, gformula, na.rm, dots = character(),
     )
   }
 
-  if (!isTRUE(na.rm)) {
-    abort(
-      c(
-        "`na.rm = FALSE` is not supported",
-        "*" = "gf_squareplot() draws one square per observation, and a missing value has none",
-        "*" = "drop the missing values before plotting, or leave `na.rm = TRUE`"
-      ),
-      call = call
-    )
-  }
+  squareplot_check_na_rm(na.rm, call = call)
 
   frm <- if (inherits(object, "formula")) object else gformula
   if (inherits(frm, "formula") && length(frm) == 3L) {
@@ -472,13 +594,11 @@ gf_squareplot <- named_layer_factory(
     closed = NULL, breaks = NULL, bars = "none", na.rm = TRUE
   ),
   .pre_bindings = alist(
-    squareplot_check = squareplot_check,
-    squareplot_layer = squareplot_layer
+    squareplot_check = squareplot_check
   ),
   note = "each observation is drawn as its own square, so a bin can be counted",
-  layer_fun = ggplot2::layer,
+  layer_fun = squareplot_layer,
   pre = {
     squareplot_check(object, gformula, na.rm, dots = ...names())
-    layer_fun <- squareplot_layer(object)
   }
 )
