@@ -36,11 +36,11 @@ diverging_mapping_expressions <- function(object, aes) {
 #' comes from the plot rather than from `...`: which axis carries the outcome is
 #' not a style choice.
 #'
-#' The layer states its axes rather than inheriting them, exactly as
-#' `resid_mapping()` does: `inherit = FALSE`, `data` is the pinned plot's own
-#' data (so facet columns travel to the stat, which fits per panel), and the
-#' mapping is built from the pinned plot's own mapping for only the axes this
-#' shape needs. Stating rather than inheriting is what keeps
+#' The layer states its axes rather than inheriting them: `inherit = FALSE`,
+#' `data` is the pinned plot's own data (so facet columns travel to the stat,
+#' which fits per panel), and the mapping is built from the pinned plot's own
+#' mapping for only the axes this shape needs. Stating rather than inheriting
+#' is what keeps
 #' `gf_point(Thumb ~ Height, color = ~Sex) %>% gf_model()` drawing ONE black
 #' line rather than one per color: the inferred model is a model of the two
 #' axes, not of the legend.

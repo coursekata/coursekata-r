@@ -129,10 +129,85 @@ test_that("ggplot2 and ggformula functions build the same model layers", {
       gg_data[sort(names(gg_data))],
       gf_data[sort(names(gf_data))]
     )
-    expect_equal(
-      as.numeric(ggplot2::layer_grob(gg_plot, 2)[[1]]$x),
-      as.numeric(ggplot2::layer_grob(gf_plot, 2)[[1]]$x)
+    gg_grob <- ggplot2::layer_grob(gg_plot, 2)[[1]]
+    gf_grob <- ggplot2::layer_grob(gf_plot, 2)[[1]]
+    square <- inherits(gg_plot$layers[[2]]$geom, "GeomSquareResid")
+    coordinates <- if (square) c("x", "y") else c("x0", "y0", "x1", "y1")
+    for (coordinate in coordinates) {
+      expect_length(gg_grob[[coordinate]], nrow(data) * if (square) 4L else 1L)
+      expect_equal(
+        as.numeric(gg_grob[[coordinate]]),
+        as.numeric(gf_grob[[coordinate]])
+      )
+    }
+  }
+})
+
+test_that("both residual interfaces preserve independent model arithmetic in either orientation", {
+  data <- data.frame(x = 1:6, y = c(3, 4, 8, 7, 11, 9))
+  model <- lm(y ~ x, data = data)
+  fitted <- unname(predict(model, data))
+  grand <- mean(data$y)
+  cases <- list(
+    list(geom_resid, gf_resid, FALSE),
+    list(geom_square_resid, gf_square_resid, FALSE),
+    list(geom_square_resid, gf_squaresid, FALSE),
+    list(geom_reduce, gf_reduce, TRUE),
+    list(geom_square_reduce, gf_square_reduce, TRUE),
+    list(geom_square_reduce, gf_squareduce, TRUE)
+  )
+  for (orientation in c("x", "y")) {
+    mapping <- if (orientation == "x") ggplot2::aes(x, y) else ggplot2::aes(y, x)
+    base <- ggplot2::ggplot(data, mapping) + ggplot2::geom_point()
+    outcome <- if (orientation == "x") "y" else "x"
+    for (case in cases) {
+      plots <- list(
+        base + case[[1]](model = model, orientation = orientation),
+        suppressMessages(case[[2]](base, model))
+      )
+      for (plot in plots) {
+        drawn <- ggplot2::ggplot_build(plot)$data[[2]]
+        expected_start <- if (case[[3]]) rep(grand, nrow(data)) else data$y
+        expect_equal(drawn[[outcome]], expected_start)
+        expect_equal(drawn[[paste0(outcome, "end")]], fitted)
+      }
+    }
+  }
+})
+
+test_that("gf adapters predict before checking the model's outcome axis", {
+  plot <- gf_point(Thumb ~ Height, data = Fingers)
+  model <- lm(later_anxiety ~ base_anxiety, data = er)
+
+  constructors <- list(gf_resid, gf_square_resid, gf_reduce, gf_square_reduce)
+  for (constructor in constructors) {
+    expect_error(
+      suppressMessages(constructor(plot, model)),
+      "missing from the plot's data: base_anxiety"
     )
+  }
+})
+
+test_that("function residual adapters preserve mapped x values and call the function once", {
+  data <- data.frame(x = c(1, 2, 4, 8), y = c(3, 5, 6, 8))
+  for (constructor in list(gf_resid_fun, gf_square_resid_fun)) {
+    calls <- 0L
+    received <- NULL
+    prediction <- function(x) {
+      calls <<- calls + 1L
+      received <<- x
+      2 + 3 * x
+    }
+    plot <- suppressMessages(constructor(
+      gf_point(y ~ log(x), data = data), prediction
+    ))
+    drawn <- ggplot2::ggplot_build(plot)$data[[2]]
+    expect_equal(received, log(data$x))
+    expect_identical(calls, 1L)
+    expect_equal(drawn$y, data$y)
+    expect_equal(drawn$yend, 2 + 3 * log(data$x))
+    ggplot2::ggplot_build(plot)
+    expect_identical(calls, 1L)
   }
 })
 

@@ -286,25 +286,6 @@ resid_end <- function(spec, model, call = caller_env()) {
   if (identical(outcome_axis, "x")) "xend" else "yend"
 }
 
-#' Build the positional mapping for a residual-family layer
-#'
-#' @param from `NULL` to use the plot's observed value as the starting point,
-#'   or a column name such as `.grand` to replace that value.
-#'
-#' @noRd
-resid_mapping <- function(spec, end, from = NULL) {
-  mapping <- ggplot2::aes(yend = .data$.fitted)
-  names(mapping) <- end
-  # Keep the plot's quosures and their environments. Square layers cannot rely
-  # on inherited positional mappings.
-  mapping[c("x", "y")] <- spec$mapping[c("x", "y")]
-  if (!is.null(from)) {
-    axis <- sub("end$", "", end)
-    mapping[[axis]] <- rlang::quo(.data[[from]])
-  }
-  mapping
-}
-
 #' Refuse a fit whose squares would not add up
 #'
 #' The area identity requires the residuals to be orthogonal to the fitted
@@ -408,25 +389,6 @@ check_resid_plot <- function(object, fn, call = caller_env()) {
   invisible(object)
 }
 
-#' Assemble residual data and mappings
-#'
-#' Keep the complete plot data so facet variables and omitted rows stay aligned
-#' with the point layer.
-#'
-#' @param spec A `plot_spec()`.
-#' @param fitted One prediction per row of `spec$data`.
-#' @param end `"xend"` or `"yend"`: the axis the residual is measured along.
-#'
-#' @return A list with `data` (the plot's own data plus `.fitted`) and
-#'   `aesthetics`.
-#'
-#' @noRd
-resid_pieces <- function(spec, fitted, end) {
-  data <- spec$data
-  data$.fitted <- fitted
-  list(data = data, aesthetics = resid_mapping(spec, end))
-}
-
 #' Build a residual specification from a model
 #'
 #' Validation order is part of the error contract: plot, model, axes,
@@ -454,8 +416,11 @@ resid_spec <- function(object, model, fn = "gf_resid", call = caller_env()) {
   }
   spec <- plot_spec(object)
   check_resid_axes(spec, call = call)
-  fitted <- resid_fitted(model, spec$data, call = call)
-  resid_pieces(spec, fitted, resid_end(spec, model, call = call))
+  resid_layer_spec(
+    spec$data, spec$mapping[c("x", "y")], model,
+    orientation = if (identical(resid_end(spec, model, call = call), "xend")) "y" else "x",
+    call = call
+  )
 }
 
 #' Build a residual specification from a function of x
@@ -487,8 +452,9 @@ resid_fun_spec <- function(object, fun, fn = "gf_resid_fun", call = caller_env()
   }
   spec <- plot_spec(object)
   check_resid_axes(spec, call = call)
-  fitted <- fun(plot_x_values(spec))
-  resid_pieces(spec, fitted, "yend")
+  resid_layer_spec(
+    spec$data, spec$mapping[c("x", "y")], fun = fun, call = call
+  )
 }
 
 #' Build a reduction specification from a model
@@ -520,27 +486,28 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
   }
   spec <- plot_spec(object)
   check_resid_axes(spec, call = call)
-  fitted <- resid_fitted(model, spec$data, call = call)
-  end <- resid_end(spec, model, call = call)
+  layer <- resid_layer_spec(
+    spec$data, spec$mapping[c("x", "y")], model,
+    orientation = if (identical(resid_end(spec, model, call = call), "xend")) "y" else "x",
+    reduction = TRUE, call = call
+  )
 
   check_decomposable(model, fn, call = call)
 
   warn_empty_reduction(model, fn)
 
-  grand <- reduction_grand(model)
-  data <- spec$data
-  data$.fitted <- fitted
-  data$.grand <- grand
-  list(data = data, aesthetics = resid_mapping(spec, end, from = ".grand"))
+  layer
 }
 
-#' Adapt residual layer construction to `layer_factory()`
+#' Adapt the shared residual layer builder to `layer_factory()`
 #'
 #' Named `model` and `fun` arguments arrive in `params` but are inputs to layer
 #' construction, not geom or stat parameters, so they are removed here. The
 #' plot's positional quosures replace ggformula's copies to preserve their
-#' original evaluation environments. `check.param` is passed through because
-#' ggformula and ggplot2 intentionally use different defaults.
+#' original evaluation environments. Both interfaces prepare these inputs with
+#' `resid_layer_spec()` before calling the same `resid_layer()` builder.
+#' `check.param` is passed through because ggformula and ggplot2 use different
+#' defaults.
 #'
 #' @param tag The tag to name the layer with.
 #' @param aesthetics The mapping `resid_spec()` or `resid_fun_spec()` computed,
@@ -555,7 +522,8 @@ resid_layer_fun <- function(tag, aesthetics) {
   force(tag)
   force(aesthetics)
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL,
-           check.param = FALSE, ...) {
+           check.aes = TRUE, check.param = FALSE, show.legend = NA,
+           inherit.aes = TRUE, ...) {
     params[["model"]] <- NULL
     params[["fun"]] <- NULL
     mapping <- mapping %||% ggplot2::aes()
@@ -568,19 +536,15 @@ resid_layer_fun <- function(tag, aesthetics) {
       mapping = mapping,
       data = data,
       params = params,
-      check.param = check.param,
-      tag = tag,
       orientation = orientation,
       reduction = tag %in% c("reduce", "square_reduce"),
+      show.legend = show.legend,
+      inherit.aes = inherit.aes,
+      call = caller_env(),
+      tag = tag,
+      check.aes = check.aes,
+      check.param = check.param,
       ...
     )
   }
 }
-
-#' The x values the plot draws, as the caller's function will be handed them
-#'
-#' Evaluating the plot's quosure preserves transformations such as
-#' `~log(Height)` and the factor representation of a discrete x.
-#'
-#' @noRd
-plot_x_values <- function(spec) eval_tidy(spec$mapping$x, spec$data)
