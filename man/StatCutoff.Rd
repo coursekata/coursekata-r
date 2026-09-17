@@ -76,7 +76,9 @@ scales.
 
 \code{stat_cutoff()} is the conventional layer constructor. Its default geom is
 \code{"cutoff"}; use \code{geom = "vline"} when a full-height reference line is
-wanted instead.
+wanted instead. Since the stat computes once per panel, styling aesthetics
+from the source data cannot be mapped; set them to one value, or facet the
+plot to compute one set of cutoffs per group.
 }
 \seealso{
 \code{\link[=show_cutoffs]{show_cutoffs()}}, which marks whole-distribution cutoffs.

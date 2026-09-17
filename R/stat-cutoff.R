@@ -15,7 +15,9 @@
 #'
 #' `stat_cutoff()` is the conventional layer constructor. Its default geom is
 #' `"cutoff"`; use `geom = "vline"` when a full-height reference line is
-#' wanted instead.
+#' wanted instead. Since the stat computes once per panel, styling aesthetics
+#' from the source data cannot be mapped; set them to one value, or facet the
+#' plot to compute one set of cutoffs per group.
 #'
 #' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
 #' @param data The data to be displayed in this layer.
@@ -46,6 +48,7 @@ StatCutoff <- ggplot2::ggproto(
   "StatCutoff", ggplot2::Stat,
   required_aes = "x",
   setup_params = function(data, params) {
+    check_panel_stat_aesthetics(data, "stat_cutoff", "x")
     has_part <- !is.null(params$part)
     has_func <- !is.null(params$func)
 
@@ -129,6 +132,8 @@ stat_cutoff <- function(mapping = NULL, data = NULL, geom = "cutoff",
   ggplot2::layer(
     stat = StatCutoff, data = data, mapping = mapping, geom = geom,
     position = position, show.legend = show.legend, inherit.aes = inherit.aes,
-    params = list(part = part, prop = prop, greedy = greedy, na.rm = na.rm, ...)
+    params = rlang::list2(
+      part = part, prop = prop, greedy = greedy, na.rm = na.rm, ...
+    )
   )
 }

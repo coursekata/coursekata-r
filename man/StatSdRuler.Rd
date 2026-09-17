@@ -2,21 +2,76 @@
 % Please edit documentation in R/gf_sd_ruler.R
 \name{StatSdRuler}
 \alias{StatSdRuler}
-\title{Measure one standard deviation of the outcome, anchored at its mean}
+\alias{stat_sd_ruler}
+\title{Compute a panel's standard deviation ruler}
 \format{
 A \link[ggplot2:Stat]{ggplot2::Stat} object.
 }
 \usage{
 StatSdRuler
+
+stat_sd_ruler(
+  mapping = NULL,
+  data = NULL,
+  geom = "segment",
+  position = "identity",
+  ...,
+  where = "middle",
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+)
+}
+\arguments{
+\item{mapping}{Set of aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.}
+
+\item{data}{The data to be displayed in this layer.}
+
+\item{geom}{The geometric object used to display the data. Defaults to
+\code{"segment"}.}
+
+\item{position}{A position adjustment. Defaults to \code{"identity"}.}
+
+\item{...}{Other arguments passed to \code{\link[ggplot2:layer]{ggplot2::layer()}}.}
+
+\item{where}{With both \code{x} and \code{y} mapped, where to place the ruler along
+\code{x}: \code{"middle"}, \code{"mean"}, or \code{"median"}. Ignored when only \code{x} is
+mapped.}
+
+\item{na.rm}{If \code{FALSE}, the default, missing values are removed with a
+warning. If \code{TRUE}, missing values are silently removed.}
+
+\item{show.legend}{Logical. Should this layer be included in the legends?}
+
+\item{inherit.aes}{If \code{FALSE}, override the default aesthetics rather than
+combining with them.}
+}
+\value{
+\code{stat_sd_ruler()} returns a ggplot2 layer.
 }
 \description{
-Reduces a panel to the single segment a standard deviation ruler draws. The
-outcome is whichever axis carries it: with a \code{y} aesthetic the ruler is
-vertical and \code{where} places it along x; without one the outcome is on x and
-the ruler runs along the baseline from the mean. Both are measured in the
-space the panel is drawn in, so a facet measures its own subset and a
-transformed axis measures the transformed values.
+\code{StatSdRuler} reduces each panel to the segment for one standard deviation,
+anchored at the outcome's mean. With \code{x} and \code{y} aesthetics, the outcome is
+\code{y}; the ruler is vertical and \code{where} places it along \code{x}. With \code{x} alone,
+the outcome is \code{x} and the ruler runs along the baseline from the mean to
+one standard deviation above it.
+}
+\details{
+\code{stat_sd_ruler()} is the conventional layer constructor. It uses the same
+stat as \code{\link[=gf_sd_ruler]{gf_sd_ruler()}}, so both interfaces measure transformed values and
+compute one ruler from each panel's rows. Groups within a panel do not get
+separate rulers. Styling aesthetics from the source data cannot be mapped;
+set them to one value, or facet the plot to draw one ruler per group.
+}
+\examples{
+ggplot2::ggplot(Fingers, ggplot2::aes(Height, Thumb)) +
+  ggplot2::geom_point() +
+  stat_sd_ruler(where = "mean", colour = "red", linewidth = 1)
+
+ggplot2::ggplot(Fingers, ggplot2::aes(Thumb)) +
+  ggplot2::geom_histogram(bins = 30) +
+  stat_sd_ruler(colour = "red", linewidth = 1)
 }
 \seealso{
-\code{\link[=gf_sd_ruler]{gf_sd_ruler()}}, which pairs this stat with a segment for you.
+\code{\link[=gf_sd_ruler]{gf_sd_ruler()}} provides the ggformula interface.
 }

@@ -31,16 +31,19 @@ reference:
     distribution's mean and the process that generated it.
   contents:
   - gf_sd_ruler
+  - stat_sd_ruler
   - StatSdRuler
   - gf_squareplot
   - StatSquareplot
   - GeomSquareplot
   - middle
   - show_cutoffs
+  - stat_cutoff
   - GeomCutoff
   - guide_cutoff
   - StatCutoff
   - show_mean
+  - stat_dist_mean
   - StatDistMean
   - show_dgp
   - guide_dgp

@@ -65,24 +65,56 @@ sd_ruler_inherited <- function(object) {
   )
 }
 
-#' Measure one standard deviation of the outcome, anchored at its mean
+#' Compute a panel's standard deviation ruler
 #'
-#' Reduces a panel to the single segment a standard deviation ruler draws. The
-#' outcome is whichever axis carries it: with a `y` aesthetic the ruler is
-#' vertical and `where` places it along x; without one the outcome is on x and
-#' the ruler runs along the baseline from the mean. Both are measured in the
-#' space the panel is drawn in, so a facet measures its own subset and a
-#' transformed axis measures the transformed values.
+#' `StatSdRuler` reduces each panel to the segment for one standard deviation,
+#' anchored at the outcome's mean. With `x` and `y` aesthetics, the outcome is
+#' `y`; the ruler is vertical and `where` places it along `x`. With `x` alone,
+#' the outcome is `x` and the ruler runs along the baseline from the mean to
+#' one standard deviation above it.
+#'
+#' `stat_sd_ruler()` is the conventional layer constructor. It uses the same
+#' stat as [gf_sd_ruler()], so both interfaces measure transformed values and
+#' compute one ruler from each panel's rows. Groups within a panel do not get
+#' separate rulers. Styling aesthetics from the source data cannot be mapped;
+#' set them to one value, or facet the plot to draw one ruler per group.
+#'
+#' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
+#' @param data The data to be displayed in this layer.
+#' @param geom The geometric object used to display the data. Defaults to
+#'   `"segment"`.
+#' @param position A position adjustment. Defaults to `"identity"`.
+#' @param ... Other arguments passed to [ggplot2::layer()].
+#' @param where With both `x` and `y` mapped, where to place the ruler along
+#'   `x`: `"middle"`, `"mean"`, or `"median"`. Ignored when only `x` is
+#'   mapped.
+#' @param na.rm If `FALSE`, the default, missing values are removed with a
+#'   warning. If `TRUE`, missing values are silently removed.
+#' @param show.legend Logical. Should this layer be included in the legends?
+#' @param inherit.aes If `FALSE`, override the default aesthetics rather than
+#'   combining with them.
+#'
+#' @return `stat_sd_ruler()` returns a ggplot2 layer.
 #'
 #' @format A [ggplot2::Stat] object.
 #'
-#' @seealso [gf_sd_ruler()], which pairs this stat with a segment for you.
+#' @seealso [gf_sd_ruler()] provides the ggformula interface.
 #' @export
+#' @examples
+#' ggplot2::ggplot(Fingers, ggplot2::aes(Height, Thumb)) +
+#'   ggplot2::geom_point() +
+#'   stat_sd_ruler(where = "mean", colour = "red", linewidth = 1)
+#'
+#' ggplot2::ggplot(Fingers, ggplot2::aes(Thumb)) +
+#'   ggplot2::geom_histogram(bins = 30) +
+#'   stat_sd_ruler(colour = "red", linewidth = 1)
 StatSdRuler <- ggplot2::ggproto(
   "StatSdRuler", ggplot2::Stat,
   required_aes = "x",
-  dropped_aes = c("y", "weight"),
+  non_missing_aes = "y",
+  dropped_aes = "y",
   setup_params = function(data, params) {
+    check_panel_stat_aesthetics(data, "stat_sd_ruler", c("x", "y"))
     check_ruler_where(params$where %||% "middle")
     params
   },
@@ -119,7 +151,35 @@ StatSdRuler <- ggplot2::ggproto(
   }
 )
 
-#' Build the ruler's layer, tagged, reading `size` as `linewidth`
+#' @rdname StatSdRuler
+#' @export
+stat_sd_ruler <- function(mapping = NULL, data = NULL, geom = "segment",
+                          position = "identity", ..., where = "middle",
+                          na.rm = FALSE, show.legend = NA,
+                          inherit.aes = TRUE) {
+  sd_ruler_layer(
+    stat = StatSdRuler, data = data, mapping = mapping, geom = geom,
+    position = position, show.legend = show.legend, inherit.aes = inherit.aes,
+    params = rlang::list2(where = where, na.rm = na.rm, ...)
+  )
+}
+
+#' Build a standard deviation ruler layer
+#'
+#' @param geom,stat,position,params,mapping,data,... Passed to
+#'   [ggplot2::layer()].
+#'
+#' @return A ggplot2 layer.
+#' @noRd
+sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
+                           data = NULL, ...) {
+  ggplot2::layer(
+    geom = geom, stat = stat, position = position, params = params,
+    mapping = mapping, data = data, ...
+  )
+}
+
+#' Adapt the shared ruler layer to the ggformula front door
 #'
 #' `layer_factory()` reads its extras out of `match.call()`, so `pre` cannot
 #' rename one argument into another -- the rename has to happen where the params
@@ -130,8 +190,8 @@ StatSdRuler <- ggplot2::ggproto(
 #' @return A tagged ggplot2 layer.
 #'
 #' @noRd
-sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
-                           data = NULL, ...) {
+gf_sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
+                              data = NULL, ...) {
   if (!is.null(params$size)) {
     warn(c(
       "`size` is now `linewidth` in `gf_sd_ruler()`",
@@ -154,7 +214,7 @@ sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
   params$color <- NULL
 
   tag_layer(
-    ggplot2::layer(
+    sd_ruler_layer(
       geom = geom, stat = stat, position = position, params = params,
       mapping = mapping, data = data, ...
     ),
@@ -209,9 +269,9 @@ sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
 #' @return A ggplot object with the SD ruler segment added.
 #'
 #' @export
-#' @seealso
-#' The model visualization guide shows the ruler alongside residuals and
-#' compares groups with different spread:
+#' @seealso [stat_sd_ruler()] provides the ggplot2 interface. The model
+#' visualization guide shows the ruler alongside residuals and compares groups
+#' with different spread:
 #' <https://coursekata.github.io/coursekata-r/articles/model-visualization.html>
 #'
 #' @examples
@@ -265,5 +325,5 @@ gf_sd_ruler <- named_layer_factory(
       }
     }
   },
-  layer_fun = sd_ruler_layer
+  layer_fun = gf_sd_ruler_layer
 )

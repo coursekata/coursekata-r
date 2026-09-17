@@ -79,6 +79,14 @@ test_that("StatDistMean handles missing values and mapped expressions", {
   expect_equal(mean_layer_data(mapped)$xintercept, 1)
 })
 
+test_that("stat_dist_mean refuses mapped styling aesthetics", {
+  values <- data.frame(x = 1:6, g = rep(c("a", "b"), each = 3))
+  plot <- ggplot2::ggplot(values, ggplot2::aes(x, colour = g)) +
+    stat_dist_mean(na.rm = TRUE)
+
+  expect_error(ggplot2::ggplot_build(plot), "colour.*can't be mapped")
+})
+
 test_that("new_stat_dist_mean makes the internal x and y subclasses", {
   x_stat <- new_stat_dist_mean("x")
   y_stat <- new_stat_dist_mean("y")

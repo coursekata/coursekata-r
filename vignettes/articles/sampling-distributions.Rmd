@@ -95,6 +95,12 @@ For plots assembled at the ggplot2 layer level, the same calculation and drawing
 pieces are available separately through `stat_cutoff()`, `geom_cutoff()`, and
 `guide_cutoff()`.
 
+Facets expose one deliberate difference between the two cutoff interfaces.
+`stat_cutoff()` computes from each panel's rows, as a ggplot2 stat normally
+does. `show_cutoffs()` computes once from the whole distribution and repeats
+those marks across panels. Means have no such split: `show_mean()` and
+`stat_dist_mean()` both compute a mean for each panel.
+
 ## Bootstrapping instead of shuffling
 
 Swap `shuffle()` for `resample()` and the same pattern produces a bootstrap

@@ -112,7 +112,8 @@ gf_point(Thumb ~ Height, data = Fingers, alpha = .4) \%>\%
 gf_sd_ruler(Thumb ~ Height | Sex, data = Fingers)
 }
 \seealso{
-The model visualization guide shows the ruler alongside residuals and
-compares groups with different spread:
+\code{\link[=stat_sd_ruler]{stat_sd_ruler()}} provides the ggplot2 interface. The model
+visualization guide shows the ruler alongside residuals and compares groups
+with different spread:
 \url{https://coursekata.github.io/coursekata-r/articles/model-visualization.html}
 }

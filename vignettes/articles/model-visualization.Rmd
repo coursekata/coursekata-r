@@ -219,6 +219,15 @@ gf_histogram(~Thumb, data = Fingers, binwidth = 5) %>%
   gf_sd_ruler(color = "red", linewidth = 2)
 ```
 
+The ggplot2 layer is `stat_sd_ruler()`. It uses the same panel calculation, so
+the choice of front door does not change what the ruler measures.
+
+```{r}
+ggplot(Fingers, aes(Height, Thumb)) +
+  geom_point(alpha = .4) +
+  stat_sd_ruler(where = "mean", color = "red", linewidth = 2)
+```
+
 Two groups with the same mean and different spread get rulers of different
 lengths, which is the comparison the ruler exists to make. Zooming both to the
 same x range keeps them comparable. `coord_cartesian()` does that by changing
