@@ -71,6 +71,7 @@ model_layer_spec <- function(object, model, args = list(), fn = "gf_model",
   mapped <- purrr::map_lgl(plan$args, ~ is_formula(.x) && length(.x) == 2L)
 
   list(
+    model = mspec$fit,
     geom = GeomModel,
     data = plan$grid,
     aesthetics = do.call(ggplot2::aes, purrr::map(plan$args[mapped], function(value) {
@@ -106,7 +107,9 @@ model_spec <- function(plot_data, model, call = caller_env()) {
   }
 
   fit <- if (inherits(model, "lm")) model else stats::lm(formula, data = data)
-  terms <- sort(names(fit$model))
+  # `lm()` stores case weights in its model frame for later diagnostics, but
+  # they are not a term in the fitted claim or a prediction-grid dimension.
+  terms <- sort(setdiff(names(fit$model), "(weights)"))
   predictors <- sort(setdiff(terms, deparse(f_lhs(formula))))
   outcome <- setdiff(terms, predictors)
   list(

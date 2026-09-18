@@ -13,8 +13,8 @@ test_that("generated aliases leave unused caller promises lazy through the help 
 
 test_that("generated front doors bind private pre helpers without changing ggformula scope", {
   helpers <- list(
-    gf_b = c("gf_b_warn_unreachable", "gf_b_spec", "gf_b_layer_fun"),
-    gf_coef = c("gf_b_warn_unreachable", "gf_b_spec", "gf_b_layer_fun"),
+    gf_b = c("b_warn_unreachable", "b_annotation", "check_resid_plot", "gf_b_layer_fun"),
+    gf_coef = c("b_warn_unreachable", "b_annotation", "check_resid_plot", "gf_b_layer_fun"),
     gf_model = c(
       "implied_model_spec", "model_layer_spec", "implied_layer_fun", "model_layer_fun"
     ),

@@ -65,6 +65,7 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
     show.legend = show.legend, ...
   )
   layer <- public_layer_constructor(layer, fn)
+  layer <- with_model_layer_fit(layer, model)
   layer <- if (is.null(tag)) layer else tag_layer(layer, tag)
   if (!prepared && is.null(model)) {
     source_layer(layer, inherit.data = is.null(data) || ggplot2::is_waiver(data))
@@ -124,7 +125,7 @@ ggplot_add.coursekata_model_layer <- function(object, plot, ...) {
   layer <- rlang::exec(
     model_layer, mapping = spec$aesthetics, data = spec$data,
     geom = request$geom, stat = request$stat, position = request$position,
-    params = spec$params, orientation = spec$orientation,
+    params = spec$params, model = spec$model, orientation = spec$orientation,
     inherit.aes = binding$inherit.aes && spec$inherit,
     show.legend = request$show.legend, tag = request$tag, prepared = TRUE,
     fn = request$fn, call = request$call,

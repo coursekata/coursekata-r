@@ -53,7 +53,9 @@ b_visual_collisions <- function(plot, width, height) {
     tag <- attr(layer, "coursekata_layer")
     if (is.null(tag)) "base" else tag
   }, character(1))
-  package_layers <- which(tags != "base")
+  package_layers <- which(tags != "base" & !vapply(plot$layers, function(layer) {
+    inherits(layer$geom, "GeomBlank")
+  }, logical(1)))
   findings <- character()
 
   for (panel_number in seq_along(panel_indices)) {
@@ -77,6 +79,8 @@ b_visual_collisions <- function(plot, width, height) {
     for (layer_index in package_layers) {
       grob <- panel$children[[2L + layer_index]]
       tag <- tags[[layer_index]]
+      # The stat activates only the roles needed by this model/panel.
+      if (inherits(grob, "zeroGrob") && inherits(plot$layers[[layer_index]]$stat, "StatBMark")) next
       if (inherits(grob, "text")) {
         grob_width <- grid::convertWidth(
           grid::grobWidth(grob), "mm", valueOnly = TRUE

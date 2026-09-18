@@ -10,6 +10,31 @@ library(coursekata)
 A model's coefficients are numbers in a table. `gf_b()` puts them on the plot, so
 you can see what each one measures.
 
+In a ggplot2 plot, add `geom_b(model = fit)` for the same annotation:
+
+```{r}
+fit <- lm(Thumb ~ Height, data = Fingers)
+ggplot2::ggplot(Fingers, ggplot2::aes(Height, Thumb)) +
+  ggplot2::geom_point(alpha = .4) + geom_model(model = fit) +
+  geom_b(model = fit)
+```
+
+You can omit the model to annotate the plot's implied fit. The annotation reads
+the final scales and rows, including limits added later in the pipeline.
+A supplied fit keeps its original coefficients even when limits hide observations.
+
+```{r}
+gf_point(Thumb ~ Height, data = Fingers) %>%
+  gf_lims(x = c(60, 72)) %>%
+  gf_model() %>%
+  gf_b(show_b0 = FALSE)
+```
+
+For an inferred model on a transformed scale, the run is measured in the
+transformed units. On a log10 predictor scale, `run = 1` means a tenfold change
+in the original predictor. A coordinate zoom changes the view without changing
+the rows used to fit the model.
+
 ## Slope is rise over run
 
 For a quantitative predictor, `b1` is how much the prediction moves for a

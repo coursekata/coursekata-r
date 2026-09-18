@@ -194,12 +194,13 @@ gf_model <- named_layer_factory(
       layer_fun <- if (inferred) {
         implied_layer_fun(spec$params, spec$tag)
       } else {
-        model_layer_fun(spec$params, spec$tag, spec$orientation, spec$aesthetics)
+        model_layer_fun(
+          spec$params, spec$tag, spec$orientation, spec$aesthetics, spec$model
+        )
       }
     }
   }
 )
-
 
 #' Build the layer function that draws a model
 #'
@@ -212,22 +213,25 @@ gf_model <- named_layer_factory(
 #' @param tag The tag to name the layer with.
 #' @param orientation The orientation resolved from the ggformula plot.
 #' @param plan_mapping The mappings accepted by the shared model planner.
+#' @param model The fitted model retained for coefficient annotations.
 #'
 #' @return A function with the formals `layer_factory()` expects. It must name
 #'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
 #'   all four by `create_formals()` and fails with a missing geom.
 #'
 #' @noRd
-model_layer_fun <- function(plan_params, tag, orientation, plan_mapping) {
+model_layer_fun <- function(plan_params, tag, orientation, plan_mapping, model = NULL) {
   force(plan_params)
   force(tag)
   force(orientation)
   force(plan_mapping)
+  force(model)
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL, ...) {
     model_layer(
       geom = geom, stat = stat, position = position,
       mapping = plan_mapping, data = data, params = plan_params,
-      orientation = orientation, tag = tag, prepared = TRUE, fn = "gf_model", ...
+      orientation = orientation, tag = tag, prepared = TRUE, model = model,
+      fn = "gf_model", ...
     )
   }
 }
