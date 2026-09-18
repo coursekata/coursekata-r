@@ -83,8 +83,9 @@ applied to the predictions. A supplied model is prepared once when added to
 the plot, including when \code{data} is a function or formula.
 
 Override unrelated inherited aesthetics locally, or set \code{inherit.aes = FALSE}
-and supply a predictor mapping such as \code{aes(x = Height)}. A layer does not
-borrow mappings or data from sibling layers.
+and supply a predictor mapping such as \code{aes(x = Height)}. Without explicit
+data or positions, the layer follows the first observation layer, preferring
+points, so a model describes the rows and axes the plot actually shows.
 }
 \examples{
 fit <- lm(Thumb ~ Height, data = Fingers)

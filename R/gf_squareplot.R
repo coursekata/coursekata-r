@@ -141,17 +141,18 @@ squareplot_scale_plan <- function(object) {
 #' @return The evaluated x values, or `NULL` when no x or data was supplied.
 #'
 #' @noRd
-squareplot_x_values <- function(mapping, data, object) {
-  plot <- inherits(object, c("gg", "ggplot"))
-  # the pinned quosure when the plot carries one, so a pinned `shuffle(Thumb)`
-  # counts the values it already drew rather than a fresh shuffle; the axis
-  # title is a separate concern and stays on plot_spec()'s `labels`
-  x <- mapping$x %||% (if (plot) plot_spec(object)$mapping$x)
-  values_from <- data %||% (if (plot) plot_spec(object)$resolve_aes("x")$data)
+squareplot_x_values <- function(mapping, data, plot_data = NULL) {
+  # The caller supplies the effective source mapping. Keep its pinned quosure
+  # so a random expression is classified from the values the source draws.
+  x <- mapping$x
   if (is.null(x)) {
     return(NULL)
   }
-  if (ggplot2::is_waiver(values_from)) values_from <- NULL
+  values_from <- data
+  if (ggplot2::is_waiver(values_from)) values_from <- plot_data
+  if (is.function(values_from) || is_formula(values_from)) {
+    values_from <- with_random_seed_restored(as_function(values_from)(plot_data))
+  }
   with_random_seed_restored(eval_tidy(x, values_from))
 }
 
@@ -285,24 +286,7 @@ ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
   spec$dots$inherit.aes <- binding$inherit.aes
   scale_plan <- squareplot_scale_plan(plot)
   inherits_mapping <- spec$dots$inherit.aes %||% TRUE
-  source <- plot_spec(plot)
-  mapping <- spec$mapping %||% ggplot2::aes()
-  layer_mapping <- spec$mapping
-  data <- spec$data
-  if (inherits_mapping) {
-    missing <- setdiff(names(source$mapping), names(mapping))
-    mapping[missing] <- source$mapping[missing]
-    # Plot-level mappings and data must remain inherited: later additions can
-    # replace them. Only a sibling layer's mapping needs to be copied locally.
-    recovered <- setdiff(missing, names(plot$mapping))
-    if (length(recovered)) {
-      layer_mapping <- layer_mapping %||% ggplot2::aes()
-      layer_mapping[recovered] <- source$mapping[recovered]
-      if ("x" %in% recovered && is.null(data)) {
-        data <- source$resolve_aes("x")$data
-      }
-    }
-  }
+  mapping <- source_mapping(spec$mapping, plot$mapping, inherits_mapping)
   if (!is.null(mapping$y)) {
     remedy <- if (identical(spec$fn, "gf_squareplot")) {
       "remove the y mapping, or set `inherit = FALSE` and supply a one-sided formula"
@@ -314,8 +298,8 @@ ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
       "*" = remedy
     ))
   }
-  if (ggplot2::is_waiver(data)) data <- NULL
-  values <- squareplot_x_values(mapping, data %||% plot$data, NULL)
+  data <- spec$data
+  values <- squareplot_x_values(mapping, data %||% plot$data, plot$data)
   discrete <- squareplot_discrete(values)
   linewidth <- spec$mapping$linewidth
   staged_linewidth <- !is.null(linewidth) && (
@@ -335,7 +319,7 @@ ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
   layer <- rlang::exec(
     ggplot2::layer,
     geom = spec$geom, stat = spec$stat, position = spec$position,
-    params = spec$params, mapping = layer_mapping, data = data,
+    params = spec$params, mapping = spec$mapping, data = data,
     !!!spec$dots
   )
   parts <- list(layer)

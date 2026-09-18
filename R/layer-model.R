@@ -62,7 +62,12 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
     show.legend = show.legend, ...
   )
   if (!is.null(constructor)) layer$constructor <- constructor
-  if (is.null(tag)) layer else tag_layer(layer, tag)
+  layer <- if (is.null(tag)) layer else tag_layer(layer, tag)
+  if (!prepared && is.null(model)) {
+    source_layer(layer, inherit.data = is.null(data) || ggplot2::is_waiver(data))
+  } else {
+    layer
+  }
 }
 
 #' Resolve an explicit model against its destination plot
@@ -72,23 +77,29 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
 #' @export
 ggplot_add.coursekata_model_layer <- function(object, plot, ...) {
   request <- attr(object, "model_spec")
-  mapping <- if (request$inherit.aes) {
-    inherited <- model_plot_spec(plot)$mapping
-    inherited[names(plot$mapping)]
-  } else {
-    ggplot2::aes()
+  plot <- stabilize_source_data(plot)
+  binding <- source_layer_binding(
+    plot, request$mapping, request$data, request$inherit.aes
+  )
+  mapping <- source_mapping(binding$mapping, plot$mapping, binding$inherit.aes)
+  # A fitted model must apply the reader's original expression to its
+  # prediction grid, not a hidden storage column pinned to observation rows.
+  current <- plot_spec(plot)
+  restored <- model_plot_spec(plot)
+  for (aesthetic in names(restored$pins)) {
+    if (identical(mapping[[aesthetic]], current$mapping[[aesthetic]])) {
+      mapping[[aesthetic]] <- restored$mapping[[aesthetic]]
+    }
   }
-  local <- request$mapping %||% ggplot2::aes()
-  mapping[names(local)] <- local
   if (!any(c("x", "y") %in% names(mapping))) {
     abort(glue("`{request$fn}()` needs a positional mapping; map its predictor with `aes()`."),
           call = request$call)
   }
-  data <- request$data
+  data <- binding$data
   if (is.null(data) || ggplot2::is_waiver(data)) {
     data <- plot$data
   } else if (is.function(data) || is_formula(data)) {
-    data <- as_function(data)(plot$data)
+    data <- with_random_seed_restored(as_function(data)(plot$data))
   }
   data <- ggplot2::fortify(data)
 
@@ -111,7 +122,7 @@ ggplot_add.coursekata_model_layer <- function(object, plot, ...) {
     model_layer, mapping = spec$aesthetics, data = spec$data,
     geom = request$geom, stat = request$stat, position = request$position,
     params = spec$params, orientation = spec$orientation,
-    inherit.aes = request$inherit.aes && spec$inherit,
+    inherit.aes = binding$inherit.aes && spec$inherit,
     show.legend = request$show.legend, tag = request$tag, prepared = TRUE,
     fn = request$fn, call = request$call, constructor = request$constructor,
     !!!request$dots
@@ -142,8 +153,9 @@ ggplot_add.coursekata_model_layer <- function(object, plot, ...) {
 #' the plot, including when `data` is a function or formula.
 #'
 #' Override unrelated inherited aesthetics locally, or set `inherit.aes = FALSE`
-#' and supply a predictor mapping such as `aes(x = Height)`. A layer does not
-#' borrow mappings or data from sibling layers.
+#' and supply a predictor mapping such as `aes(x = Height)`. Without explicit
+#' data or positions, the layer follows the first observation layer, preferring
+#' points, so a model describes the rows and axes the plot actually shows.
 #'
 #' @param mapping,data,position,show.legend,inherit.aes See
 #'   [ggplot2::geom_smooth()]. `data` may be a data frame, a function, or a

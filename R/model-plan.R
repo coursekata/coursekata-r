@@ -7,10 +7,11 @@
 model_plot_spec <- function(object) {
   spec <- plot_spec(object)
   originals <- list()
-  for (aesthetic in names(spec$pins)) {
-    if (!is.null(spec$mapping[[aesthetic]]) &&
-        identical(quo_get_expr(spec$mapping[[aesthetic]]),
-                  sym(paste0(".coursekata_pin_", aesthetic)))) {
+  # plot_pins() has already proved that each surviving pin still owns both its
+  # mapping and data source. Restore that original expression without guessing
+  # the storage column's spelling; collision-safe pins may have a suffix.
+  for (aesthetic in intersect(names(spec$pins), names(spec$mapping))) {
+    if (!is.null(spec$mapping[[aesthetic]])) {
       originals[[aesthetic]] <- spec$pins[[aesthetic]]
       spec$mapping[[aesthetic]] <- spec$pins[[aesthetic]]
     }

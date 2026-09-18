@@ -37,7 +37,11 @@ plot_source <- function(p, resolve.data = TRUE) {
   mapping <- if (is.null(layer)) p$mapping else {
     source_mapping(layer$mapping, p$mapping, layer$inherit.aes)
   }
-  data <- if (is.null(layer)) p$data else if (!resolve.data) layer$data else {
+  data <- if (is.null(layer)) p$data else if (!resolve.data) {
+    # Read the stored binding directly. `$data` wraps callbacks as a
+    # ggproto_method, which is not a valid ggplot2 layer data function.
+    get("data", envir = layer)
+  } else {
     with_random_seed_restored(layer$layer_data(p$data))
   }
   list(mapping = mapping, data = data, layer = layer, layer_index = index)
@@ -96,7 +100,7 @@ source_layer_binding <- function(plot, mapping = NULL, data = NULL,
   }
   mapping <- source_mapping(mapping, fallback, drop.null = FALSE)
   if (is.null(data) || inherits(data, "waiver")) {
-    data <- source$data
+    data <- get("data", envir = source)
     if (inherits(data, "waiver")) data <- NULL
   }
   list(mapping = mapping, data = data, inherit.aes = inherit.aes)
