@@ -178,17 +178,22 @@ labels the arrow that matches its coefficient.
 \strong{No predictor} (the empty model): the \code{b0} line and its label, nothing
 else.
 
-Every mark is a separately tagged layer -- \code{"b0"}, \code{"b1"}, \code{"bk_2"},
-\code{"run"}, and each one's own \code{"_label"} -- so a script can find one without
-counting layers.
+Layers have stable role tags such as \code{"b0"}, \code{"b1"}, \code{"run"}, and their
+\code{"_label"} counterparts. Categorical annotations use numbered roles plus
+shared \code{"bk_more"} and \code{"bk_more_label"} layers for additional groups.
+Replacement data can add groups without changing the layer list. A role
+can be empty when the model does not need it.
 }
 
 \section{No model}{
 With no \code{model}, \code{gf_b()} reads the model the plot implies -- the same
-decision \code{\link[=gf_model]{gf_model()}}'s own inference reads -- and fits it at call time, on
-the plot's whole data. This is refused on a faceted plot, because
-\code{gf_model()}'s inferred line is fit per panel and a single set of arrows
-drawn over it would describe a fit no panel actually has.
+decision \code{\link[=gf_model]{gf_model()}} uses. The marks read that model's prediction grid,
+after position scales transform values and remove rows outside hard limits.
+If no model layer exists, the same model stat supplies the predictions.
+Inference is refused on a faceted plot because its panels have different fits.
+Position scales and \code{gf_lims()} can precede or follow the annotation. For an
+inferred model on transformed scales, \code{run} and \code{run_x} use transformed units.
+\code{\link[=geom_b]{geom_b()}} provides the same annotation with ggplot2 syntax.
 }
 
 \section{Placement}{

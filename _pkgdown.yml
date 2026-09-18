@@ -55,6 +55,7 @@ reference:
     both onto `ggplot2` or `ggformula` plots.
   contents:
   - geom_model
+  - geom_b
   - stat_model
   - geom_resid
   - geom_square_resid

@@ -1,4 +1,4 @@
-mark <- function(p, tag) p$layers[[layer_index(p, tag)]]
+mark <- coefficient_test_mark
 
 test_that("a continuous model's b0 dot and rise arrow read the model, not the plot", {
   # MUTATION: an off-by-one in coefs, a rise measured over the wrong run, or a
@@ -278,21 +278,19 @@ test_that("arrow position and label follow coef() order, not sort(levels())", {
 })
 
 test_that("an inferred gf_b() reads the same decision gf_model()'s inference reads", {
-  # MUTATION: the outcome/predictor/kind decision drifting between gf_model()
-  # and gf_b() -- a second copy of the inference living in R/gf_b.R. gf_b()
-  # fits its own lm() by design; what must not drift is which variables and
-  # which shape.
+  # The coefficient must describe the values actually mapped by its source,
+  # even when the mapping is stochastic. No constructor-time pin is needed.
   set.seed(31)
   q <- gf_jitter(shuffle(Height) ~ Sex, data = Fingers, width = .1) %>% gf_b()
 
-  expect_true(!is.null(attr(q, "coursekata_pins")))
-  im <- implied_model(q)
-  expect_equal(im$kind, "segment")
-  expect_equal(im$outcome$column, ".coursekata_pin_y")
-  expect_equal(im$predictor$column, "Sex")
-
-  reference <- levels(Fingers$Sex)[[1]]
-  expected <- mean(q$data$.coursekata_pin_y[Fingers$Sex == reference])
+  built <- ggplot2::ggplot_build(q)
+  source <- built$data[[1L]]
+  # Jitter affects positions after the stat; recover the stat's input using
+  # an identity position on a copied layer.
+  unjittered <- q
+  unjittered$layers[[1L]] <- layer_with_position(q$layers[[1L]], ggplot2::position_identity())
+  source <- ggplot2::ggplot_build(unjittered)$data[[1L]]
+  expected <- mean(source$y[source$group == min(source$group)])
   expect_equal(mark(q, "b0")$data$y, expected)
 })
 
@@ -348,9 +346,11 @@ test_that("gf_b and gf_coef draw identical plots", {
   model <- lm(Thumb ~ Height, data = Fingers)
   strip <- function(fn) {
     p <- fn(gf_point(Thumb ~ Height, data = Fingers), model)
-    lapply(p$layers, function(l) {
+    built <- ggplot2::ggplot_build(p)
+    lapply(seq_along(p$layers), function(i) {
+      l <- p$layers[[i]]
       list(
-        geom = class(l$geom)[[1]], data = l$data,
+        geom = class(l$geom)[[1]], data = built$data[[i]],
         params = l$aes_params, tag = attr(l, "coursekata_layer")
       )
     })
@@ -430,8 +430,8 @@ test_that("a model whose predictor the plot does not draw is refused", {
   # variable -- the picture that comes out looks entirely reasonable.
   p_race <- gf_jitter(Thumb ~ RaceEthnic, data = Fingers)
 
-  expect_error(gf_b(p_race, lm(Thumb ~ Sex, data = Fingers)), "annotates a model of what")
-  expect_error(gf_coef(p_race, lm(Thumb ~ Sex, data = Fingers)), "annotates a model of what")
+  expect_error(ggplot2::ggplot_build(gf_b(p_race, lm(Thumb ~ Sex, data = Fingers))), "annotates a model of what")
+  expect_error(ggplot2::ggplot_build(gf_coef(p_race, lm(Thumb ~ Sex, data = Fingers))), "annotates a model of what")
 })
 
 test_that("a predictor is matched as it is spelled, not as the column underneath", {
@@ -444,7 +444,7 @@ test_that("a predictor is matched as it is spelled, not as the column underneath
   logged <- gf_point(Thumb ~ log(Height), data = Fingers)
   log_model <- lm(Thumb ~ log(Height), data = Fingers)
 
-  expect_error(gf_b(raw, log_model), "the plot's x axis draws `Height`")
+  expect_error(ggplot2::ggplot_build(gf_b(raw, log_model)), "the plot's x axis draws `Height`")
   expect_no_error(gf_b(logged, log_model))
   expect_no_error(gf_b(raw, lm(Thumb ~ Height, data = Fingers)))
 })
@@ -467,7 +467,7 @@ test_that("a plot with no predictor axis at all is refused as such", {
   # errors with `subscript out of bounds` instead of saying what is wrong.
   p <- gf_histogram(~Thumb, data = Fingers, binwidth = 5)
 
-  expect_error(gf_b(p, lm(Thumb ~ Height, data = Fingers)), "no y axis to draw it on")
+  expect_error(ggplot2::ggplot_build(gf_b(p, lm(Thumb ~ Height, data = Fingers))), "no y axis to draw it on")
 })
 
 test_that("the empty model is drawable over any predictor", {
@@ -517,7 +517,7 @@ test_that("the coding check reaches a model this package fit for itself", {
   df <- Fingers
   df$R <- factor(df$RaceEthnic)
 
-  expect_error(gf_jitter(Thumb ~ R, data = df) %>% gf_b(), "difference from the reference group")
+  expect_error(ggplot2::ggplot_build(gf_jitter(Thumb ~ R, data = df) %>% gf_b()), "difference from the reference group")
 })
 
 test_that("changing which group is the reference is still fine", {

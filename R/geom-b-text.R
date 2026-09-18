@@ -16,9 +16,24 @@ GeomBText <- ggplot2::ggproto(
 
   draw_panel = function(data, panel_params, coord, parse = FALSE,
                         na.rm = FALSE, check_overlap = FALSE,
-                        size.unit = "mm", x_just = 0.5, y_just = 0.5) {
-    x_vector <- b_panel_axis_vector(panel_params, coord, "x")
-    y_vector <- b_panel_axis_vector(panel_params, coord, "y")
+                        size.unit = "mm", x_just = 0.5, y_just = 0.5,
+                        fn = "gf_b") {
+    if (!inherits(coord, "CoordCartesian")) {
+      abort(glue("`{fn}()` coefficient labels require Cartesian coordinates."),
+            class = "coursekata_gf_b_coord")
+    }
+    if (nrow(data) > 1L) {
+      grobs <- lapply(seq_len(nrow(data)), function(i) {
+        GeomBText$draw_panel(data[i, , drop = FALSE], panel_params, coord,
+          parse = parse, na.rm = na.rm, check_overlap = check_overlap,
+          size.unit = size.unit, x_just = x_just, y_just = y_just, fn = fn)
+      })
+      return(do.call(grid::grobTree, grobs))
+    }
+    x_vector <- b_panel_axis_vector(panel_params, coord, "x", fn)
+    y_vector <- b_panel_axis_vector(panel_params, coord, "y", fn)
+    x_just <- data$.b_x_just %||% x_just
+    y_just <- data$.b_y_just %||% y_just
     just <- b_physical_justification(x_just, y_just, x_vector, y_vector)
     data$hjust <- just[["hjust"]]
     data$vjust <- just[["vjust"]]
@@ -121,12 +136,12 @@ b_increasing_scale_endpoints <- function(view) {
 #' coordinate object then captures flips and coordinate-level reversals too.
 #'
 #' @noRd
-b_panel_axis_vector <- function(panel_params, coord, aesthetic) {
+b_panel_axis_vector <- function(panel_params, coord, aesthetic, fn = "gf_b") {
   x_view <- b_panel_view_scale(panel_params, "x")
   y_view <- b_panel_view_scale(panel_params, "y")
   if (is.null(x_view) || is.null(y_view)) {
     abort(
-      "`gf_b()` coefficient labels require Cartesian coordinates.",
+      glue("`{fn}()` coefficient labels require Cartesian coordinates."),
       class = "coursekata_gf_b_coord"
     )
   }
