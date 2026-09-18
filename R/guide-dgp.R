@@ -121,6 +121,22 @@ GuideDgp <- ggplot2::ggproto(
         "*" = "its guides describe a horizontal parameter axis above a vertical count axis"
       ))
     }
+    if (isTRUE(params$validate_upright) &&
+        identical(params$role, "estimate") &&
+        !identical(params$position, "bottom")) {
+      abort(c(
+        "`show_dgp()` needs the primary x guide at the bottom",
+        "i" = "A top primary guide reverses the population and estimate frame."
+      ))
+    }
+    if (isTRUE(params$validate_upright) &&
+        identical(params$role, "population") &&
+        !identical(params$position, "top")) {
+      abort(c(
+        "`show_dgp()` needs the population guide at the top",
+        "i" = "A top primary guide reverses the population and estimate frame."
+      ))
+    }
     ggplot2::GuideAxis$transform(
       params = params, coord = coord, panel_params = panel_params
     )

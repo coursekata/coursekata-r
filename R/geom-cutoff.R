@@ -7,6 +7,8 @@
 #' changing the orthogonal scale. Optional `label`, `side`, and `call_id`
 #' aesthetics let a teaching helper add measured callouts without training the
 #' count axis.
+#' When the x scale is positioned at the top, the stem starts at that panel
+#' edge and points inward instead.
 #'
 #' `geom_cutoff()` is the conventional layer constructor. It does not compute
 #' cutoffs. [show_cutoffs()] supplies the optional marker and callout metadata
@@ -147,17 +149,15 @@ GeomCutoff <- ggplot2::ggproto(
 #'   remains visible.
 #' @noRd
 cutoff_panel_data <- function(data, panel_params, coord) {
-  position_view <- NULL
+  position_views <- panel_params[intersect(c("x", "y"), names(panel_params))]
+  carries_intercept <- vapply(position_views, function(view) {
+    !is.null(view$scale) && "xintercept" %in% view$scale$aesthetics
+  }, logical(1))
+  matches <- which(carries_intercept)
+  position_view <- if (length(matches) == 1L) position_views[[matches[[1L]]]] else NULL
   if (".coursekata_protect" %in% names(data) && ".value" %in% names(data)) {
     protected <- !is.na(data$.coursekata_protect) & data$.coursekata_protect
-    position_views <- panel_params[intersect(c("x", "y"), names(panel_params))]
-    carries_intercept <- vapply(position_views, function(view) {
-      !is.null(view$scale) && "xintercept" %in% view$scale$aesthetics
-    }, logical(1))
-    matches <- which(carries_intercept)
-    if (length(matches) != 1L) return(NULL)
-
-    position_view <- position_views[[matches[[1L]]]]
+    if (is.null(position_view)) return(NULL)
     key <- position_anchor_key(position_view, data$.value)
     keep_protected <- protected & key$visible
     data$xintercept[keep_protected] <- key$transformed[keep_protected]

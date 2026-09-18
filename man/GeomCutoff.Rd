@@ -55,6 +55,8 @@ at the distribution baseline and follows \code{\link[ggplot2:coord_flip]{ggplot2
 changing the orthogonal scale. Optional \code{label}, \code{side}, and \code{call_id}
 aesthetics let a teaching helper add measured callouts without training the
 count axis.
+When the x scale is positioned at the top, the stem starts at that panel
+edge and points inward instead.
 }
 \details{
 \code{geom_cutoff()} is the conventional layer constructor. It does not compute

@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' class='svglite' data-engine-version='2.0' width='720.00pt' height='576.00pt' viewBox='0 0 720.00 576.00'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: #FFFFFF;'/>
+<defs>
+  <clipPath id='cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA='>
+    <rect x='0.00' y='0.00' width='720.00' height='576.00' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<rect x='0.00' y='0.00' width='720.00' height='576.00' style='stroke-width: 1.07; stroke: #FFFFFF; fill: #FFFFFF;' />
+</g>
+<defs>
+  <clipPath id='cpMTYuODJ8NjMwLjQ1fDkzLjQ4fDU1OS4xOA=='>
+    <rect x='16.82' y='93.48' width='613.64' height='465.70' />
+  </clipPath>
+</defs>
+<g clip-path='url(#cpMTYuODJ8NjMwLjQ1fDkzLjQ4fDU1OS4xOA==)'>
+<rect x='16.82' y='93.48' width='613.64' height='465.70' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<circle cx='44.71' cy='538.01' r='2.49' style='stroke-width: 0.71; stroke: #000000; stroke-opacity: 0.60; fill: #000000; fill-opacity: 0.60;' />
+<circle cx='602.56' cy='114.65' r='2.49' style='stroke-width: 0.71; stroke: #000000; stroke-opacity: 0.60; fill: #000000; fill-opacity: 0.60;' />
+<rect x='16.82' y='93.48' width='613.64' height='465.70' style='stroke-width: 1.07; stroke: #333333;' />
+</g>
+<g clip-path='url(#cpMC4wMHw3MjAuMDB8MC4wMHw1NzYuMDA=)'>
+<polygon points='184.17,93.48 178.50,82.14 189.84,82.14 ' style='stroke-width: 1.07; stroke: #E60000; fill: #E60000;' />
+<text x='172.52' y='69.82' style='font-size: 8.80px; fill: #E60000; font-family: sans;' textLength='4.08px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text x='176.60' y='71.46' style='font-size: 6.16px; fill: #E60000; font-family: sans;' textLength='3.43px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text x='182.06' y='69.82' style='font-size: 8.80px; fill: #E60000; font-family: sans;' textLength='6.83px' lengthAdjust='spacingAndGlyphs'>=</text>
+<text x='190.93' y='69.82' style='font-size: 8.80px; fill: #E60000; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
+<polygon points='16.82,432.17 5.48,437.84 5.48,426.50 ' style='stroke-width: 1.07; stroke: #1E3A8A; fill: #1E3A8A;' />
+<polygon points='630.45,432.17 641.79,437.84 641.79,426.50 ' style='stroke-width: 1.07; stroke: #E60000; fill: #E60000;' />
+<text x='659.00' y='434.43' style='font-size: 8.80px; fill: #E60000; font-family: sans;' textLength='4.08px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text x='663.08' y='436.07' style='font-size: 6.16px; fill: #E60000; font-family: sans;' textLength='3.43px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text x='668.55' y='434.43' style='font-size: 8.80px; fill: #E60000; font-family: sans;' textLength='6.83px' lengthAdjust='spacingAndGlyphs'>=</text>
+<text x='677.42' y='434.43' style='font-size: 8.80px; fill: #E60000; font-family: sans;' textLength='4.89px' lengthAdjust='spacingAndGlyphs'>0</text>
+<polygon points='184.17,559.18 178.50,570.52 189.84,570.52 ' style='stroke-width: 1.07; stroke: #1E3A8A; fill: #1E3A8A;' />
+<text x='253.32' y='33.04' style='font-size: 11.00px; font-weight: bold; font-family: sans;' textLength='140.63px' lengthAdjust='spacingAndGlyphs'>Population Parameter (DGP)</text>
+<text x='282.55' y='51.34' style='font-size: 11.00px; font-weight: bold; font-family: sans;' textLength='7.34px' lengthAdjust='spacingAndGlyphs'>Y</text>
+<text x='289.89' y='53.67' style='font-size: 7.70px; font-weight: bold; font-family: sans;' textLength='1.71px' lengthAdjust='spacingAndGlyphs'>i</text>
+<text x='294.14' y='51.34' style='font-size: 11.00px; font-family: sans;' textLength='8.54px' lengthAdjust='spacingAndGlyphs'>=</text>
+<text x='305.23' y='51.34' style='font-size: 11.00px; font-family: sans;' textLength='5.10px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text x='310.33' y='53.46' style='font-size: 7.70px; font-family: sans;' textLength='4.28px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='316.65' y='51.34' style='font-size: 11.00px; font-family: sans;' textLength='8.54px' lengthAdjust='spacingAndGlyphs'>+</text>
+<text x='327.23' y='51.34' style='font-size: 11.00px; font-family: sans;' textLength='5.10px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text x='332.33' y='53.38' style='font-size: 7.70px; font-family: sans;' textLength='4.28px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text x='336.61' y='51.34' style='font-size: 11.00px; font-weight: bold; font-family: sans;' textLength='7.34px' lengthAdjust='spacingAndGlyphs'>X</text>
+<text x='343.95' y='53.67' style='font-size: 7.70px; font-weight: bold; font-family: sans;' textLength='1.71px' lengthAdjust='spacingAndGlyphs'>i</text>
+<text x='347.70' y='51.34' style='font-size: 11.00px; font-family: sans;' textLength='8.54px' lengthAdjust='spacingAndGlyphs'>+</text>
+<text x='358.28' y='51.34' style='font-size: 11.00px; font-family: sans;' textLength='4.74px' lengthAdjust='spacingAndGlyphs'>ε</text>
+<text x='363.01' y='53.67' style='font-size: 7.70px; font-weight: bold; font-family: sans;' textLength='1.71px' lengthAdjust='spacingAndGlyphs'>i</text>
+<text transform='translate(706.55,256.01) rotate(90)' style='font-size: 11.00px; font-weight: bold; font-family: sans;' textLength='140.63px' lengthAdjust='spacingAndGlyphs'>Population Parameter (DGP)</text>
+<text transform='translate(688.25,285.24) rotate(90)' style='font-size: 11.00px; font-weight: bold; font-family: sans;' textLength='7.34px' lengthAdjust='spacingAndGlyphs'>Y</text>
+<text transform='translate(685.92,292.58) rotate(90)' style='font-size: 7.70px; font-weight: bold; font-family: sans;' textLength='1.71px' lengthAdjust='spacingAndGlyphs'>i</text>
+<text transform='translate(688.25,296.84) rotate(90)' style='font-size: 11.00px; font-family: sans;' textLength='8.54px' lengthAdjust='spacingAndGlyphs'>=</text>
+<text transform='translate(688.25,307.92) rotate(90)' style='font-size: 11.00px; font-family: sans;' textLength='5.10px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text transform='translate(686.13,313.03) rotate(90)' style='font-size: 7.70px; font-family: sans;' textLength='4.28px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text transform='translate(688.25,319.35) rotate(90)' style='font-size: 11.00px; font-family: sans;' textLength='8.54px' lengthAdjust='spacingAndGlyphs'>+</text>
+<text transform='translate(688.25,329.92) rotate(90)' style='font-size: 11.00px; font-family: sans;' textLength='5.10px' lengthAdjust='spacingAndGlyphs'>β</text>
+<text transform='translate(686.20,335.02) rotate(90)' style='font-size: 7.70px; font-family: sans;' textLength='4.28px' lengthAdjust='spacingAndGlyphs'>1</text>
+<text transform='translate(688.25,339.31) rotate(90)' style='font-size: 11.00px; font-weight: bold; font-family: sans;' textLength='7.34px' lengthAdjust='spacingAndGlyphs'>X</text>
+<text transform='translate(685.92,346.65) rotate(90)' style='font-size: 7.70px; font-weight: bold; font-family: sans;' textLength='1.71px' lengthAdjust='spacingAndGlyphs'>i</text>
+<text transform='translate(688.25,350.39) rotate(90)' style='font-size: 11.00px; font-family: sans;' textLength='8.54px' lengthAdjust='spacingAndGlyphs'>+</text>
+<text transform='translate(688.25,360.97) rotate(90)' style='font-size: 11.00px; font-family: sans;' textLength='4.74px' lengthAdjust='spacingAndGlyphs'>ε</text>
+<text transform='translate(685.92,365.71) rotate(90)' style='font-size: 7.70px; font-weight: bold; font-family: sans;' textLength='1.71px' lengthAdjust='spacingAndGlyphs'>i</text>
+<text x='16.82' y='14.56' style='font-size: 13.20px; font-family: sans;' textLength='214.28px' lengthAdjust='spacingAndGlyphs'>position guide triangles on four sides</text>
+</g>
+</svg>
