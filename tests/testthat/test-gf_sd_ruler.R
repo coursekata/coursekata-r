@@ -202,14 +202,17 @@ test_that("`size` still works, and says what to write instead", {
 
 test_that("an aesthetic the ruler cannot honour is refused, not swallowed", {
   p <- gf_jitter(Thumb ~ Height, data = Fingers)
-  expect_error(suppressMessages(gf_sd_ruler(p, color = ~Sex)), "can't be mapped")
-  expect_error(suppressMessages(gf_sd_ruler(p, color = ~Sex)), "y ~ x | group")
+  error <- expect_error(suppressMessages(gf_sd_ruler(p, color = ~Sex)))
+  expect_match(conditionMessage(error), "computes once per panel")
+  expect_match(conditionMessage(error), "facet the plot")
 })
 
-test_that("the ruler is red and 0.8 wide unless told otherwise", {
+test_that("the ruler uses geom_segment defaults unless told otherwise", {
   p <- gf_jitter(Thumb ~ Height, data = Fingers)
-  expect_equal(ruler_of(suppressMessages(gf_sd_ruler(p)))$colour, "red")
-  expect_equal(ruler_of(suppressMessages(gf_sd_ruler(p)))$linewidth, 0.8)
+  defaults <- ggplot2::get_geom_defaults("segment")
+  drawn <- ruler_of(suppressMessages(gf_sd_ruler(p)))
+  expect_equal(drawn$colour, defaults$colour)
+  expect_equal(drawn$linewidth, defaults$linewidth)
   expect_equal(ruler_of(suppressMessages(gf_sd_ruler(p, color = "blue")))$colour, "blue")
   expect_equal(ruler_of(suppressMessages(gf_sd_ruler(p, colour = "blue")))$colour, "blue")
 })

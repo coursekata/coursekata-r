@@ -1,18 +1,3 @@
-#' Resolve a model layer's orientation
-#'
-#' @noRd
-model_orientation <- function(orientation, call = caller_env()) {
-  if (length(orientation) == 1L && is.na(orientation)) {
-    return(orientation)
-  }
-  if (!is.character(orientation) || length(orientation) != 1L ||
-      !orientation %in% c("x", "y")) {
-    abort('`orientation` must be one of "x" or "y".', call = call)
-  }
-  orientation
-}
-
-
 #' Build the ggplot2 layer shared by native and formula interfaces
 #'
 #' Supplied models are planned when the layer is added to a plot, where both
@@ -27,7 +12,7 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
                         fn = "geom_model", call = call2(fn), ...) {
   rlang::local_error_call(call2(fn))
   params <- normalize_linewidth(params, geom, fn, warn_size = fn != "gf_model")
-  orientation <- model_orientation(orientation, call = call)
+  orientation <- layer_orientation(orientation, call = call)
   if (!prepared && !is.null(model)) {
     if (is_formula(model) && is.null(f_lhs(model))) {
       abort(

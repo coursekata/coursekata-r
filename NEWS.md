@@ -19,6 +19,8 @@
 - Add `stat_sd_ruler()` as the ggplot2 constructor for `StatSdRuler`. It uses
   the same per-panel calculation as `gf_sd_ruler()`, completing the native
   `stat_*()` surface for distribution means, standard deviations, and cutoffs.
+  Both front doors now use `na.rm = FALSE`, the ordinary segment defaults, and
+  one shared refusal for mapped styling aesthetics.
 - Add `geom_model()` and `stat_model()` as the ggplot2-native model layers,
   backed by exported `GeomModel` and `StatModel` extensions. They draw fitted
   models or infer the model represented by the layer's mappings. `gf_model()`

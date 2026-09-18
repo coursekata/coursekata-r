@@ -224,12 +224,14 @@ GeomCutoffCallout <- ggplot2::ggproto(
   ),
   setup_params = function(data, params) {
     params$marker <- FALSE
-    GeomCutoff$setup_params(data, params)
+    params <- GeomCutoff$setup_params(data, params)
+    params$marker <- NULL
+    params$marker_size <- NULL
+    params
   },
   draw_panel = function(data, panel_params, coord, height = 0.2,
                         label_size = 3.2, label_padding = 1.6,
-                        label_radius = 0.8, marker = FALSE,
-                        marker_size = 4, avoidance = NULL,
+                        label_radius = 0.8, avoidance = NULL,
                         na.rm = FALSE) {
     panel <- cutoff_panel_data(data, panel_params, coord)
     if (is.null(panel)) return(ggplot2::zeroGrob())

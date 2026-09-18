@@ -1,25 +1,3 @@
-#' Resolve the direction a model layer runs
-#'
-#' ggplot2 uses `"x"` for a layer whose outcome is on y and `"y"` for the
-#' turned version. A missing orientation takes the usual `"x"` default.
-#'
-#' @param orientation `NA`, `"x"`, or `"y"`.
-#' @param call The calling environment or call.
-#'
-#' @return `"x"` or `"y"`.
-#'
-#' @noRd
-resid_orientation <- function(orientation, call = caller_env()) {
-  if (length(orientation) == 1 && is.na(orientation)) {
-    return("x")
-  }
-  if (!is.character(orientation) || length(orientation) != 1 ||
-      !orientation %in% c("x", "y")) {
-    abort('`orientation` must be one of "x" or "y".', call = call)
-  }
-  orientation
-}
-
 #' Prepare complete source rows before ggplot2 evaluates aesthetics
 #'
 #' Both interfaces validate axes, predict, validate the outcome axis, and then
@@ -34,7 +12,7 @@ resid_layer_spec <- function(data, mapping, model = NULL, fun = NULL,
   spec <- list(data = data, mapping = mapping, labels = labels,
                axes = labels[intersect(c("x", "y"), names(labels))])
   check_resid_axes(spec, call = call)
-  direction <- resid_orientation(orientation, call = call)
+  direction <- layer_orientation(orientation, default = "x", call = call)
   fitted <- if (is.null(fun)) {
     resid_fitted(model, data, call = call)
   } else {
@@ -175,13 +153,12 @@ resid_layer <- function(mapping = NULL, data = NULL, geom, stat,
   rlang::local_error_call(call2(fn))
   params <- normalize_linewidth(params, geom, fn)
   params <- resid_geom_defaults(params, geom, mapping)
-  orientation <- resid_orientation(orientation, call = call)
+  orientation <- layer_orientation(orientation, default = "x", call = call)
   position <- resid_layer_position(
     position, orientation = orientation, reduction = reduction, call = call
   )
   params$orientation <- orientation
-  if (!is.null(fn) && (inherits(geom, c("GeomResid", "GeomSquareResid")) ||
-                       (is.character(geom) && geom %in% c("resid", "square_resid")))) {
+  if (!is.null(fn) && !is.null(resid_geom_kind(geom))) {
     params$.resid_fn <- fn
   }
 
@@ -203,15 +180,29 @@ resid_layer <- function(mapping = NULL, data = NULL, geom, stat,
 }
 
 resid_geom_defaults <- function(params, geom, mapping = NULL) {
-  is_line <- identical(geom, "resid") || inherits(geom, "GeomResid")
-  is_square <- identical(geom, "square_resid") || inherits(geom, "GeomSquareResid")
-  if (is_line && is.null(params$linewidth) && is.null(mapping$linewidth)) {
+  kind <- resid_geom_kind(geom)
+  if (identical(kind, "line") && is.null(params$linewidth) && is.null(mapping$linewidth)) {
     params$linewidth <- 0.2
   }
-  if (is_square && is.null(params$alpha)) {
+  if (identical(kind, "square") && is.null(params$alpha)) {
     params$alpha <- 0.1
   }
   params
+}
+
+resid_geom_kind <- function(geom) {
+  if (identical(geom, "resid") || inherits(geom, "GeomResid")) return("line")
+  if (identical(geom, "square_resid") || inherits(geom, "GeomSquareResid")) return("square")
+  NULL
+}
+
+resid_layer_tag <- function(geom, reduction = FALSE) {
+  kind <- resid_geom_kind(geom)
+  if (identical(kind, "square")) {
+    if (reduction) "square_reduce" else "square_resid"
+  } else {
+    if (reduction) "reduce" else "resid"
+  }
 }
 
 model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
@@ -227,7 +218,7 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     abort("A reduction needs a fitted `model`; `fun` only defines residuals.", call = call)
   }
   if (ggplot2::is_waiver(data)) data <- NULL
-  direction <- resid_orientation(orientation, call = call)
+  direction <- layer_orientation(orientation, default = "x", call = call)
   position <- resid_layer_position(position, direction, reduction, call)
   layer <- resid_layer(
     fn = fn,
@@ -239,17 +230,7 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     params = params,
     inherit.aes = inherit.aes,
     show.legend = show.legend,
-    tag = if (reduction) {
-      if (inherits(geom, "GeomSquareResid") || identical(geom, "square_resid")) {
-        "square_reduce"
-      } else {
-        "reduce"
-      }
-    } else if (inherits(geom, "GeomSquareResid") || identical(geom, "square_resid")) {
-      "square_resid"
-    } else {
-      "resid"
-    },
+    tag = resid_layer_tag(geom, reduction),
     orientation = direction,
     reduction = reduction,
     call = call

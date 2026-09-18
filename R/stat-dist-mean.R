@@ -58,18 +58,3 @@ stat_dist_mean <- function(mapping = NULL, data = NULL, geom = "vline",
     params = rlang::list2(na.rm = na.rm, ...)
   )
 }
-
-#' Make a distribution-mean stat for an inferred model axis
-#'
-#' `required_aes` is ggproto metadata, so model inference needs a distinct
-#' subclass when the outcome is on y. The public `stat_dist_mean()` constructor
-#' remains fixed to x and returns a layer.
-#'
-#' @param axis `"x"` or `"y"`.
-#'
-#' @return A `StatDistMean` ggproto instance whose required aesthetic is
-#'   `axis`.
-#' @noRd
-new_stat_dist_mean <- function(axis = "x") {
-  ggplot2::ggproto(NULL, StatDistMean, required_aes = axis)
-}

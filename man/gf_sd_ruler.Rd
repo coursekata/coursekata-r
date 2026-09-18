@@ -10,7 +10,7 @@ gf_sd_ruler(
   data = NULL,
   ...,
   where = "middle",
-  na.rm = TRUE,
+  na.rm = FALSE,
   xlab,
   ylab,
   title,
@@ -35,9 +35,9 @@ already names one.}
 
 \item{data}{Dataset. Defaults to the plot's data.}
 
-\item{...}{Additional arguments: \code{color} (default \code{"red"}),
-\code{linewidth} (default \code{0.8}), and any other \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}}
-parameter.}
+\item{...}{Additional arguments accepted by \code{\link[ggplot2:geom_segment]{ggplot2::geom_segment()}},
+including fixed \code{color} and \code{linewidth} values. Defaults come from the
+segment geom, as they do for \code{\link[=stat_sd_ruler]{stat_sd_ruler()}}.}
 
 \item{where}{For a vertical ruler, where on the x-axis to place it:
 \code{"middle"} (midpoint of x range), \code{"mean"}, or \code{"median"}. Ignored for

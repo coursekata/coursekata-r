@@ -67,7 +67,6 @@ StatSdRuler <- ggplot2::ggproto(
   "StatSdRuler", ggplot2::Stat,
   required_aes = "x",
   non_missing_aes = "y",
-  dropped_aes = "y",
   setup_params = function(data, params) {
     check_panel_stat_aesthetics(data, "stat_sd_ruler", c("x", "y"))
     check_ruler_where(params$where %||% "middle")
@@ -152,17 +151,7 @@ gf_sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
                               data = NULL, ...) {
   params <- normalize_linewidth(params, geom, "gf_sd_ruler")
 
-  mapped <- setdiff(names(mapping), c("x", "y"))
-  if (length(mapped) > 0) {
-    abort(c(
-      glue("gf_sd_ruler() draws one ruler per panel, so {collapse(mapped)} can't be mapped"),
-      "give it a value instead, or split the plot with `y ~ x | group` to get one per group"
-    ))
-  }
-
-  params$colour <- params$colour %||% params$color %||% "red"
-  params$linewidth <- params$linewidth %||% 0.8
-  params$color <- NULL
+  check_panel_stat_aesthetics(mapping, "gf_sd_ruler", c("x", "y"))
 
   source_layer(tag_layer(
     sd_ruler_layer(
@@ -205,9 +194,9 @@ gf_sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
 #'   `"middle"` (midpoint of x range), `"mean"`, or `"median"`. Ignored for
 #'   a horizontal ruler, which always starts at the mean.
 #' @param na.rm Should missing values be silently removed?
-#' @param ... Additional arguments: `color` (default `"red"`),
-#'   `linewidth` (default `0.8`), and any other [ggplot2::geom_segment()]
-#'   parameter.
+#' @param ... Additional arguments accepted by [ggplot2::geom_segment()],
+#'   including fixed `color` and `linewidth` values. Defaults come from the
+#'   segment geom, as they do for [stat_sd_ruler()].
 #' @param xlab,ylab,title,subtitle,caption Axis and plot labels; see
 #'   [ggformula::gf_point()].
 #' @param geom,stat,position Layer components; see [ggformula::gf_point()].
@@ -260,7 +249,7 @@ gf_sd_ruler <- named_layer_factory(
   stat = coursekata::StatSdRuler,
   position = "identity",
   aes_form = list(NULL, ~x, y ~ x),
-  extras = alist(where = "middle", na.rm = TRUE),
+  extras = alist(where = "middle", na.rm = FALSE),
   .pre_bindings = alist(
     check_ruler_where = check_ruler_where
   ),

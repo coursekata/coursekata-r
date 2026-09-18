@@ -100,3 +100,22 @@ collapse <- function(x) glue::glue_collapse(x, sep = ", ")
 #'
 #' @noRd
 name_to_frm <- function(x) stats::formula(glue("~{x}"))
+
+#' Normalize a ggplot2 layer orientation
+#'
+#' @param orientation `NA`, `"x"`, or `"y"`.
+#' @param default The value to use when `orientation` is `NA`.
+#' @param call The public call used for an error.
+#'
+#' @return `"x"`, `"y"`, or `default`.
+#'
+#' @noRd
+layer_orientation <- function(orientation, default = NA,
+                              call = caller_env()) {
+  if (length(orientation) == 1L && is.na(orientation)) return(default)
+  if (!is.character(orientation) || length(orientation) != 1L ||
+      !orientation %in% c("x", "y")) {
+    abort('`orientation` must be one of "x" or "y".', call = call)
+  }
+  orientation
+}

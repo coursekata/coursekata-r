@@ -42,7 +42,6 @@ guide_dgp <- function(value = 0, role = c("population", "estimate"),
   equation <- if (inherits(equation, "waiver")) defaults$equation else equation
   heading <- if (inherits(title, "waiver")) defaults$title else title
   colour <- if (inherits(colour, "waiver")) defaults$colour else colour
-  shape <- if (inherits(shape, "waiver") && role == "estimate") NA else shape
   size <- if (inherits(size, "waiver")) defaults$size else size
   linewidth <- if (inherits(linewidth, "waiver")) 0.5 else linewidth
 
