@@ -69,11 +69,11 @@ A ggplot object with residual lines added.
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 }
 \details{
-Draws residual lines from observed points to the values predicted by a
+Draws residual lines from predicted values to the observed points, using a
 user-supplied function of x (e.g., the function plotted with
 \code{gf_function()}). Where \code{\link[=gf_resid]{gf_resid()}} measures a fitted model, this measures a
 function you wrote: it is called on the x values the plot draws, and each
-residual runs from an observation to what the function predicts for it.
+residual runs from the prediction to the observation.
 }
 \examples{
 set.seed(1)

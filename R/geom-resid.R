@@ -149,6 +149,8 @@ position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcom
 #'
 #' @noRd
 resid_jitter <- function(plot, outcome = NULL) {
+  if (!inherits(plot, "ggplot")) return(list(plot = plot, position = "identity"))
+  plot <- stabilize_resid_mappings(plot)
   plot <- stabilize_source_data(plot)
   plain <- list(plot = plot, position = "identity")
   index <- plot_source_index(plot)
@@ -156,6 +158,9 @@ resid_jitter <- function(plot, outcome = NULL) {
     return(plain)
   }
   pos <- plot$layers[[index]]$position
+  if (inherits(pos, "PositionJitterdodge")) {
+    resid_layer_position(pos, "x")
+  }
   if (!inherits(pos, "PositionJitter")) {
     return(plain)
   }
@@ -189,6 +194,7 @@ resid_jitter <- function(plot, outcome = NULL) {
 #' @export
 GeomResid <- ggplot2::ggproto(
   "GeomResid", ggplot2::GeomSegment,
+  extra_params = c("na.rm", ".resid_fn"),
   required_aes = c("x", "y", "xend|yend"),
   handle_na = function(self, data, params) {
     # the inherited drop reads `required_aes` literally, and `"xend|yend"` is
@@ -197,7 +203,7 @@ GeomResid <- ggplot2::ggproto(
     ggplot2::remove_missing(
       data, params$na.rm,
       c("x", "y", paste0(resid_axis(data), "end"), self$non_missing_aes),
-      "geom_resid"
+      params$.resid_fn %||% "geom_resid"
     )
   },
   draw_panel = function(self, data, panel_params, coord, arrow = NULL,
@@ -229,17 +235,26 @@ GeomResid <- ggplot2::ggproto(
 #' @export
 GeomSquareResid <- ggplot2::ggproto(
   "GeomSquareResid", ggplot2::GeomPolygon,
+  extra_params = c("na.rm", ".resid_fn"),
   required_aes = c("x", "y", "xend|yend"),
+  handle_na = function(self, data, params) {
+    ggplot2::remove_missing(
+      data, params$na.rm,
+      c("x", "y", paste0(resid_axis(data), "end"), self$non_missing_aes),
+      params$.resid_fn %||% "geom_square_resid"
+    )
+  },
   draw_panel = function(self, data, panel_params, coord, aspect = 4 / 6,
                         rule = "evenodd", lineend = "butt", linejoin = "round",
                         linemitre = 10, na.rm = FALSE) {
-    keep <- c("x", "y", paste0(resid_axis(data), "end"))
-    data <- data[stats::complete.cases(data[keep]), , drop = FALSE]
     if (nrow(data) == 0) {
       return(ggplot2::zeroGrob())
     }
+    # The observations are still in scale space. Ask the coordinate system for
+    # those ranges; panel x/y ranges have already been exchanged by coord_flip.
+    ranges <- coord$backtransform_range(panel_params)
     ggplot2::GeomPolygon$draw_panel(
-      square_vertices(data, panel_params$x.range, panel_params$y.range, aspect),
+      square_vertices(data, ranges$x, ranges$y, aspect),
       panel_params, coord,
       rule = rule, lineend = lineend, linejoin = linejoin, linemitre = linemitre
     )
@@ -282,22 +297,23 @@ resid_fitted <- function(model, data, call = caller_env()) {
 #' that outcome.
 #'
 #' @noRd
-resid_end <- function(spec, model, call = caller_env()) {
-  mspec <- model_spec(spec$data, model, call = call)
-  outcome_axis <- names(spec$axes[spec$axes %in% mspec$outcome])
+resid_end <- function(spec, model, call = caller_env(), orientation = NA) {
+  outcome <- as_label(rlang::f_lhs(stats::formula(model)))
+  outcome_axis <- names(spec$axes[spec$axes %in% outcome])
   if (length(outcome_axis) == 0) {
     axes <- purrr::imap_chr(spec$axes, function(variable, aes) glue("{aes} = {variable}"))
     abort(
       c(
         "A residual is measured along the axis carrying the model's outcome",
-        glue("the model predicts: {collapse(mspec$outcome)}"),
+        glue("the model predicts: {collapse(outcome)}"),
         glue("the plot's axes are: {collapse(axes)}"),
         "plot the outcome this model predicts, or measure the model this plot was built for"
       ),
       call = call
     )
   }
-  if (identical(outcome_axis, "x")) "xend" else "yend"
+  preferred <- if (identical(orientation, "y")) "x" else "y"
+  if (preferred %in% outcome_axis) paste0(preferred, "end") else paste0(outcome_axis[[1]], "end")
 }
 
 #' Refuse a fit whose squares would not add up
@@ -306,6 +322,8 @@ resid_end <- function(spec, model, call = caller_env()) {
 #' values' reduction from the grand mean. Unweighted least squares with an
 #' intercept guarantees that orthogonality. Weighted fits use a weighted inner
 #' product instead, so their unweighted areas do not satisfy the identity.
+#' An offset can also contribute fitted variation outside the model matrix,
+#' where least squares does not guarantee orthogonality to the residuals.
 #'
 #' @param model A model fit by `lm()` or `aov()`.
 #' @param fn The name to refuse in, e.g. `"gf_reduce"`.
@@ -317,8 +335,13 @@ resid_end <- function(spec, model, call = caller_env()) {
 check_decomposable <- function(model, fn, call = caller_env()) {
   no_intercept <- identical(as.integer(attr(stats::terms(model), "intercept")), 0L)
   weighted <- length(model$weights) > 0
+  offset <- length(model$offset) > 0
+  residual <- switch(fn,
+    geom_reduce = "geom_resid", geom_square_reduce = "geom_square_resid",
+    stat_reduce = "stat_resid", gf_square_reduce = "gf_square_resid",
+    gf_squareduce = "gf_squaresid", "gf_resid")
 
-  if (!no_intercept && !weighted) {
+  if (!no_intercept && !weighted && !offset) {
     return(invisible(model))
   }
 
@@ -327,16 +350,20 @@ check_decomposable <- function(model, fn, call = caller_env()) {
       glue("`{fn}()` draws a reduction that this model's own arithmetic does not support"),
       x = if (no_intercept) {
         "this model was fit without an intercept"
-      } else {
+      } else if (weighted) {
         "this model was fit with weights"
+      } else {
+        "this model was fit with an offset"
       },
       "*" = paste(
         "the sums of the total, error and reduction squares only add up when residuals",
         "are orthogonal to the model's reduction from the grand mean"
       ),
       i = paste(
-        if (no_intercept) "fit the model with its intercept" else "fit the model unweighted",
-        "or measure it with `gf_resid()`, which needs no such identity"
+        if (no_intercept) "fit the model with its intercept" else if (weighted) {
+          "fit the model unweighted"
+        } else "fit the model without its offset",
+        glue("or measure it with `{residual}()`, which needs no such identity")
       )
     ),
     call = call
@@ -429,12 +456,8 @@ resid_spec <- function(object, model, fn = "gf_resid", call = caller_env()) {
     )
   }
   spec <- plot_spec(object)
-  check_resid_axes(spec, call = call)
-  resid_layer_spec(
-    spec$data, spec$mapping[c("x", "y")], model,
-    orientation = if (identical(resid_end(spec, model, call = call), "xend")) "y" else "x",
-    call = call
-  )
+  resid_layer_spec(spec$data, spec$mapping[c("x", "y")], model,
+                   fn = fn, labels = spec$labels, call = call)
 }
 
 #' Build a residual specification from a function of x
@@ -465,10 +488,8 @@ resid_fun_spec <- function(object, fun, fn = "gf_resid_fun", call = caller_env()
     )
   }
   spec <- plot_spec(object)
-  check_resid_axes(spec, call = call)
-  resid_layer_spec(
-    spec$data, spec$mapping[c("x", "y")], fun = fun, call = call
-  )
+  resid_layer_spec(spec$data, spec$mapping[c("x", "y")], fun = fun,
+                   fn = fn, labels = spec$labels, call = call)
 }
 
 #' Build a reduction specification from a model
@@ -499,16 +520,8 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
     )
   }
   spec <- plot_spec(object)
-  check_resid_axes(spec, call = call)
-  resid_layer_spec(
-    spec$data, spec$mapping[c("x", "y")], model,
-    orientation = if (identical(resid_end(spec, model, call = call), "xend")) "y" else "x",
-    reduction = TRUE, call = call,
-    validate = function() {
-      check_decomposable(model, fn, call = call)
-      warn_empty_reduction(model, fn)
-    }
-  )
+  resid_layer_spec(spec$data, spec$mapping[c("x", "y")], model,
+                   reduction = TRUE, fn = fn, labels = spec$labels, call = call)
 }
 
 #' Adapt the shared residual layer builder to `layer_factory()`
@@ -522,19 +535,14 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
 #' defaults.
 #'
 #' @param tag The tag to name the layer with.
-#' @param aesthetics The mapping `resid_spec()` or `resid_fun_spec()` computed,
-#'   with its own quosures.
+#' @param spec The prepared data, mappings, orientation, and operation.
 #'
-#' @return A function with the formals `layer_factory()` expects. These formals
-#'   must be explicit because `create_formals()` removes arguments hidden in
-#'   `...`.
+#' @return A function with the formals `layer_factory()` expects.
 #'
 #' @noRd
-resid_layer_fun <- function(tag, aesthetics, fn = paste0("gf_", tag),
-                            linewidth_given = TRUE) {
+resid_layer_fun <- function(tag, spec, linewidth_given = TRUE) {
   force(tag)
-  force(aesthetics)
-  force(fn)
+  force(spec)
   force(linewidth_given)
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL,
            check.aes = TRUE, check.param = FALSE, show.legend = NA,
@@ -543,8 +551,7 @@ resid_layer_fun <- function(tag, aesthetics, fn = paste0("gf_", tag),
     params[["fun"]] <- NULL
     if (!linewidth_given && !is.null(params$size)) params$linewidth <- NULL
     mapping <- mapping %||% ggplot2::aes()
-    mapping[names(aesthetics)] <- aesthetics
-    orientation <- if ("xend" %in% names(aesthetics)) "y" else "x"
+    mapping[names(spec$aesthetics)] <- spec$aesthetics
     resid_layer(
       geom = geom,
       stat = stat,
@@ -552,15 +559,15 @@ resid_layer_fun <- function(tag, aesthetics, fn = paste0("gf_", tag),
       mapping = mapping,
       data = data,
       params = params,
-      orientation = orientation,
-      reduction = tag %in% c("reduce", "square_reduce"),
       show.legend = show.legend,
       inherit.aes = inherit.aes,
       tag = tag,
       check.aes = check.aes,
       check.param = check.param,
-      fn = fn,
-      call = call2(fn),
+      orientation = spec$orientation,
+      reduction = spec$reduction,
+      fn = spec$fn,
+      call = call2(spec$fn),
       ...
     )
   }

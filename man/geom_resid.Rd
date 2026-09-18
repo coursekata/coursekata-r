@@ -16,6 +16,7 @@ geom_resid(
   position = "identity",
   ...,
   model = NULL,
+  fun = NULL,
   orientation = NA,
   linewidth = 0.2,
   na.rm = FALSE,
@@ -30,6 +31,7 @@ geom_square_resid(
   position = "identity",
   ...,
   model = NULL,
+  fun = NULL,
   orientation = NA,
   aspect = 4/6,
   alpha = 0.1,
@@ -45,6 +47,7 @@ geom_reduce(
   position = "identity",
   ...,
   model = NULL,
+  fun = NULL,
   orientation = NA,
   linewidth = 0.2,
   na.rm = FALSE,
@@ -59,6 +62,7 @@ geom_square_reduce(
   position = "identity",
   ...,
   model = NULL,
+  fun = NULL,
   orientation = NA,
   aspect = 4/6,
   alpha = 0.1,
@@ -74,6 +78,7 @@ stat_resid(
   position = "identity",
   ...,
   model = NULL,
+  fun = NULL,
   orientation = NA,
   na.rm = FALSE,
   show.legend = NA,
@@ -87,6 +92,7 @@ stat_reduce(
   position = "identity",
   ...,
   model = NULL,
+  fun = NULL,
   orientation = NA,
   na.rm = FALSE,
   show.legend = NA,
@@ -107,8 +113,13 @@ fixed aesthetics such as \code{colour}, \code{fill}, \code{alpha}, or \code{line
 \item{model}{A model already fit by \code{\link[stats:lm]{stats::lm()}} or \code{\link[stats:aov]{stats::aov()}}. Name this
 argument in a ggplot2 call, as in \code{geom_resid(model = fit)}.}
 
-\item{orientation}{Layer orientation. \code{NA} and \code{"x"} put the model's outcome
-on y; \code{"y"} puts it on x.}
+\item{fun}{For residual layers, a function instead of \code{model}. It receives
+the mapped predictor values and returns predicted outcomes. The default
+orientation predicts y from x; \code{orientation = "y"} predicts x from y.
+Supply only one of \code{model} and \code{fun}. Reductions require a fitted model.}
+
+\item{orientation}{Layer orientation. \code{NA} infers a model's outcome axis;
+\code{"x"} puts it on y and \code{"y"} puts it on x. For \code{fun}, \code{NA} means \code{"x"}.}
 
 \item{linewidth}{The line width. The default is \code{0.2}.}
 
@@ -127,18 +138,21 @@ A ggplot2 layer.
 }
 \description{
 These layers measure a fitted model directly from an ordinary \code{\link[ggplot2:ggplot]{ggplot2::ggplot()}}.
-A residual runs from an observed value to the model's prediction. A reduction
-runs from the model's grand mean to that prediction. The square variants draw
-the same distances as areas.
+A residual segment runs from the model's prediction to the observed value;
+an arrow at its last end points to the observation. A reduction segment runs
+from the prediction to the model's grand mean. The square variants draw
+areas proportional to those squared distances at a shared aspect ratio.
 }
 \details{
 When the observations have their own data or mappings, these layers follow
 the first point layer (or the first non-annotation layer when there are no
 points). Explicit layer \code{data} and \code{mapping} arguments take precedence.
 
-Supply \code{orientation = "y"} when the model's outcome is mapped to x. With the
-default \code{orientation = NA}, the layer follows ggplot2's usual x orientation:
-x is the predictor axis and the outcome is on y. Coordinate systems such as
+With \code{orientation = NA}, a model's outcome determines the direction. The
+outcome expression must match an axis exactly: \code{log(y)} is refused for a
+model of \code{y}, because that distance is not the model's residual. An explicit
+\code{orientation = "x"} puts the outcome on y; \code{"y"} puts it on x and must agree
+with that mapping. Coordinate systems such as
 \code{\link[ggplot2:coord_flip]{ggplot2::coord_flip()}} are applied later and do not change this argument.
 
 A jittered point layer and its model layer must use the same
@@ -146,9 +160,22 @@ A jittered point layer and its model layer must use the same
 the fitted endpoint fixed while moving the observed endpoint by the same
 amount as its point.
 
+Positional expressions are evaluated reproducibly on the current data, so
+random mappings give the observations and residuals the same coordinates.
+Native layers still respond to later data and mapping changes. A new unseeded
+random mapping must be added before the residual layer, or carry its own
+fixed seed. Checks that need the rows or mappings run when the plot is built:
+axes, prediction,
+outcome axis, then reduction eligibility.
+
+Native square layers inherit mapped aesthetics by default, including colour.
+\code{\link[=gf_square_resid]{gf_square_resid()}} and \code{\link[=gf_square_reduce]{gf_square_reduce()}} default to \code{inherit = FALSE}
+for neutral square outlines. Set their \code{inherit = TRUE} to match this API.
+
 Reduction layers express the ordinary least-squares sum-of-squares identity.
-They require an unweighted model with an intercept. The identity holds across
-the sums of the square areas, not separately for each observation.
+They require an unweighted model with an intercept, no offset, and its stored model frame.
+On the fitted observations, the identity holds across the sums of the square
+areas, not separately for each observation or for new prediction data.
 }
 \examples{
 model <- lm(Thumb ~ Height, data = Fingers)

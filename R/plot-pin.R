@@ -291,7 +291,11 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
     # writing only into the empty slot keeps the reader's words and still
     # never shows the pin column.
     if (is.null(plot$labels[[a]])) {
-      plot$labels[[a]] <- as_label(expr)
+      plot$labels[[a]] <- source_mapping_label(original)
+    } else if (is.function(plot$labels[[a]])) {
+      plot$labels[[a]] <- source_label_restore(
+        col, source_mapping_label(original), plot$labels[[a]]
+      )
     }
     pins[[a]] <- original
     columns[[a]] <- col

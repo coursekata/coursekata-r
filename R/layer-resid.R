@@ -20,52 +20,47 @@ resid_orientation <- function(orientation, call = caller_env()) {
   orientation
 }
 
-#' Add model predictions to the complete data a layer receives
+#' Prepare complete source rows before ggplot2 evaluates aesthetics
 #'
-#' A ggplot2 stat sees mapped aesthetics, not the complete source rows. Model
-#' prediction has to happen one step earlier because a model can use columns
-#' that the plot never maps. A layer data function is that step: ggplot2 hands
-#' it the complete plot data before evaluating the layer's aesthetics.
-#'
-#' @param data A layer's `data` argument.
-#' @param model A fitted model.
-#' @param reduction Whether to add the grand mean used by a reduction.
-#' @param call The public call to name in an error raised during a later build.
-#' @param fun An optional function of the mapped x values, instead of a model.
-#' @param mapping The positional mapping used to evaluate `fun`.
-#' @param after_prediction Validation to run after prediction, before the grand
-#'   mean.
-#'
-#' @return A data frame or a function from plot data to a data frame, matching
-#'   the form of `data` that [ggplot2::layer()] accepts.
-#'
+#' Both interfaces validate axes, predict, validate the outcome axis, and then
+#' validate the reduction. Keep that order explicit: compound-invalid inputs
+#' must give the same first diagnostic. No grand mean is computed on a refused
+#' model, and prediction never compacts rows omitted by the fit.
 #' @noRd
-resid_layer_data <- function(data, model = NULL, reduction = FALSE,
-                             call = caller_env(), fun = NULL, mapping = NULL,
-                             after_prediction = NULL) {
-  add_predictions <- function(rows) {
-    rows$.fitted <- if (is.null(fun)) {
-      resid_fitted(model, rows, call = call)
-    } else {
-      fun(eval_tidy(mapping$x, rows))
-    }
-    if (!is.null(after_prediction)) {
-      after_prediction()
-    }
-    if (reduction) {
-      rows$.grand <- reduction_grand(model)
-    }
-    rows
+resid_layer_spec <- function(data, mapping, model = NULL, fun = NULL,
+                             orientation = NA, reduction = FALSE,
+                             fn = "geom_resid", labels = NULL, call = caller_env()) {
+  labels <- labels %||% vapply(mapping, source_mapping_label, character(1))
+  spec <- list(data = data, mapping = mapping, labels = labels,
+               axes = labels[intersect(c("x", "y"), names(labels))])
+  check_resid_axes(spec, call = call)
+  direction <- resid_orientation(orientation, call = call)
+  fitted <- if (is.null(fun)) {
+    resid_fitted(model, data, call = call)
+  } else {
+    axis <- if (identical(direction, "x")) "x" else "y"
+    fun(with_random_seed_restored(eval_tidy(mapping[[axis]], data)))
   }
-
-  if (is.null(data)) {
-    return(add_predictions)
+  data$.fitted <- if (length(fitted) == 1L) rep(fitted, nrow(data)) else fitted
+  if (is.null(fun)) {
+    inferred <- if (identical(resid_end(spec, model, call, orientation), "xend")) "y" else "x"
+    if (!is.na(orientation) && !identical(direction, inferred)) {
+      abort("`orientation` must put the model's outcome on its mapped axis.", call = call)
+    }
+    direction <- inferred
   }
-  if (is.function(data) || rlang::is_formula(data)) {
-    data_fun <- rlang::as_function(data)
-    return(function(plot_data) add_predictions(data_fun(plot_data)))
+  check_resid_live_mappings(mapping, data, call = call)
+  if (reduction) {
+    check_decomposable(model, fn, call = call)
+    if (is.null(model$model)) {
+      abort("A reduction needs the model's fitted data; refit with `model = TRUE`.", call = call)
+    }
+    warn_empty_reduction(model, fn)
+    data$.grand <- rep(reduction_grand(model), nrow(data))
   }
-  add_predictions(data)
+  list(data = data,
+       aesthetics = resid_layer_mapping(mapping, direction, reduction),
+       orientation = direction, reduction = reduction, fn = fn)
 }
 
 #' State the endpoint mappings a residual or reduction owns
@@ -79,6 +74,7 @@ resid_layer_data <- function(data, model = NULL, reduction = FALSE,
 #' @noRd
 resid_layer_mapping <- function(mapping, orientation, reduction = FALSE) {
   mapping <- mapping %||% ggplot2::aes()
+  mapping[c("xend", "yend")] <- NULL
   owned <- if (identical(orientation, "x")) {
     if (reduction) {
       ggplot2::aes(y = .data$.grand, yend = .data$.fitted)
@@ -94,35 +90,6 @@ resid_layer_mapping <- function(mapping, orientation, reduction = FALSE) {
   }
   mapping[names(owned)] <- owned
   mapping
-}
-
-#' Prepare the data and mappings shared by every residual-family interface
-#'
-#' The formula adapter supplies the plot's positional quosures and resolves
-#' orientation from its model. The native interface supplies a layer mapping
-#' and orientation directly. Prediction runs before orientation is forced, so
-#' the formula interface reports missing prediction variables before checking
-#' which axis carries the outcome. Reduction validation follows that check,
-#' before the grand mean is computed. Function predictions use the same path.
-#'
-#' @noRd
-resid_layer_spec <- function(data, mapping, model = NULL, orientation = "x",
-                             reduction = FALSE, fun = NULL, call = caller_env(),
-                             validate = NULL) {
-  after_prediction <- function() {
-    force(orientation)
-    if (!is.null(validate)) {
-      validate()
-    }
-  }
-  data <- resid_layer_data(
-    data, model, reduction = reduction, fun = fun, mapping = mapping, call = call,
-    after_prediction = after_prediction
-  )
-  list(
-    data = data,
-    aesthetics = resid_layer_mapping(mapping, orientation, reduction = reduction)
-  )
 }
 
 #' Make a normal jitter safe for model endpoints
@@ -213,6 +180,10 @@ resid_layer <- function(mapping = NULL, data = NULL, geom, stat,
     position, orientation = orientation, reduction = reduction, call = call
   )
   params$orientation <- orientation
+  if (!is.null(fn) && (inherits(geom, c("GeomResid", "GeomSquareResid")) ||
+                       (is.character(geom) && geom %in% c("resid", "square_resid")))) {
+    params$.resid_fn <- fn
+  }
 
   layer <- ggplot2::layer(
     geom = geom,
@@ -245,26 +216,23 @@ resid_geom_defaults <- function(params, geom, mapping = NULL) {
 
 model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
                               model, orientation, reduction, show.legend,
-                              inherit.aes, call = call2(fn)) {
-  if (is.null(model)) {
+                              inherit.aes, call = call2(fn), fun = NULL) {
+  if (is.null(model) && is.null(fun)) {
     abort(glue("`{fn}()` needs a fitted `model`."), call = call)
   }
-  orientation <- resid_orientation(orientation, call = call)
-  if (reduction) {
-    check_decomposable(model, fn, call = call)
-    warn_empty_reduction(model, fn)
+  if (!is.null(model) && !is.null(fun)) {
+    abort("Supply only one of `model` and `fun`.", call = call)
   }
-  position <- resid_layer_position(
-    position, orientation = orientation, reduction = reduction, call = call
-  )
+  if (reduction && !is.null(fun)) {
+    abort("A reduction needs a fitted `model`; `fun` only defines residuals.", call = call)
+  }
   if (ggplot2::is_waiver(data)) data <- NULL
-  spec <- resid_layer_spec(
-    data, mapping, model, orientation, reduction = reduction, call = call
-  )
-
-  source_layer(resid_layer(
-    mapping = spec$aesthetics,
-    data = spec$data,
+  direction <- resid_orientation(orientation, call = call)
+  position <- resid_layer_position(position, direction, reduction, call)
+  layer <- resid_layer(
+    fn = fn,
+    mapping = mapping,
+    data = data,
     geom = geom,
     stat = stat,
     position = position,
@@ -282,27 +250,59 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     } else {
       "resid"
     },
-    orientation = orientation,
+    orientation = direction,
     reduction = reduction,
-    call = call,
-    fn = fn
-  ), inherit.data = is.null(data))
+    call = call
+  )
+  # setup_layer receives both the full rows and the current plot mapping.
+  # Preparing here preserves native mapping and data additions, including when a
+  # layer object is reused. The parent still owns ordinary ggplot2 inheritance.
+  parent <- layer
+  position <- layer$position
+  setup <- function(self, data, plot) {
+    data <- ggplot2::ggproto_parent(parent, self)$setup_layer(data, plot)
+    mapping <- self$computed_mapping
+    labels <- vapply(mapping, source_mapping_label, character(1))
+    pins <- plot_pins(plot)
+    for (axis in intersect(names(pins), names(mapping))) {
+      if (identical(mapping[[axis]], plot_source(plot, resolve.data = FALSE)$mapping[[axis]])) {
+        labels[[axis]] <- source_mapping_label(pins[[axis]])
+      }
+    }
+    prepared <- resid_layer_spec(data, mapping, model, fun, orientation,
+                                 reduction, fn, labels, call)
+    self$computed_mapping <- prepared$aesthetics
+    self$stat_params$orientation <- prepared$orientation
+    self$position <- resid_layer_position(position, prepared$orientation, reduction, call)
+    if (inherits(self$position, "PositionResidJitter") && reduction) {
+      self$position <- position_resid_jitter(position$width, position$height, position$seed,
+        outcome = if (prepared$orientation == "x") "y" else "x")
+    }
+    prepared$data
+  }
+  layer <- source_layer(layer_with(layer, setup_layer = setup,
+                           constructor = rlang::call2(fn)), inherit.data = is.null(data))
+  class(layer) <- c("coursekata_resid_layer", class(layer))
+  layer
 }
 
 #' Residual and reduction layers for ggplot2
 #'
 #' These layers measure a fitted model directly from an ordinary [ggplot2::ggplot()].
-#' A residual runs from an observed value to the model's prediction. A reduction
-#' runs from the model's grand mean to that prediction. The square variants draw
-#' the same distances as areas.
+#' A residual segment runs from the model's prediction to the observed value;
+#' an arrow at its last end points to the observation. A reduction segment runs
+#' from the prediction to the model's grand mean. The square variants draw
+#' areas proportional to those squared distances at a shared aspect ratio.
 #'
 #' When the observations have their own data or mappings, these layers follow
 #' the first point layer (or the first non-annotation layer when there are no
 #' points). Explicit layer `data` and `mapping` arguments take precedence.
 #'
-#' Supply `orientation = "y"` when the model's outcome is mapped to x. With the
-#' default `orientation = NA`, the layer follows ggplot2's usual x orientation:
-#' x is the predictor axis and the outcome is on y. Coordinate systems such as
+#' With `orientation = NA`, a model's outcome determines the direction. The
+#' outcome expression must match an axis exactly: `log(y)` is refused for a
+#' model of `y`, because that distance is not the model's residual. An explicit
+#' `orientation = "x"` puts the outcome on y; `"y"` puts it on x and must agree
+#' with that mapping. Coordinate systems such as
 #' [ggplot2::coord_flip()] are applied later and do not change this argument.
 #'
 #' A jittered point layer and its model layer must use the same
@@ -310,9 +310,22 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
 #' the fitted endpoint fixed while moving the observed endpoint by the same
 #' amount as its point.
 #'
+#' Positional expressions are evaluated reproducibly on the current data, so
+#' random mappings give the observations and residuals the same coordinates.
+#' Native layers still respond to later data and mapping changes. A new unseeded
+#' random mapping must be added before the residual layer, or carry its own
+#' fixed seed. Checks that need the rows or mappings run when the plot is built:
+#' axes, prediction,
+#' outcome axis, then reduction eligibility.
+#'
+#' Native square layers inherit mapped aesthetics by default, including colour.
+#' [gf_square_resid()] and [gf_square_reduce()] default to `inherit = FALSE`
+#' for neutral square outlines. Set their `inherit = TRUE` to match this API.
+#'
 #' Reduction layers express the ordinary least-squares sum-of-squares identity.
-#' They require an unweighted model with an intercept. The identity holds across
-#' the sums of the square areas, not separately for each observation.
+#' They require an unweighted model with an intercept, no offset, and its stored model frame.
+#' On the fitted observations, the identity holds across the sums of the square
+#' areas, not separately for each observation or for new prediction data.
 #'
 #' @param mapping,data,position,show.legend,inherit.aes See
 #'   [ggplot2::geom_segment()]. `data` may also be a function or one-sided
@@ -323,8 +336,12 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
 #'   `"resid"` by default; use `"square_resid"` to draw areas.
 #' @param model A model already fit by [stats::lm()] or [stats::aov()]. Name this
 #'   argument in a ggplot2 call, as in `geom_resid(model = fit)`.
-#' @param orientation Layer orientation. `NA` and `"x"` put the model's outcome
-#'   on y; `"y"` puts it on x.
+#' @param fun For residual layers, a function instead of `model`. It receives
+#'   the mapped predictor values and returns predicted outcomes. The default
+#'   orientation predicts y from x; `orientation = "y"` predicts x from y.
+#'   Supply only one of `model` and `fun`. Reductions require a fitted model.
+#' @param orientation Layer orientation. `NA` infers a model's outcome axis;
+#'   `"x"` puts it on y and `"y"` puts it on x. For `fun`, `NA` means `"x"`.
 #' @param linewidth The line width. The default is `0.2`.
 #' @param aspect The square's aspect ratio. The default is `4 / 6`.
 #' @param alpha The square's transparency. The default is `0.1`.
@@ -357,7 +374,7 @@ NULL
 #' @rdname geom_resid
 #' @export
 geom_resid <- function(mapping = NULL, data = NULL, stat = "resid",
-                       position = "identity", ..., model = NULL,
+                       position = "identity", ..., model = NULL, fun = NULL,
                        orientation = NA, linewidth = 0.2, na.rm = FALSE, show.legend = NA,
                        inherit.aes = TRUE) {
   model_resid_layer(
@@ -370,7 +387,7 @@ geom_resid <- function(mapping = NULL, data = NULL, stat = "resid",
     params = rlang::list2(
       na.rm = na.rm, linewidth = if (missing(linewidth)) NULL else linewidth, ...
     ),
-    model = model,
+    model = model, fun = fun,
     orientation = orientation,
     reduction = FALSE,
     inherit.aes = inherit.aes,
@@ -381,7 +398,7 @@ geom_resid <- function(mapping = NULL, data = NULL, stat = "resid",
 #' @rdname geom_resid
 #' @export
 geom_square_resid <- function(mapping = NULL, data = NULL, stat = "resid",
-                              position = "identity", ..., model = NULL,
+                              position = "identity", ..., model = NULL, fun = NULL,
                               orientation = NA, aspect = 4 / 6, alpha = 0.1,
                               na.rm = FALSE, show.legend = NA,
                               inherit.aes = TRUE) {
@@ -393,7 +410,7 @@ geom_square_resid <- function(mapping = NULL, data = NULL, stat = "resid",
     stat = stat,
     position = position,
     params = rlang::list2(na.rm = na.rm, aspect = aspect, alpha = alpha, ...),
-    model = model,
+    model = model, fun = fun,
     orientation = orientation,
     reduction = FALSE,
     inherit.aes = inherit.aes,
@@ -404,7 +421,7 @@ geom_square_resid <- function(mapping = NULL, data = NULL, stat = "resid",
 #' @rdname geom_resid
 #' @export
 geom_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
-                        position = "identity", ..., model = NULL,
+                        position = "identity", ..., model = NULL, fun = NULL,
                         orientation = NA, linewidth = 0.2, na.rm = FALSE, show.legend = NA,
                         inherit.aes = TRUE) {
   model_resid_layer(
@@ -417,7 +434,7 @@ geom_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
     params = rlang::list2(
       na.rm = na.rm, linewidth = if (missing(linewidth)) NULL else linewidth, ...
     ),
-    model = model,
+    model = model, fun = fun,
     orientation = orientation,
     reduction = TRUE,
     inherit.aes = inherit.aes,
@@ -428,7 +445,7 @@ geom_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
 #' @rdname geom_resid
 #' @export
 geom_square_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
-                               position = "identity", ..., model = NULL,
+                               position = "identity", ..., model = NULL, fun = NULL,
                                orientation = NA, aspect = 4 / 6, alpha = 0.1,
                                na.rm = FALSE, show.legend = NA,
                                inherit.aes = TRUE) {
@@ -440,7 +457,7 @@ geom_square_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
     stat = stat,
     position = position,
     params = rlang::list2(na.rm = na.rm, aspect = aspect, alpha = alpha, ...),
-    model = model,
+    model = model, fun = fun,
     orientation = orientation,
     reduction = TRUE,
     inherit.aes = inherit.aes,
@@ -451,7 +468,7 @@ geom_square_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
 #' @rdname geom_resid
 #' @export
 stat_resid <- function(mapping = NULL, data = NULL, geom = "resid",
-                       position = "identity", ..., model = NULL,
+                       position = "identity", ..., model = NULL, fun = NULL,
                        orientation = NA, na.rm = FALSE, show.legend = NA,
                        inherit.aes = TRUE) {
   params <- rlang::list2(na.rm = na.rm, ...)
@@ -463,7 +480,7 @@ stat_resid <- function(mapping = NULL, data = NULL, geom = "resid",
     stat = StatResid,
     position = position,
     params = params,
-    model = model,
+    model = model, fun = fun,
     orientation = orientation,
     reduction = FALSE,
     inherit.aes = inherit.aes,
@@ -474,7 +491,7 @@ stat_resid <- function(mapping = NULL, data = NULL, geom = "resid",
 #' @rdname geom_resid
 #' @export
 stat_reduce <- function(mapping = NULL, data = NULL, geom = "resid",
-                        position = "identity", ..., model = NULL,
+                        position = "identity", ..., model = NULL, fun = NULL,
                         orientation = NA, na.rm = FALSE, show.legend = NA,
                         inherit.aes = TRUE) {
   params <- rlang::list2(na.rm = na.rm, ...)
@@ -486,7 +503,7 @@ stat_reduce <- function(mapping = NULL, data = NULL, geom = "resid",
     stat = StatReduce,
     position = position,
     params = params,
-    model = model,
+    model = model, fun = fun,
     orientation = orientation,
     reduction = TRUE,
     inherit.aes = inherit.aes,

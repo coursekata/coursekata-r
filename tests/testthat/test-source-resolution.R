@@ -134,7 +134,7 @@ test_that("ordinary native inheritance survives post-add plot mutation", {
   expect_equal(drawn[[2]]$x, drawn[[1]]$x)
   expect_null(p$layers[[2]]$mapping$x)
   q <- p + ggplot2::aes(x = NULL)
-  expect_error(ggplot2::ggplot_build(q), "missing aesthetics")
+  expect_error(ggplot2::ggplot_build(q), "needs both an x and a y")
 })
 
 test_that("an explicit source mapping remains local even when it repeats the plot", {

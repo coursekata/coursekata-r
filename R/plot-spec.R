@@ -24,6 +24,24 @@ source_mapping <- function(mapping, inherited, inherit.aes = TRUE, drop.null = T
   if (drop.null) result[!vapply(result, is.null, logical(1))] else result
 }
 
+#' Retain the user's expression when a live mapping has a reproducible seed
+#' @noRd
+source_mapping_label <- function(quo) {
+  as_label(attr(quo, "coursekata_original_mapping") %||% quo)
+}
+
+#' Restore a derived label only while its prepared mapping still supplies it
+#' @noRd
+source_label_restore <- function(prepared, original, previous = NULL) {
+  force(prepared)
+  force(original)
+  force(previous)
+  function(label) {
+    if (identical(label, prepared)) label <- original
+    if (is.function(previous)) previous(label) else label
+  }
+}
+
 #' Read the source rows and mappings used by the selected observation layer
 #'
 #' Data ownership is independent of mapping ownership: an inherited aesthetic
@@ -55,7 +73,7 @@ plot_spec <- function(p) {
   data <- source$data
   pins <- plot_pins(p)
   labels <- purrr::imap_chr(mapping, function(quo, a) {
-    if (!is.null(pins[[a]])) as_label(pins[[a]]) else as_label(quo)
+    if (!is.null(pins[[a]])) source_mapping_label(pins[[a]]) else source_mapping_label(quo)
   })
   aes_names <- sort(setdiff(names(mapping), c("x", "y")))
   facets <- p$facet$vars()
