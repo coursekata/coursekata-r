@@ -2,6 +2,7 @@
 
 S3method(ggplot_add,coursekata_model_layer)
 S3method(ggplot_add,coursekata_squareplot_layer)
+S3method(ggplot_add,coursekata_source_layer)
 S3method(grid::makeContent,coursekata_cutoff_callouts)
 S3method(grid::makeContent,coursekata_squares)
 export(GeomCutoff)

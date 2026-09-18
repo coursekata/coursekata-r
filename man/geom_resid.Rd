@@ -132,6 +132,10 @@ runs from the model's grand mean to that prediction. The square variants draw
 the same distances as areas.
 }
 \details{
+When the observations have their own data or mappings, these layers follow
+the first point layer (or the first non-annotation layer when there are no
+points). Explicit layer \code{data} and \code{mapping} arguments take precedence.
+
 Supply \code{orientation = "y"} when the model's outcome is mapped to x. With the
 default \code{orientation = NA}, the layer follows ggplot2's usual x orientation:
 x is the predictor axis and the outcome is on y. Coordinate systems such as

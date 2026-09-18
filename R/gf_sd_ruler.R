@@ -20,51 +20,6 @@ check_ruler_where <- function(where, call = caller_env()) {
   invisible(where)
 }
 
-#' Recover the formula from a plot that maps an axis on its first layer
-#'
-#' A layer inherits the plot's mapping, never a sibling layer's, so an axis
-#' written on the first layer rather than the plot is invisible to the
-#' ruler's own layer. The ruler then measures only what it did inherit --
-#' nothing, if neither axis was named at plot level, or the wrong axis
-#' drawn horizontally along zero, if only one was. Merging the aesthetics
-#' the plot does not already name is what `plot_spec()` does for every
-#' other reader of a plot.
-#'
-#' @param object A ggplot object.
-#'
-#' @return A list with `gformula` and `data`, or `NULL` when the plot already
-#'   names every axis its first layer does and there is nothing to recover.
-#'
-#' @noRd
-sd_ruler_inherited <- function(object) {
-  spec <- plot_spec(object)
-  mapping <- spec$mapping
-  # "the plot itself names an aesthetic" has to mean the same thing on both
-  # sides of this comparison: `mapping`'s names are pin-aware (a promoted pin
-  # is written straight into `object$mapping`, per `pin_plot_values()`), so
-  # `object$mapping`'s names, read directly, already agree -- go through
-  # `spec$pins` anyway rather than reach past `plot_spec()` into the raw
-  # object, so the two can never drift apart again
-  own <- union(names(object$mapping), names(spec$pins))
-  recovered <- setdiff(intersect(c("x", "y"), names(mapping)), own)
-  if (length(recovered) == 0 || is.null(mapping$x)) {
-    return(NULL)
-  }
-
-  # a first layer with its own data is drawing that data, so that is what the
-  # ruler has to measure; plot_spec()'s own `data` prefers the plot's
-  data <- object$layers[[1]]$data
-  if (!is.data.frame(data)) data <- object$data
-
-  list(
-    gformula = new_formula(
-      if (is.null(mapping$y)) NULL else quo_get_expr(mapping$y),
-      quo_get_expr(mapping$x)
-    ),
-    data = data
-  )
-}
-
 #' Compute a panel's standard deviation ruler
 #'
 #' `StatSdRuler` reduces each panel to the segment for one standard deviation,
@@ -213,13 +168,13 @@ gf_sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
   params$linewidth <- params$linewidth %||% 0.8
   params$color <- NULL
 
-  tag_layer(
+  source_layer(tag_layer(
     sd_ruler_layer(
       geom = geom, stat = stat, position = position, params = params,
       mapping = mapping, data = data, ...
     ),
     "sd_ruler"
-  )
+  ), inherit.data = is.null(data))
 }
 
 #' Add a Standard Deviation Ruler to a Plot
@@ -311,19 +266,11 @@ gf_sd_ruler <- named_layer_factory(
   aes_form = list(NULL, ~x, y ~ x),
   extras = alist(where = "middle", na.rm = TRUE),
   .pre_bindings = alist(
-    check_ruler_where = check_ruler_where,
-    sd_ruler_inherited = sd_ruler_inherited
+    check_ruler_where = check_ruler_where
   ),
   pre = {
     lifecycle::signal_stage("experimental", "gf_sd_ruler()")
     check_ruler_where(where)
-    if (!missing(object) && inherits(object, "ggplot") && missing(gformula)) {
-      inherited <- sd_ruler_inherited(object)
-      if (!is.null(inherited)) {
-        gformula <- inherited$gformula
-        if (missing(data)) data <- inherited$data
-      }
-    }
   },
   layer_fun = gf_sd_ruler_layer
 )

@@ -96,11 +96,11 @@ test_that("a recovered formula still measures each facet's own subset", {
   expect_equal(seg$y, as.numeric(tapply(Fingers$Thumb, Fingers$Sex, mean)))
 })
 
-test_that("a plot that names both axes is left to speak for itself", {
+test_that("the ruler follows rows owned by a ggformula point layer", {
   result <- suppressMessages(gf_jitter(Thumb ~ Height, data = Fingers) %>% gf_sd_ruler())
 
-  expect_length(result$layers[[2]]$mapping, 0L)
-  expect_s3_class(result$layers[[2]]$data, "waiver")
+  expect_identical(result$layers[[2]]$mapping, result$layers[[1]]$mapping)
+  expect_identical(result$layers[[2]]$data, result$layers[[1]]$data)
 })
 
 test_that("a recovered ruler measures the data the layer draws", {

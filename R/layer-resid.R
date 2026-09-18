@@ -257,7 +257,7 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     data, mapping, model, orientation, reduction = reduction, call = call
   )
 
-  resid_layer(
+  source_layer(resid_layer(
     mapping = spec$aesthetics,
     data = spec$data,
     geom = geom,
@@ -280,7 +280,7 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     orientation = orientation,
     reduction = reduction,
     call = call
-  )
+  ), inherit.data = is.null(data))
 }
 
 #' Residual and reduction layers for ggplot2
@@ -289,6 +289,10 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
 #' A residual runs from an observed value to the model's prediction. A reduction
 #' runs from the model's grand mean to that prediction. The square variants draw
 #' the same distances as areas.
+#'
+#' When the observations have their own data or mappings, these layers follow
+#' the first point layer (or the first non-annotation layer when there are no
+#' points). Explicit layer `data` and `mapping` arguments take precedence.
 #'
 #' Supply `orientation = "y"` when the model's outcome is mapped to x. With the
 #' default `orientation = NA`, the layer follows ggplot2's usual x orientation:

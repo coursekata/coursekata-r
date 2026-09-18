@@ -78,6 +78,7 @@ show_cutoffs <- function(object = NULL, part, color = "#1e3a8a", size = 4,
     abort("`show_cutoffs()` needs a ggplot object")
   }
   check_distribution_geom(object)
+  object <- stabilize_source_data(object)
   distribution <- distribution_plot_spec(object, "show_cutoffs")
   spec <- distribution$plot
   has_part <- !shape$part_missing

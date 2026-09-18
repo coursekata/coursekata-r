@@ -275,7 +275,14 @@ squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
 #' @importFrom ggplot2 ggplot_add
 #' @export
 ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
+  plot <- stabilize_source_data(plot)
   spec <- attr(object, "squareplot_spec")
+  binding <- source_layer_binding(
+    plot, spec$mapping, spec$data, spec$dots$inherit.aes %||% TRUE
+  )
+  spec$mapping <- binding$mapping
+  spec$data <- binding$data
+  spec$dots$inherit.aes <- binding$inherit.aes
   scale_plan <- squareplot_scale_plan(plot)
   inherits_mapping <- spec$dots$inherit.aes %||% TRUE
   source <- plot_spec(plot)

@@ -48,7 +48,7 @@ distribution_plot_spec <- function(plot, fn, call = caller_env()) {
     )
   }
 
-  values <- eval_tidy(x$quo, data = x$data)
+  values <- with_random_seed_restored(eval_tidy(x$quo, data = x$data))
   if (!is.numeric(values)) {
     abort(
       c(glue("`{fn}()` needs a numeric distribution"),
@@ -166,6 +166,7 @@ show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
   object <- normalize_plot_argument(
     object, plot, missing(object), missing(plot), "show_mean"
   )
+  object <- stabilize_source_data(object)
   spec <- distribution_plot_spec(object, "show_mean")
 
   # x is mapped from the distribution's own quosure, not a precomputed value,
