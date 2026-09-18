@@ -17,14 +17,9 @@ StatModel <- ggplot2::ggproto(
     "level", "method.args"
   ),
   setup_params = function(data, params) {
-    params[["flipped_aes"]] <- if (!is.null(params[["orientation"]]) &&
-      !is.na(params[["orientation"]])) {
-      identical(params[["orientation"]], "y")
-    } else if ("x" %in% names(data) && !"y" %in% names(data)) {
-      TRUE
-    } else {
-      FALSE
-    }
+    params[["flipped_aes"]] <- ggplot2::has_flipped_aes(
+      data, params, main_is_orthogonal = TRUE
+    )
     params[["formula"]] <- params[["formula"]] %||% (y ~ x)
     params[["se"]] <- params[["se"]] %||% FALSE
     params[["n"]] <- params[["n"]] %||% 80L

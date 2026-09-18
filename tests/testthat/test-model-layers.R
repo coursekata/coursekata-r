@@ -275,7 +275,7 @@ test_that("a supplied model preserves an ordered predictor's type", {
   model <- lm(Thumb ~ ordered_sex, data = data)
   plot <- ggplot2::ggplot(data, ggplot2::aes(ordered_sex, Thumb)) +
     geom_model(model = model)
-  prepared <- plot$layers[[1]]$data(data)
+  prepared <- plot$layers[[1]]$data
 
   expect_no_error(drawn <- model_layer_data_built(plot))
   expect_equal(nrow(drawn), nlevels(data$ordered_sex))
@@ -283,18 +283,18 @@ test_that("a supplied model preserves an ordered predictor's type", {
   expect_identical(levels(prepared$ordered_sex), levels(data$ordered_sex))
 })
 
-test_that("supplied multi-predictor models require a local predictor mapping", {
+test_that("supplied multi-predictor models resolve inherited or local predictor mappings", {
   mixed <- lm(Thumb ~ Height + Sex, data = Fingers)
   categorical_plot <- ggplot2::ggplot(
     Fingers,
     ggplot2::aes(Sex, Thumb)
   ) + geom_model(model = mixed)
 
-  expect_error(ggplot2::ggplot_build(categorical_plot), "cannot choose")
+  expect_no_error(ggplot2::ggplot_build(categorical_plot))
 
   categorical <- ggplot2::ggplot(Fingers, ggplot2::aes(Sex, Thumb)) +
     geom_model(ggplot2::aes(x = Sex), model = mixed)
-  prepared <- categorical$layers[[1]]$data(Fingers)
+  prepared <- categorical$layers[[1]]$data
   categorical_data <- model_layer_data_built(categorical)
   centers <- (categorical_data$x + categorical_data$xend) / 2
   support <- mean(Fingers$Height) + c(-1, 0, 1) * stats::sd(Fingers$Height)
@@ -315,7 +315,7 @@ test_that("supplied multi-predictor models require a local predictor mapping", {
   resolved <- ggplot2::ggplot(data, ggplot2::aes(Height, Thumb)) +
     geom_model(ggplot2::aes(x = Height), model = model)
 
-  expect_error(ggplot2::ggplot_build(ambiguous), "cannot choose")
+  expect_equal(model_layer_data_built(ambiguous), model_layer_data_built(resolved))
   expect_no_error(ggplot2::ggplot_build(resolved))
   expect_equal(length(unique(model_layer_data_built(resolved)$group)), 3L)
 })
@@ -398,29 +398,30 @@ test_that("native supplied-model diagnostics name the active front door", {
 
   expect_error(geom_model(model = ~Height), "geom_model.*two-sided")
   expect_error(stat_model(model = ~Height), "stat_model.*two-sided")
-  expect_error(ggplot2::ggplot_build(base + geom_model(model = model)), "geom_model")
-  expect_error(ggplot2::ggplot_build(base + stat_model(model = model)), "stat_model")
+  expect_no_error(ggplot2::ggplot_build(base + geom_model(model = model)))
+  expect_no_error(ggplot2::ggplot_build(base + stat_model(model = model)))
 
   transformed <- lm(log(Thumb) ~ Height, data = Fingers)
   expect_error(
     ggplot2::ggplot_build(base + geom_model(model = transformed)),
-    "untransformed outcome"
+    "outcome is a variable"
   )
   expect_error(
     ggplot2::ggplot_build(base + geom_model(model = model, n = 1)),
     "integer greater than 1"
   )
 
-  missing_height <- ggplot2::ggplot(Fingers["Thumb"], ggplot2::aes(y = Thumb)) +
-    geom_model(ggplot2::aes(x = Height), model = lm(Thumb ~ Height, data = Fingers))
-  expect_error(ggplot2::ggplot_build(missing_height), "Missing: Height")
+  expect_error(
+    ggplot2::ggplot(Fingers["Thumb"], ggplot2::aes(y = Thumb)) +
+      geom_model(ggplot2::aes(x = Height), model = lm(Thumb ~ Height, data = Fingers)),
+    "missing in plot: Height"
+  )
 
   three_predictors <- lm(Thumb ~ Height + Weight + Index, data = Fingers)
-  too_many <- base + geom_model(
-    ggplot2::aes(x = Height),
-    model = three_predictors
+  expect_error(
+    base + geom_model(ggplot2::aes(x = Height), model = three_predictors),
+    "at most one predictor"
   )
-  expect_error(ggplot2::ggplot_build(too_many), "at most one predictor")
 })
 
 test_that("the continuous inference vocabulary reaches StatModel", {

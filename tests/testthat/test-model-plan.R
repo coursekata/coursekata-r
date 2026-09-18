@@ -118,11 +118,11 @@ test_that("an ignored plot aesthetic does not multiply the prediction grid", {
   expect_equal(nrow(plan$grid), length(unique(plan$grid$base_anxiety)))
 })
 
-test_that("it refuses a model whose variables are not on the plot", {
+test_that("it refuses a model with no focal predictor on the plot", {
   p <- gf_point(later_anxiety ~ base_anxiety, data = er)
   expect_error(
     plan_for(p, lm(later_anxiety ~ condition, data = er)),
-    "do not exist in the plot"
+    "unambiguous model predictor"
   )
 })
 
@@ -130,7 +130,7 @@ test_that("it refuses a model whose outcome is not on an axis", {
   p <- gf_point(base_anxiety ~ condition, color = ~later_anxiety, data = er)
   expect_error(
     plan_for(p, lm(later_anxiety ~ condition, data = er)),
-    "must be represented on the plot"
+    "must be represented on one of the axes"
   )
 })
 
@@ -138,7 +138,8 @@ test_that("the missing-variables error wins when the outcome is also off-axis", 
   # Pins the abort order: a plot can simultaneously omit a model term AND leave
   # the outcome off-axis. Which check runs first decides which message a
   # student sees, so that order is frozen here rather than left to chance.
-  p <- gf_point(heart_rate ~ resp_rate, color = ~later_anxiety, data = er)
+  p <- gf_point(heart_rate ~ resp_rate, color = ~later_anxiety,
+                data = er[setdiff(names(er), "base_anxiety")])
   expect_error(
     plan_for(p, lm(later_anxiety ~ base_anxiety, data = er)),
     "do not exist in the plot"
@@ -510,7 +511,7 @@ test_that("a transformed axis is drawn at the transformed positions", {
 })
 
 test_that("a term the plot cannot supply is still refused, named by its column", {
-  p <- gf_point(later_anxiety ~ age, data = er)
+  p <- gf_point(later_anxiety ~ age, data = er[setdiff(names(er), "base_total")])
   expect_error(
     plan_for(p, lm(later_anxiety ~ log(base_total), data = er)),
     "missing in plot: base_total"

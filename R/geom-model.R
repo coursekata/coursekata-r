@@ -20,14 +20,9 @@ GeomModel <- ggplot2::ggproto(
   extra_params = c("na.rm", "orientation", "width", "se"),
   draw_key = ggplot2::GeomLine$draw_key,
   setup_params = function(data, params) {
-    params[["flipped_aes"]] <- if (!is.null(params[["orientation"]]) &&
-      !is.na(params[["orientation"]])) {
-      identical(params[["orientation"]], "y")
-    } else if ("flipped_aes" %in% names(data)) {
-      isTRUE(data$flipped_aes[[1L]])
-    } else {
-      FALSE
-    }
+    params[["flipped_aes"]] <- ggplot2::has_flipped_aes(
+      data, params, main_is_orthogonal = TRUE
+    )
     params[["width"]] <- params[["width"]] %||% 0.4
     params[["se"]] <- params[["se"]] %||% FALSE
     params

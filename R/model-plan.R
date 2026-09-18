@@ -1,3 +1,90 @@
+#' Read the expressions an explicit model must apply to its prediction grid
+#'
+#' A pinned column contains observation values, not values on the prediction
+#' grid. Use its original expression for the fixed model claim without changing
+#' the pinned observations or their mappings.
+#' @noRd
+model_plot_spec <- function(object) {
+  spec <- plot_spec(object)
+  originals <- list()
+  for (aesthetic in names(spec$pins)) {
+    if (!is.null(spec$mapping[[aesthetic]]) &&
+        identical(quo_get_expr(spec$mapping[[aesthetic]]),
+                  sym(paste0(".coursekata_pin_", aesthetic)))) {
+      originals[[aesthetic]] <- spec$pins[[aesthetic]]
+      spec$mapping[[aesthetic]] <- spec$pins[[aesthetic]]
+    }
+  }
+  resolve <- spec$resolve_aes
+  spec$resolve_aes <- function(aesthetic) {
+    resolved <- resolve(aesthetic)
+    if (!is.null(originals[[aesthetic]])) resolved$quo <- originals[[aesthetic]]
+    resolved
+  }
+  spec
+}
+
+#' Shared explicit-model preparation for native and formula interfaces
+#'
+#' @noRd
+model_layer_spec <- function(object, model, args = list(), fn = "gf_model",
+                              call = caller_env()) {
+  if (!inherits(object, c("gg", "ggplot"))) {
+    abort(
+      c(
+        "`gf_model()` needs to be layered on top of a plot.",
+        i = "start one: `gf_point(Thumb ~ Height, data = Fingers) %>% gf_model()`"
+      ),
+      call = call
+    )
+  }
+
+  if (is_formula(model) && is.null(f_lhs(model))) {
+    abort(
+      c(
+        "`gf_model()` needs to be told what the model predicts",
+        x = glue("`{deparse1(model)}` names predictors but no outcome"),
+        i = "write the outcome on the left: `body_mass_kg ~ species`",
+        i = "a model with no predictors is written `body_mass_kg ~ NULL`"
+      ),
+      call = call
+    )
+  }
+
+  spec <- model_plot_spec(object)
+  mspec <- model_spec(spec$data, model, call = call)
+  if (isTRUE(args$se)) {
+    abort(glue("`{fn}()` supports `se = TRUE` only without a supplied `model`."), call = call)
+  }
+  plan <- model_plan(spec, mspec, args, fn = fn, call = call)
+
+  if (identical(plan$kind, "hline")) {
+    plan$args$y <- plan$args$yintercept
+    plan$args$yintercept <- NULL
+  } else if (identical(plan$kind, "vline")) {
+    plan$args$x <- plan$args$xintercept
+    plan$args$xintercept <- NULL
+  }
+  plan$grid$.model_kind <- plan$kind
+  plan$args$.model_kind <- ~.model_kind
+  mapped <- purrr::map_lgl(plan$args, ~ is_formula(.x) && length(.x) == 2L)
+
+  list(
+    geom = GeomModel,
+    data = plan$grid,
+    aesthetics = do.call(ggplot2::aes, purrr::map(plan$args[mapped], function(value) {
+      new_quosure(f_rhs(value), f_env(value))
+    })),
+    params = plan$args[!mapped],
+    # An intercept carries the whole claim and spans the panel on its own.
+    # Lines and group marks still need compatible plot aesthetics, including
+    # the predictor position and any model grouping.
+    inherit = !(plan$kind %in% c("hline", "vline")),
+    orientation = plan$orientation,
+    tag = plan$tag
+  )
+}
+
 #' Read the facts out of a fitted model
 #'
 #' @param plot_data The data frame the plot was built from.
@@ -116,6 +203,35 @@ check_model_axes <- function(spec, fn = "gf_model", call = caller_env()) {
 # both operations run in WebAssembly.
 model_grid_max_points <- 256L
 
+#' Values used to build a model prediction grid
+#'
+#' A numeric predictor on the displayed axis spans its observed range. An
+#' off-axis numeric predictor uses its mean and mean plus or minus one standard
+#' deviation. Factors retain their levels and ordering.
+#'
+#' @noRd
+model_grid_values <- function(values, dense = FALSE, n = 80L) {
+  if (is.logical(values)) return(c(TRUE, FALSE))
+  if (!is.numeric(values)) {
+    observed <- levels(factor(values))
+    if (is.factor(values)) {
+      return(factor(
+        observed,
+        levels = levels(values),
+        ordered = is.ordered(values)
+      ))
+    }
+    return(observed)
+  }
+  if (dense) {
+    range <- range(values, na.rm = TRUE)
+    return(seq(range[[1]], range[[2]], length.out = n))
+  }
+  middle <- mean(values, na.rm = TRUE)
+  spread <- stats::sd(values, na.rm = TRUE)
+  unique(c(middle - spread, middle, middle + spread))
+}
+
 #' Collect the column-level facts shared by every planning phase
 #'
 #' @param spec A `plot_spec()` list.
@@ -165,11 +281,11 @@ model_plan_facts <- function(spec, mspec) {
 #'
 #' @noRd
 check_model_plan <- function(spec, mspec, args, facts, call = caller_env()) {
-  missing_in_plot <- setdiff(facts$model_columns, facts$plot_columns)
+  missing_in_plot <- setdiff(facts$model_columns, names(spec$data))
   if (length(missing_in_plot) > 0) {
     abort(
       c(
-        "The model you are trying to plot uses variables that do not exist in the plot",
+        "The model uses variables that do not exist in the plot's data",
         glue("plot: {collapse(unique(spec$variables))}"),
         glue("model: {collapse(mspec$terms)}"),
         glue("missing in plot: {collapse(missing_in_plot)}")
@@ -206,10 +322,10 @@ check_model_plan <- function(spec, mspec, args, facts, call = caller_env()) {
     )
   }
 
-  if (length(facts$outcome_axis) == 0) {
+  if (length(facts$outcome_axis) != 1) {
     abort(
       c(
-        "The model outcome variable must be represented on the plot as one of the axes",
+        "The model outcome variable must be represented on one of the axes (exactly one)",
         glue("model outcome: {mspec$outcome}"),
         glue("plot axes: {collapse(spec$axes)}")
       ),
@@ -219,7 +335,15 @@ check_model_plan <- function(spec, mspec, args, facts, call = caller_env()) {
 
   check_numeric_outcome(mspec$outcome, mspec$data[[mspec$outcome]], call)
 
+  if (length(facts$non_outcome_axis)) {
+    focal <- intersect(label_columns(facts$non_outcome_axis), facts$predictor_columns)
+    if (length(facts$predictor_columns) && length(focal) != 1L) {
+      abort("Map one unambiguous model predictor on the non-outcome axis.", call = call)
+    }
+  }
+
   mapped <- purrr::keep(args, is_formula)
+  if (model_is_intercept(facts)) mapped$group <- NULL
   bad_aes <- purrr::keep(
     purrr::map_chr(mapped, ~ as_label(f_rhs(.x))),
     ~ all(label_columns(.x) %in% facts$predictor_columns) == FALSE
@@ -238,6 +362,14 @@ check_model_plan <- function(spec, mspec, args, facts, call = caller_env()) {
   invisible(NULL)
 }
 
+#' Whether a model spans the panel without a displayed predictor
+#' @noRd
+model_is_intercept <- function(facts) {
+  length(facts$predictor_columns) == 0L ||
+    (length(facts$predictor_columns) == 1L &&
+       !facts$predictor_columns %in% facts$axis_columns)
+}
+
 #' Choose a model geom and the arguments it needs
 #'
 #' @param spec A `plot_spec()` list.
@@ -249,6 +381,14 @@ check_model_plan <- function(spec, mspec, args, facts, call = caller_env()) {
 #'
 #' @noRd
 model_layer_plan <- function(spec, args, facts, call = caller_env()) {
+  mapped_formula <- function(aesthetic) {
+    quo <- spec$mapping[[aesthetic]]
+    if (is_quosure(quo)) {
+      new_formula(NULL, quo_get_expr(quo), quo_get_env(quo))
+    } else {
+      new_formula(NULL, quo, base_env())
+    }
+  }
   not_in_model <- spec$variables[
     purrr::map_lgl(facts$columns_by_variable, ~ any(.x %in% facts$model_columns) == FALSE)
   ]
@@ -259,13 +399,8 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
   }
 
   non_axis_predictor <- setdiff(facts$predictor_columns, facts$axis_columns)
-  if (length(non_axis_predictor) == 1) {
-    args$group <- name_to_frm(non_axis_predictor)
-  } else if (length(non_axis_predictor) > 1) {
-    abort(
-      "Not sure how to plot a model with multiple variables mapped to aesthetic properties.",
-      call = call
-    )
+  if (length(non_axis_predictor) > 1) {
+    abort("A model layer supports at most one predictor away from the displayed axis.", call = call)
   }
 
   # the shape drawn is a property of what the plot puts on the non-outcome
@@ -276,23 +411,21 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
   along <- if (length(facts$non_outcome_axis) == 1) {
     spec$resolve_aes(names(facts$non_outcome_axis))
   }
-  along_values <- if (!is.null(along)) eval_tidy(along$quo, along$data)
+  along_values <- if (!is.null(along)) {
+    with_random_seed_restored(eval_tidy(along$quo, along$data))
+  }
 
-  no_predictors <- length(facts$predictor_columns) == 0
-  predictor_off_axis <- length(facts$predictor_columns) == 1 &&
-    facts$predictor_columns %in% facts$axis_columns == FALSE
-
-  if (no_predictors || predictor_off_axis) {
+  if (model_is_intercept(facts)) {
     if (facts$flipped) {
       kind <- "vline"
       geom <- ggplot2::GeomVline
       # the intercept inherits nothing, so it is the one shape that has to
       # spell the plot's own mapping out rather than inheriting it
-      args$xintercept <- name_to_frm(unname(facts$outcome_axis))
+      args$xintercept <- mapped_formula("x")
     } else {
       kind <- "hline"
       geom <- ggplot2::GeomHline
-      args$yintercept <- name_to_frm(unname(facts$outcome_axis))
+      args$yintercept <- mapped_formula("y")
     }
   } else if (is.numeric(along_values)) {
     kind <- "line"
@@ -301,6 +434,17 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
     kind <- "segment"
     geom <- GeomModelMark
     args$width <- args$width %||% .4
+  }
+
+  if (kind %in% c("line", "segment")) {
+    if (!"group" %in% names(args) && "group" %in% names(spec$mapping)) {
+      args$group <- mapped_formula("group")
+    }
+    if (!"group" %in% names(args) && length(non_axis_predictor) == 1L) {
+      args$group <- name_to_frm(non_axis_predictor)
+    }
+  } else {
+    args$group <- NULL
   }
 
   # `size` is the pre-3.4 spelling of `linewidth`; leaving it in args sends both to
@@ -313,11 +457,12 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
     purrr::map_lgl(facts$columns_by_variable, ~ any(.x %in% facts$predictor_columns))
   ]
   remap <- remap[names(remap) %in% geom$aesthetics()]
+  if (!kind %in% c("line", "segment")) remap <- remap[names(remap) != "group"]
   remap <- remap[names(remap) %in% names(args) == FALSE]
-  args[names(remap)] <- purrr::map(remap, name_to_frm)
+  args[names(remap)] <- purrr::map(names(remap), mapped_formula)
 
   if (!width_given && "size" %in% names(spec$aesthetics)) {
-    args$linewidth <- name_to_frm(spec$variables[["size"]])
+    args$linewidth <- mapped_formula("size")
   }
 
   if (
@@ -325,13 +470,23 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
       "colour" %in% names(spec$aesthetics) == FALSE &&
       "fill" %in% names(spec$aesthetics)
   ) {
-    args$colour <- name_to_frm(spec$variables[["fill"]])
+    args$colour <- mapped_formula("fill")
   }
 
   if (kind == "segment") {
     # Group marks use the same neutral colour as model lines unless the caller
     # or plot supplies one.
     args$colour <- args$colour %||% ggplot2::get_geom_defaults("line")$colour
+  }
+
+  # State inherited mappings explicitly so a native layer can use this plan
+  # without evaluating the destination plot's outcome expression a second time.
+  if (kind %in% c("line", "segment")) {
+    inherited <- intersect(
+      setdiff(names(spec$mapping), c(names(args), names(facts$outcome_axis))),
+      GeomModel$aesthetics()
+    )
+    args[inherited] <- purrr::map(inherited, mapped_formula)
   }
 
   list(kind = kind, geom = geom, args = args)
@@ -374,8 +529,10 @@ model_prediction_grid <- function(spec, mspec, layer, facts, call = caller_env()
   # one representative row rather than crossing every level into the prediction
   # grid and drawing redundant, perfectly overlapping traces.
   inherited_columns <- if (layer$kind %in% c("line", "segment")) {
+    mapped <- purrr::keep(layer$args, ~ is_formula(.x) && length(.x) == 2L)
     inherited <- spec$aesthetics[names(spec$aesthetics) %in% names(layer$args) == FALSE]
-    label_columns(inherited)
+    unique(c(label_columns(inherited),
+             label_columns(vapply(mapped, function(value) as_label(f_rhs(value)), character(1)))))
   } else {
     character()
   }
@@ -384,44 +541,26 @@ model_prediction_grid <- function(spec, mspec, layer, facts, call = caller_env()
     c(facts$predictor_columns, facts$outcome_columns)
   )
 
-  # Retain the old iteration order so failures involving malformed columns do
-  # not reorder the package's diagnostics. Only model predictors become grid
-  # dimensions; inherited support columns are scalar.
-  grid_columns <- unique(c(facts$predictor_columns, facts$aesthetic_columns))
+  # Predictor columns define grid dimensions; inherited support columns are scalar.
+  grid_columns <- unique(c(facts$predictor_columns, support_columns))
+  points <- layer$args[["n"]] %||% min(max(nrow(spec$data), 80L), model_grid_max_points)
+  if (!is.numeric(points) || length(points) != 1L || !is.finite(points) ||
+      points < 2 || points > .Machine$integer.max || points != as.integer(points)) {
+    abort("`n` must be one integer greater than 1.", call = call)
+  }
   for (column in grid_columns) {
     column_data <- spec$data[[column]]
-    if (column %in% facts$outcome_columns) {
-      abort("How did you use the outcome as a predictor?", call = call)
-    } else if (column %in% facts$predictor_columns && !is.numeric(column_data)) {
-      params[[column]] <- if (is.logical(column_data)) {
-        c(TRUE, FALSE)
-      } else {
-        levels(factor(column_data))
-      }
-    } else if (column %in% facts$predictor_columns && column %in% facts$axis_columns) {
-      # the observed range, and never the plot's axis. A model's line is a claim
-      # about where its predictions are warranted, and inside the data every
-      # point interpolated has observations bracketing it. Outside there are
-      # none, and only a theory or a physical constraint can license the claim
-      # -- neither of which a plot can find out by measuring itself. Whatever
-      # widened the axis (a `gf_lims()`, a `gf_b()` intercept dot at zero) is
-      # not evidence about what the model does out there.
-      #
-      # a predictor with a missing value gives range() an NA endpoint, and the
-      # prediction grid seq() builds from it aborts before anything is drawn
-      rng <- range(column_data, na.rm = TRUE)
-      points <- min(max(nrow(spec$data), 80L), model_grid_max_points)
-      params[[column]] <- seq(rng[[1]], rng[[2]], length.out = points)
-    } else if (column %in% facts$predictor_columns) {
-      spread <- stats::sd(column_data, na.rm = TRUE)
-      middle <- mean(column_data, na.rm = TRUE)
-      params[[column]] <- c(middle - spread, middle, middle + spread)
+    if (column %in% facts$predictor_columns) {
+      params[[column]] <- model_grid_values(
+        column_data, dense = column %in% facts$axis_columns, n = points
+      )
     } else if (column %in% support_columns) {
       support[[column]] <- model_grid_support_value(column_data)
     }
   }
 
-  grid <- expand.grid(if (length(params)) params else list(dummy = 1))
+  grid <- expand.grid(if (length(params)) params else list(dummy = 1),
+                      KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
   for (column in names(support)) {
     grid[[column]] <- rep(support[[column]], nrow(grid))
   }
@@ -432,7 +571,7 @@ model_prediction_grid <- function(spec, mspec, layer, facts, call = caller_env()
   # sqrt() and catastrophic for shuffle(): geom_line then joins the correct
   # predictions in a random order. Evaluate it here, once, and travel as a
   # plain column of the layer's own grid.
-  if (layer$kind %in% c("line", "segment")) {
+  if (length(facts$outcome_axis)) {
     outcome_quo <- spec$resolve_aes(names(facts$outcome_axis))$quo
     prediction <- grid[[mspec$outcome]]
     drawn <- if (is.name(quo_get_expr(outcome_quo))) {
@@ -443,7 +582,9 @@ model_prediction_grid <- function(spec, mspec, layer, facts, call = caller_env()
       if (identical(sort(probe), sort(prediction))) prediction else probe
     }
     grid$.model_outcome <- drawn
-    layer$args[[names(facts$outcome_axis)]] <- ~.model_outcome
+    position <- switch(layer$kind, hline = "yintercept", vline = "xintercept",
+                       names(facts$outcome_axis))
+    layer$args[[position]] <- ~.model_outcome
   }
 
   list(grid = grid, args = layer$args)
@@ -458,8 +599,8 @@ model_prediction_grid <- function(spec, mspec, layer, facts, call = caller_env()
 #' @return A list with `kind`, `args`, `grid`, `orientation`, and `tag`.
 #'
 #' @noRd
-model_plan <- function(spec, mspec, args = list(), call = caller_env()) {
-  check_model_axes(spec, call = call)
+model_plan <- function(spec, mspec, args = list(), fn = "gf_model", call = caller_env()) {
+  check_model_axes(spec, fn = fn, call = call)
 
   if (!is.null(args$color)) {
     args$colour <- args$color

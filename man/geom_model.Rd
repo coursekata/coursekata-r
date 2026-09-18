@@ -42,14 +42,15 @@ one-sided formula.}
 continuous model these include \code{formula}, \code{se}, \code{n}, \code{fullrange}, \code{level},
 and \code{method.args}, with the meanings used by \code{\link[ggplot2:stat_smooth]{ggplot2::stat_smooth()}}.
 \code{width} controls categorical model marks. With a supplied model, \code{n}
-controls the prediction grid.}
+controls the prediction grid. \code{se = TRUE} requires an inferred continuous
+model; it is refused when \code{model} is supplied.}
 
 \item{model}{A fitted \code{lm} or \code{aov}, a two-sided model formula, or \code{NULL} to
 draw the model implied by the mapped positions.}
 
-\item{orientation}{Layer orientation. With a supplied \code{model}, \code{NA} and
-\code{"x"} put its outcome on y; \code{"y"} puts it on x. With no \code{model}, \code{NA}
-infers the orientation from a one-axis mapping.}
+\item{orientation}{Layer orientation. \code{"x"} puts the outcome on y; \code{"y"}
+puts it on x. \code{NA} uses the mapped model outcome for a supplied model, and
+ggplot2's orientation rules for an inferred model.}
 
 \item{na.rm}{If \code{FALSE}, missing values are removed with a warning. If
 \code{TRUE}, they are removed silently.}
@@ -74,12 +75,16 @@ numeric and one categorical predictor draws one line per category.
 A supplied model is one fixed claim evaluated on a prediction grid built
 from the layer data.
 
-A layer cannot inspect mappings on sibling layers. For a supplied model with
-more than one predictor, map the displayed predictor in the model layer
-itself. Single-predictor plot mappings, including transformations, are
-inherited normally. Set \code{orientation = "y"} when a supplied model's outcome
-is on x. Override unrelated inherited aesthetics locally or set
-\code{inherit.aes = FALSE}.
+The displayed predictor is read from the plot mapping or this layer's local
+mapping. One additional predictor may be present in the data: categories
+produce separate traces, and numeric values use the mean and mean plus or
+minus one standard deviation. Outcome-axis expressions such as \code{log(y)} are
+applied to the predictions. A supplied model is prepared once when added to
+the plot, including when \code{data} is a function or formula.
+
+Override unrelated inherited aesthetics locally, or set \code{inherit.aes = FALSE}
+and supply a predictor mapping such as \code{aes(x = Height)}. A layer does not
+borrow mappings or data from sibling layers.
 }
 \examples{
 fit <- lm(Thumb ~ Height, data = Fingers)
