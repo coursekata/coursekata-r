@@ -278,7 +278,7 @@ cutoff_route_candidates <- function(source, box, panel_width, panel_height,
   panel_margin <- defaults$route_panel_margin
   requested_gaps <- defaults$route_gaps
   tolerance <- defaults$route_tolerance
-  if (attachment$angle %in% c(90, 270)) {
+  routes <- if (attachment$angle %in% c(90, 270)) {
     outward <- if (attachment$angle == 270) -1 else 1
     room <- if (outward < 0) {
       port[[2L]] - panel_margin
@@ -377,6 +377,20 @@ cutoff_route_candidates <- function(source, box, panel_width, panel_height,
     }), recursive = FALSE)
     c(axis_first, depth_first)
   }
+
+  # An oversized box can put its port beyond the panel margin, leaving no
+  # outward track. Keep the stem tip and port fixed and use a single elbow.
+  # This may cross a box in a cramped panel, but preserves the cutoff and label
+  # and gives the scorer a route. Ordinary panels keep their existing routes.
+  if (length(routes) == 0L) {
+    elbow <- if (attachment$angle %in% c(90, 270)) {
+      c(port[[1L]], source[[2L]])
+    } else {
+      c(source[[1L]], port[[2L]])
+    }
+    routes <- list(rbind(source, elbow, port))
+  }
+  routes
 }
 
 cutoff_segment_hits_box <- function(from, to, box) {
