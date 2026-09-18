@@ -109,7 +109,16 @@ discrete x warns rather than changing the plot.
 smaller side, so as a bin fills and its squares shrink the separator thins
 with them and the squares stay countable.
 \item The y axis is a count, so its breaks are whole numbers.
+\item Counts must be finite, nonnegative whole numbers. Integer frequency
+weights are supported; fractional weighted counts need a histogram or
+bar plot instead.
 }
+
+Fill and separator colour inherit the plot's mappings. With no mapping or
+fixed value, squares use teal fill and white separators. Set \code{fill} or
+\code{color} explicitly to override an inherited mapping.
+Plot-level \code{after_scale()} linewidth mappings use automatic border fitting.
+Supply the mapping on the squareplot layer itself to keep its width fixed.
 
 The bins are a histogram's bins: \code{binwidth}, \code{bins}, \code{center}, \code{boundary},
 \code{closed} and \code{breaks} mean what they mean on \code{\link[ggformula:gf_histogram]{ggformula::gf_histogram()}}, and

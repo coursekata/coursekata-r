@@ -489,9 +489,9 @@ test_that("a coord transform distorts the squares instead of being refused", {
   labels <- built$layout$panel_params[[1]]$y$get_labels()
   expect_true(all(grepl("^[0-9]+$", stats::na.omit(labels))))
 
-  heights <- coursekata:::squareplot_drawn_heights(
+  heights <- coursekata:::squareplot_drawn_dimensions(
     drawn, built$layout$panel_params[[1]], built$layout$coord
-  )
+  )$height
   tallest <- heights[which.min(drawn$ymin)]
   shortest <- heights[which.max(drawn$ymin)]
   expect_gt(tallest, shortest * 2)
@@ -502,9 +502,9 @@ test_that("an identity coord leaves every square the same height", {
   # nobody asked to distort
   d <- data.frame(x = c(rep(1, 16), rep(2, 4)))
   built <- ggplot2::ggplot_build(gf_squareplot(~x, data = d, binwidth = 1))
-  heights <- coursekata:::squareplot_drawn_heights(
+  heights <- coursekata:::squareplot_drawn_dimensions(
     built$data[[1]], built$layout$panel_params[[1]], built$layout$coord
-  )
+  )$height
 
   expect_length(unique(round(heights, 10)), 1)
 })

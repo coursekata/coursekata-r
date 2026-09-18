@@ -129,9 +129,8 @@ squareplot_scale_plan <- function(object) {
 
 #' Resolve the x values a squareplot layer is about to draw
 #'
-#' A layer's `mapping`/`data` are `NULL` whenever it inherits them from the
-#' plot -- measured, for `plot %>% gf_squareplot()` both arrive `NULL` -- so
-#' each slot falls back to the plot's own mapping/data before evaluating `x`.
+#' Inherited mappings and data come from the same `plot_spec()` descriptor.
+#' The add method also supplies those rows to the layer that draws the squares.
 #' This is the one predicate that has to see a discrete x correctly: a scale
 #' that misses it merely keeps a default, but a stat that misses it tries to
 #' bin a factor's integer codes.
@@ -139,7 +138,7 @@ squareplot_scale_plan <- function(object) {
 #' @param mapping,data The squareplot layer's own mapping and data.
 #' @param object The plot that supplies any inherited mapping and data.
 #'
-#' @return The evaluated x values, or `NULL` when they cannot be resolved.
+#' @return The evaluated x values, or `NULL` when no x or data was supplied.
 #'
 #' @noRd
 squareplot_x_values <- function(mapping, data, object) {
@@ -148,11 +147,12 @@ squareplot_x_values <- function(mapping, data, object) {
   # counts the values it already drew rather than a fresh shuffle; the axis
   # title is a separate concern and stays on plot_spec()'s `labels`
   x <- mapping$x %||% (if (plot) plot_spec(object)$mapping$x)
-  values_from <- data %||% (if (plot) object$data)
-  if (is.null(x) || is.null(values_from)) {
+  values_from <- data %||% (if (plot) plot_spec(object)$resolve_aes("x")$data)
+  if (is.null(x)) {
     return(NULL)
   }
-  tryCatch(eval_tidy(x, values_from), error = function(e) NULL)
+  if (ggplot2::is_waiver(values_from)) values_from <- NULL
+  with_random_seed_restored(eval_tidy(x, values_from))
 }
 
 #' Whether x needs the counted squareplot path
@@ -245,15 +245,6 @@ squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
   # spelling into the one the geom uses before the layer is built.
   params$colour <- params$colour %||% params$color
   params$color <- NULL
-  # Keep gf_squareplot()'s existing rule: only a layer mapping displaces these
-  # fixed defaults; an inherited plot mapping belongs to the plot underneath.
-  if (square_geom && is.null(mapping$colour)) {
-    params$colour <- params$colour %||% "white"
-  }
-  if (square_geom && is.null(mapping$fill)) {
-    params$fill <- params$fill %||% "#7fcecc"
-  }
-
   dots <- list(...)
   # This provisional object makes the constructor a real LayerInstance. The
   # add method validates a rebuilt layer once the x type selects the right stat.
@@ -286,19 +277,46 @@ squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
 ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
   spec <- attr(object, "squareplot_spec")
   scale_plan <- squareplot_scale_plan(plot)
-  values <- squareplot_x_values(spec$mapping, spec$data, plot)
-  discrete <- squareplot_discrete(values)
   inherits_mapping <- spec$dots$inherit.aes %||% TRUE
-  has_effective_mapping <- function(aesthetic) {
-    !is.null(spec$mapping[[aesthetic]]) ||
-      (inherits_mapping && !is.null(plot_spec(plot)$mapping[[aesthetic]]))
+  source <- plot_spec(plot)
+  mapping <- spec$mapping %||% ggplot2::aes()
+  layer_mapping <- spec$mapping
+  data <- spec$data
+  if (inherits_mapping) {
+    missing <- setdiff(names(source$mapping), names(mapping))
+    mapping[missing] <- source$mapping[missing]
+    # Plot-level mappings and data must remain inherited: later additions can
+    # replace them. Only a sibling layer's mapping needs to be copied locally.
+    recovered <- setdiff(missing, names(plot$mapping))
+    if (length(recovered)) {
+      layer_mapping <- layer_mapping %||% ggplot2::aes()
+      layer_mapping[recovered] <- source$mapping[recovered]
+      if ("x" %in% recovered && is.null(data)) {
+        data <- source$resolve_aes("x")$data
+      }
+    }
   }
-
-  if (!identical(spec$fn, "gf_squareplot") && has_effective_mapping("y")) {
+  if (!is.null(mapping$y)) {
+    remedy <- if (identical(spec$fn, "gf_squareplot")) {
+      "remove the y mapping, or set `inherit = FALSE` and supply a one-sided formula"
+    } else {
+      "remove the y mapping, or set `inherit.aes = FALSE` and map x on this layer"
+    }
     abort(c(
       glue("`{spec$fn}()` draws the distribution mapped to x"),
-      "*" = "remove the y mapping, or set `inherit.aes = FALSE` and map x on this layer"
+      "*" = remedy
     ))
+  }
+  if (ggplot2::is_waiver(data)) data <- NULL
+  values <- squareplot_x_values(mapping, data %||% plot$data, NULL)
+  discrete <- squareplot_discrete(values)
+  linewidth <- spec$mapping$linewidth
+  staged_linewidth <- !is.null(linewidth) && (
+    has_build_time_call(quo_get_expr(linewidth)) ||
+      is_call(quo_get_expr(linewidth), "stage")
+  )
+  if (squareplot_default_geom(spec$geom) && staged_linewidth) {
+    spec$params$fit_border <- FALSE
   }
 
   if (discrete && squareplot_default_stat(spec$stat)) {
@@ -310,7 +328,7 @@ ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
   layer <- rlang::exec(
     ggplot2::layer,
     geom = spec$geom, stat = spec$stat, position = spec$position,
-    params = spec$params, mapping = spec$mapping, data = spec$data,
+    params = spec$params, mapping = layer_mapping, data = data,
     !!!spec$dots
   )
   parts <- list(layer)
@@ -469,6 +487,15 @@ squareplot_check <- function(object, gformula, na.rm, dots = character(),
 #'   smaller side, so as a bin fills and its squares shrink the separator thins
 #'   with them and the squares stay countable.
 #' - The y axis is a count, so its breaks are whole numbers.
+#' - Counts must be finite, nonnegative whole numbers. Integer frequency
+#'   weights are supported; fractional weighted counts need a histogram or
+#'   bar plot instead.
+#'
+#' Fill and separator colour inherit the plot's mappings. With no mapping or
+#' fixed value, squares use teal fill and white separators. Set `fill` or
+#' `color` explicitly to override an inherited mapping.
+#' Plot-level `after_scale()` linewidth mappings use automatic border fitting.
+#' Supply the mapping on the squareplot layer itself to keep its width fixed.
 #'
 #' The bins are a histogram's bins: `binwidth`, `bins`, `center`, `boundary`,
 #' `closed` and `breaks` mean what they mean on [ggformula::gf_histogram()], and
