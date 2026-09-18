@@ -42,7 +42,7 @@ mapped with \code{attribute = ~ expression}, or (c) attributes of the layer as a
 \item{model}{A model already fit by \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}. The plot supplies
 the observations' position on the other axis; the model supplies what it
 predicted for each of them. May be given positionally or as \verb{model =}. A
-fit without an intercept, or one fit with weights, is refused. For an
+fit without an intercept, or one fit with weights or an offset, is refused. For an
 unweighted least-squares fit with an intercept, the sum of squared total
 deviations equals the sum of squared residuals plus the sum of squared
 reductions. That identity need not hold without an intercept. Weighted
@@ -73,8 +73,8 @@ instance -- is inherited from the plot.}
 A ggplot object with reduction lines added.
 }
 \description{
-Draws reduction lines from the grand mean to the value a fitted model
-predicts for each observation. Squaring and summing those lengths across
+Draws reduction lines from the value a fitted model predicts for each
+observation to the grand mean. Squaring and summing those lengths across
 observations gives the model sum of squares; \code{\link[=gf_resid]{gf_resid()}} supplies the error
 term in the same decomposition.
 Each line runs along whichever axis the plot puts the model's outcome on,

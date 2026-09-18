@@ -65,8 +65,8 @@ instance -- is inherited from the plot.}
 A ggplot object with residual lines added.
 }
 \description{
-Draws residual lines from observed points to the values a fitted model
-predicts for them. Each residual runs along whichever axis the plot puts the
+Draws residual lines from the values a fitted model predicts to the observed
+points. Each residual runs along whichever axis the plot puts the
 model's outcome on, so a model of the variable drawn on x is measured across
 x rather than down y.
 }

@@ -67,7 +67,7 @@ answer, exactly as it is for any other \code{gf_} layer.}
 \item{model}{A model already fit by \code{\link[=lm]{lm()}} or \code{\link[=aov]{aov()}}. The plot supplies
 the observations' position on the other axis; the model supplies what it
 predicted for each of them. May be given positionally or as \verb{model =}. A
-fit without an intercept, or one fit with weights, is refused. For an
+fit without an intercept, or one fit with weights or an offset, is refused. For an
 unweighted least-squares fit with an intercept, the sum of squared total
 deviations equals the sum of squared residuals plus the sum of squared
 reductions. That identity need not hold without an intercept. Weighted

@@ -315,9 +315,11 @@ test_that("native position guards precede prediction with explicit layer data", 
       )
     }
     expect_error(
-      constructor(
-        model = model, data = data,
-        position = ggplot2::position_jitter(width = 0.1, seed = 42)
+      ggplot2::ggplot_build(
+        ggplot2::ggplot() + constructor(
+          ggplot2::aes(Height, Thumb), model = model, data = data,
+          position = ggplot2::position_jitter(width = 0.1, seed = 42)
+        )
       ),
       "missing from the plot's data: Sex"
     )
@@ -392,17 +394,19 @@ test_that("reduction contracts are shared by the ggplot2 constructors", {
   set.seed(3)
   data <- Fingers[!is.na(Fingers$Thumb) & !is.na(Fingers$Height), ]
   data$w <- runif(nrow(data), 0.5, 2)
+  plot <- ggplot2::ggplot(data, ggplot2::aes(Height, Thumb))
 
   expect_error(
-    geom_reduce(model = lm(Thumb ~ Height - 1, data = data)),
+    ggplot2::ggplot_build(plot + geom_reduce(model = lm(Thumb ~ Height - 1, data = data))),
     "arithmetic does not support"
   )
   expect_error(
-    stat_reduce(model = lm(Thumb ~ Height, data = data, weights = w)),
+    ggplot2::ggplot_build(plot + stat_reduce(model = lm(Thumb ~ Height, data = data, weights = w))),
     "arithmetic does not support"
   )
+  layer <- geom_square_reduce(model = lm(Thumb ~ NULL, data = data))
   expect_warning(
-    layer <- geom_square_reduce(model = lm(Thumb ~ NULL, data = data)),
+    ggplot2::ggplot_build(plot + layer),
     class = "coursekata_reduce_empty"
   )
   expect_s3_class(layer, "Layer")

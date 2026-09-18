@@ -219,9 +219,9 @@ test_that("a function that predicts nothing draws nothing rather than failing", 
   p <- gf_point(Thumb ~ Height, data = Fingers)
   drawn <- suppressMessages(gf_square_resid_fun(p, function(x) NA_real_))
 
-  expect_s3_class(
-    ggplot2::layer_grob(drawn, layer_index(drawn, "square_resid"))[[1]], "zeroGrob"
-  )
+  expect_warning(grob <- ggplot2::layer_grob(drawn, layer_index(drawn, "square_resid"))[[1]],
+                 "gf_square_resid_fun")
+  expect_s3_class(grob, "zeroGrob")
 })
 
 test_that("the experimental signal fires on a real call and not on a bare help call", {

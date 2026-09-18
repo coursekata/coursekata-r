@@ -385,7 +385,8 @@ test_that("the alias draws exactly what the function it aliases draws", {
     list(
       i = i, geom = class(layer$geom)[[1]], stat = class(layer$stat)[[1]],
       position = class(layer$position)[[1]], inherit = layer$inherit.aes,
-      aes_params = layer$aes_params, geom_params = layer$geom_params,
+      aes_params = layer$aes_params,
+      geom_params = layer$geom_params[setdiff(names(layer$geom_params), ".resid_fn")],
       mapping = vapply(layer$mapping, rlang::as_label, character(1)),
       built = ggplot2::ggplot_build(plot)$data[[i]],
       grob_x = as.numeric(ggplot2::layer_grob(plot, i)[[1]]$x)

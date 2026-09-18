@@ -1,7 +1,7 @@
 #' Add Reduction Lines to a Plot
 #'
-#' Draws reduction lines from the grand mean to the value a fitted model
-#' predicts for each observation. Squaring and summing those lengths across
+#' Draws reduction lines from the value a fitted model predicts for each
+#' observation to the grand mean. Squaring and summing those lengths across
 #' observations gives the model sum of squares; [gf_resid()] supplies the error
 #' term in the same decomposition.
 #' Each line runs along whichever axis the plot puts the model's outcome on,
@@ -18,7 +18,7 @@
 #' @param model A model already fit by [`lm()`] or [`aov()`]. The plot supplies
 #'   the observations' position on the other axis; the model supplies what it
 #'   predicted for each of them. May be given positionally or as `model =`. A
-#'   fit without an intercept, or one fit with weights, is refused. For an
+#'   fit without an intercept, or one fit with weights or an offset, is refused. For an
 #'   unweighted least-squares fit with an intercept, the sum of squared total
 #'   deviations equals the sum of squared residuals plus the sum of squared
 #'   reductions. That identity need not hold without an intercept. Weighted
@@ -98,13 +98,15 @@ gf_reduce <- named_layer_factory(
     }
 
     if ((!missing(object) || !missing(model)) && !isTRUE(show.help)) {
+      jitter <- resid_jitter(if (missing(object)) NULL else object)
+      object <- jitter$plot
       reduce <- reduce_spec(
         if (missing(object)) NULL else object, if (missing(model)) NULL else model, "gf_reduce"
       )
 
       # Keep the grand-mean axis fixed while reproducing the point layer's
       # jitter on the other axis.
-      axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
+      axis <- if (reduce$orientation == "y") "x" else "y"
       jitter <- resid_jitter(if (missing(object)) NULL else object, outcome = axis)
       object <- jitter$plot
 
@@ -117,7 +119,7 @@ gf_reduce <- named_layer_factory(
       position <- jitter$position
 
       layer_fun <- resid_layer_fun(
-        "reduce", reduce$aesthetics, .coursekata_function_name,
+        "reduce", reduce,
         linewidth_given = !missing(linewidth)
       )
     }
@@ -152,13 +154,16 @@ gf_square_reduce_layer_factory <- function(function_name) {
           "experimental", paste0(.coursekata_function_name, "()")
         )
 
+        jitter <- resid_jitter(if (missing(object)) NULL else object)
+        object <- jitter$plot
+
         reduce <- reduce_spec(
           if (missing(object)) NULL else object,
           if (missing(model)) NULL else model,
           .coursekata_function_name
         )
 
-        axis <- if ("xend" %in% names(reduce$aesthetics)) "x" else "y"
+        axis <- if (reduce$orientation == "y") "x" else "y"
         jitter <- resid_jitter(
           if (missing(object)) NULL else object, outcome = axis
         )
@@ -171,7 +176,7 @@ gf_square_reduce_layer_factory <- function(function_name) {
         stat <- coursekata::StatReduce
         position <- jitter$position
 
-        layer_fun <- resid_layer_fun("square_reduce", reduce$aesthetics, .coursekata_function_name)
+        layer_fun <- resid_layer_fun("square_reduce", reduce)
       }
     })
   )
@@ -198,7 +203,7 @@ gf_square_reduce_layer_factory <- function(function_name) {
 #' @param model A model already fit by [`lm()`] or [`aov()`]. The plot supplies
 #'   the observations' position on the other axis; the model supplies what it
 #'   predicted for each of them. May be given positionally or as `model =`. A
-#'   fit without an intercept, or one fit with weights, is refused. For an
+#'   fit without an intercept, or one fit with weights or an offset, is refused. For an
 #'   unweighted least-squares fit with an intercept, the sum of squared total
 #'   deviations equals the sum of squared residuals plus the sum of squared
 #'   reductions. That identity need not hold without an intercept. Weighted

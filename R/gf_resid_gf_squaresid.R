@@ -1,7 +1,7 @@
 #' Add Residual Lines to a Plot
 #'
-#' Draws residual lines from observed points to the values a fitted model
-#' predicts for them. Each residual runs along whichever axis the plot puts the
+#' Draws residual lines from the values a fitted model predicts to the observed
+#' points. Each residual runs along whichever axis the plot puts the
 #' model's outcome on, so a model of the variable drawn on x is measured across
 #' x rather than down y.
 #'
@@ -149,7 +149,7 @@ gf_resid <- named_layer_factory(
       # `layer_fun` is called while the package is being built, which would tie
       # this file's collation order to `geom-resid.R`'s
       layer_fun <- resid_layer_fun(
-        "resid", resid$aesthetics, .coursekata_function_name,
+        "resid", resid,
         linewidth_given = !missing(linewidth)
       )
     }
@@ -199,7 +199,7 @@ gf_square_resid_layer_factory <- function(function_name) {
         stat <- coursekata::StatResid
         position <- jitter$position
 
-        layer_fun <- resid_layer_fun("square_resid", resid$aesthetics, .coursekata_function_name)
+        layer_fun <- resid_layer_fun("square_resid", resid)
       }
     })
   )

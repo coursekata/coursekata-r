@@ -296,7 +296,8 @@ test_that("what to draw is removed from the layer's parameters, however it was s
   # ggformula way.
   aes0 <- ggplot2::aes(yend = .data$.fitted)
   build <- function(params, check.param) {
-    coursekata:::resid_layer_fun("resid", aes0)(
+    coursekata:::resid_layer_fun("resid", list(aesthetics = aes0,
+      orientation = "x", reduction = FALSE, fn = "gf_resid_fun"))(
       GeomResid, StatResid, "identity",
       params = params, mapping = aes0,
       data = transform(Fingers, .fitted = Fingers$Height),
@@ -348,7 +349,7 @@ test_that("a function that predicts nothing for a row drops that row and says so
 
   expect_warning(
     grob <- ggplot2::layer_grob(drawn, layer_index(drawn, "resid"))[[1]],
-    "geom_resid"
+    "gf_resid_fun"
   )
   expect_equal(length(grob$x0), sum(Fingers$Height <= 65))
 })

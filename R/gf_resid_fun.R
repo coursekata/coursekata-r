@@ -2,11 +2,11 @@
 #'
 #' `r lifecycle::badge("experimental")`
 #'
-#' Draws residual lines from observed points to the values predicted by a
+#' Draws residual lines from predicted values to the observed points, using a
 #' user-supplied function of x (e.g., the function plotted with
 #' `gf_function()`). Where [gf_resid()] measures a fitted model, this measures a
 #' function you wrote: it is called on the x values the plot draws, and each
-#' residual runs from an observation to what the function predicts for it.
+#' residual runs from the prediction to the observation.
 #'
 #' @param object A ggformula plot object, typically created with `gf_point()`.
 #' @param fun A function of one argument. It is called on the x values the plot
@@ -112,7 +112,7 @@ gf_resid_fun <- named_layer_factory(
       # here rather than at the factory: it needs this call's mapping, and a
       # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's
       layer_fun <- resid_layer_fun(
-        "resid", resid$aesthetics, .coursekata_function_name,
+        "resid", resid,
         linewidth_given = !missing(linewidth)
       )
     }
