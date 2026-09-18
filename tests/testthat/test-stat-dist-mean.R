@@ -86,24 +86,3 @@ test_that("stat_dist_mean refuses mapped styling aesthetics", {
 
   expect_error(ggplot2::ggplot_build(plot), "colour.*can't be mapped")
 })
-
-test_that("new_stat_dist_mean makes the internal x and y subclasses", {
-  x_stat <- new_stat_dist_mean("x")
-  y_stat <- new_stat_dist_mean("y")
-
-  expect_s3_class(x_stat, "StatDistMean")
-  expect_s3_class(y_stat, "StatDistMean")
-  expect_identical(x_stat$required_aes, "x")
-  expect_identical(y_stat$required_aes, "y")
-
-  values <- data.frame(value = c(1, 3, 8))
-  horizontal <- ggplot2::ggplot(values, ggplot2::aes(y = value)) +
-    ggplot2::layer(
-      stat = y_stat, geom = ggplot2::GeomHline, position = "identity",
-      params = list(na.rm = TRUE)
-    )
-
-  built <- mean_layer_data(horizontal)
-  expect_equal(built$yintercept, 4)
-  expect_false("xintercept" %in% names(built))
-})

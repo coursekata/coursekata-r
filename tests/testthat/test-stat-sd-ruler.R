@@ -140,6 +140,34 @@ test_that("the ggplot2 and ggformula front doors use the same ruler stat", {
                   "StatSdRuler")
 })
 
+test_that("the ggplot2 and ggformula front doors share defaults and refusals", {
+  values <- data.frame(x = 1:6, y = c(1, 3, NA, 7, 9, 11), g = rep(c("a", "b"), each = 3))
+  native <- ggplot2::ggplot(values, ggplot2::aes(x, y)) + stat_sd_ruler()
+  formula <- suppressMessages(gf_point(y ~ x, data = values) %>% gf_sd_ruler())
+
+  native_layer <- native$layers[[1L]]
+  formula_layer <- formula$layers[[layer_index(formula, "sd_ruler")]]
+  expect_identical(native_layer$stat_params$na.rm, FALSE)
+  expect_identical(formula_layer$stat_params$na.rm, FALSE)
+  expect_named(native_layer$aes_params, character())
+  expect_named(formula_layer$aes_params, character())
+  expect_warning(native_data <- sd_ruler_data(native), "Removed 1 row")
+  expect_warning(formula_data <- sd_ruler_data(formula), "Removed 1 row")
+  columns <- c("x", "xend", "y", "yend", "colour", "linewidth")
+  expect_equal(native_data[columns], formula_data[columns])
+
+  native_mapped <- ggplot2::ggplot(values, ggplot2::aes(x, y)) +
+    stat_sd_ruler(ggplot2::aes(colour = g))
+  native_error <- expect_error(ggplot2::ggplot_build(native_mapped))
+  formula_error <- expect_error(suppressMessages(
+    gf_point(y ~ x, data = values) %>% gf_sd_ruler(color = ~g)
+  ))
+  for (error in list(native_error, formula_error)) {
+    expect_match(conditionMessage(error), "computes once per panel")
+    expect_match(conditionMessage(error), "facet the plot")
+  }
+})
+
 test_that("stat_sd_ruler refuses an unknown placement rule", {
   plot <- ggplot2::ggplot(Fingers, ggplot2::aes(Height, Thumb)) +
     stat_sd_ruler(where = "moddle", na.rm = TRUE)
