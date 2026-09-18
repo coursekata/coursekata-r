@@ -9,8 +9,8 @@
 #' (`pin_plot_values()`) -- a `shuffle()` mapping is one fixed permutation by
 #' the time this reads it, not a fresh one on every read, and a downstream fit
 #' built from the returned `data` agrees with what the returned `plot` draws.
-#' An aesthetic whose expression is or contains `after_stat()`, `stat()` or
-#' `after_scale()` computes something only ggplot2's build can supply, not a
+#' An aesthetic whose expression contains `after_stat()`, `stat()`,
+#' `after_scale()` or `stage()` computes something only ggplot2's build can supply, not a
 #' value this could read or fit against, so it counts as unmapped for the
 #' whole of the rule below: `gf_density(~Thumb)` maps `y = after_stat(density)`,
 #' and without this guard the rule would find neither axis numeric and refuse
@@ -41,7 +41,7 @@
 #'
 #' @return A list with:
 #'   `plot`      the pinned copy, or the plot unchanged when nothing needed pinning
-#'   `data`      the pinned plot's data -- the frame both a layer and any fit read
+#'   `data`      the selected source's pinned rows, used by the inferred fit
 #'   `outcome`   list(column =, label =), e.g. `.coursekata_pin_y` / "shuffle(Thumb)"
 #'   `predictor` the same, or NULL when the plot draws only an outcome
 #'   `kind`      "line" | "segment" | "hline" | "vline"
@@ -69,7 +69,7 @@ implied_model <- function(object, fn = "gf_model", call = caller_env()) {
 
     drawn[[a]] <- list(
       value = eval_tidy(resolved$quo, resolved$data),
-      column = if (is.null(spec$pins[[a]])) as_label(expr) else paste0(".coursekata_pin_", a),
+      column = as_label(expr),
       label = spec$labels[[a]]
     )
   }

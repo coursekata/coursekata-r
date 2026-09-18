@@ -1,6 +1,6 @@
 #' Does an expression compute something only ggplot2's build can supply
 #'
-#' `after_stat()`, `stat()` and `after_scale()` mark a mapping as a build-time
+#' `after_stat()`, `stat()`, `after_scale()` and `stage()` mark a mapping as a build-time
 #' instruction rather than a value: evaluating `after_stat(density)` against a
 #' plot's source data does not raise an error, it silently returns the
 #' function `stats::density`, which is not a value anyone meant to pin. The
@@ -10,14 +10,14 @@
 #'
 #' @param expr A language object.
 #'
-#' @return `TRUE` when `expr` contains one of those three calls anywhere.
+#' @return `TRUE` when `expr` contains one of those calls anywhere.
 #'
 #' @noRd
 has_build_time_call <- function(expr) {
   if (!is_call(expr)) {
     return(FALSE)
   }
-  if (is_call(expr, c("after_stat", "stat", "after_scale"))) {
+  if (is_call(expr, c("after_stat", "stat", "after_scale", "stage"))) {
     return(TRUE)
   }
   args <- as.list(expr)[-1]
@@ -29,12 +29,11 @@ has_build_time_call <- function(expr) {
 #' A mapping such as `shuffle(Thumb)` names a different permutation on every
 #' render, and independently in every layer that carries it -- there is no
 #' seed to declare and no function of the plot's inputs an inferred model
-#' could agree with it on. This rewrites the mapping at its owner: a plot-level
-#' mapping and every layer that inherits or repeats it, or a first-layer mapping
-#' and only layers that state the same expression themselves. A layer carrying
-#' its own data frame gets its own evaluation against its own rows, so a pinned
-#' layer still draws exactly the rows it always did. A model fit from the
-#' returned plot's data is then fit on exactly what the returned plot draws.
+#' could agree with it on. This pins the selected observation source and other
+#' layers that inherit or repeat its expression. Each layer evaluates against
+#' its own rows. When a callback constructs those rows, its pin stays on the
+#' layer rather than requiring columns in the callback's input frame. A model
+#' fit from the resolved source then uses the values that source draws.
 #'
 #' The plot handed in is never modified. A ggplot2 layer is a ggproto object --
 #' an environment -- so writing into a layer's own `mapping` field in place
@@ -48,7 +47,7 @@ has_build_time_call <- function(expr) {
 #' aesthetics an inferred model reads. A mapping is left alone -- not pinned,
 #' not reported as unreached -- when it is unmapped, when its expression is a
 #' bare symbol (there is nothing to evaluate), or when it contains
-#' `after_stat()`, `stat()` or `after_scale()` (a build-time instruction, not a
+#' `after_stat()`, `stat()`, `after_scale()` or `stage()` (a build-time instruction, not a
 #' value). Everything else is pinned unconditionally: a deterministic mapping
 #' such as `log(Height)` is pinned to exactly the numbers it already drew, and
 #' the only thing that changes is the mapping's spelling.
@@ -82,9 +81,18 @@ has_build_time_call <- function(expr) {
 #'
 #' @noRd
 pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
+  plot <- stabilize_source_data(plot)
   spec <- plot_spec(plot)
+  plot_rows <- plot$data
   pins <- plot_pins(plot)
+  columns <- attr(plot, "coursekata_pin_columns") %||% list()
+  provenance <- attr(plot, "coursekata_pin_provenance") %||% list()
   unreached <- character(0)
+  # Callback-created columns also belong to the reader. Resolve each drawer
+  # once so storage allocation sees them without spending RNG or replaying
+  # callback side effects for each aesthetic. The selected source is already
+  # resolved by plot_spec(). An unrelated invalid callback is left for build.
+  layer_rows <- NULL
 
   # ONE save/restore around the whole loop, and a SEPARATE fixed seed per
   # aesthetic inside it. The two are doing different jobs and neither can do
@@ -95,8 +103,8 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
   # to spend.
   #
   # The per-aesthetic seed is what makes one mapping's two evaluations agree.
-  # An expression is evaluated once against the plot's data and again against
-  # any layer that carries its own copy of it, and the pinned column has to be
+  # An expression is evaluated against the selected source's data and against
+  # any other layer's different rows, and the pinned column has to be
   # the SAME permutation both times or the layer draws rows the plot's pin does
   # not describe. A fixed seed gives one draw from two evaluations.
   #
@@ -125,9 +133,33 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
 
     seed <- sample.int(.Machine$integer.max, 1L)
     v <- with_fixed_seed(seed, eval_tidy(original, resolved$data))
-    col <- paste0(".coursekata_pin_", a)
+    if (is.null(layer_rows)) {
+      layer_rows <- lapply(seq_along(plot$layers), function(i) {
+        if (identical(i, spec$source$layer_index)) return(spec$data)
+        layer <- plot$layers[[i]]
+        if (!is.null(attr(layer, "coursekata_layer"))) return(NULL)
+        tryCatch(with_random_seed_restored(layer$layer_data(plot_rows)),
+                 error = function(e) NULL)
+      })
+    }
+    occupied <- unique(c(names(plot_rows), names(spec$data),
+                         unlist(lapply(layer_rows, names)), unlist(columns)))
+    col <- utils::tail(
+      make.unique(c(occupied, paste0(".coursekata_pin_", a))), 1L
+    )
     pinned_quo <- new_quosure(sym(col), base_env())
     plot_owned <- identical(resolved$owner, "plot")
+    source <- spec$source$layer
+    source_uses_plot_data <- is.null(source) || is.null(source$data) ||
+      inherits(source$data, "waiver")
+    # Mapping ownership does not imply data ownership. A callback can create
+    # the mapped columns, so its pin must not require those columns in the
+    # input frame. Keep that pin on its drawers and leave the plot mapping
+    # available to future layers. Identical frames can share the existing
+    # source evaluation without evaluating the expression on other rows.
+    pin_plot_mapping <- plot_owned &&
+      (source_uses_plot_data || identical(plot_rows, resolved$data))
+    token <- new.env(parent = emptyenv())
 
     for (i in seq_along(plot$layers)) {
       layer <- plot$layers[[i]]
@@ -141,7 +173,7 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
       layer_mapping_a <- layer$mapping[[a]]
       inherits_mapping <- is.null(layer_mapping_a)
       if (!plot_owned && inherits_mapping) {
-        # A mapping stated only by the first layer does not become a plot-level
+        # A mapping stated only by the source layer does not become a plot-level
         # mapping when pinned. Sibling layers with no mapping did not inherit it
         # before the pin and must not begin inheriting its storage column now.
         next
@@ -152,7 +184,9 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
         } else {
           layer_mapping_a
         }
-        if (!identical(layer_expr, expr)) {
+        if (!identical(layer_expr, expr) ||
+            (is_quosure(layer_mapping_a) &&
+              !identical(quo_get_env(layer_mapping_a), quo_get_env(original)))) {
           # a drawer of `a` with an expression different from the plot's -- the
           # pin cannot reach it, and the caller decides what that means
           unreached <- union(unreached, a)
@@ -165,27 +199,55 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
         next
       }
 
-      if (is.data.frame(layer$data)) {
-        # this layer draws its own rows -- whether it stated the mapping or
-        # inherits it, the plot-level `v` was drawn from the plot's data and
-        # is the wrong length (and, for a random mapping, the wrong draw)
-        # for this frame. Evaluate the SAME expression again, against THIS
-        # layer's own data, so the pin lands on exactly the rows the layer
-        # already draws.
-        lv <- try(with_fixed_seed(seed, eval_tidy(original, layer$data)), silent = TRUE)
-        if (inherits(lv, "try-error") || !length(lv) %in% c(1L, nrow(layer$data))) {
+      if (is.data.frame(layer$data) || is.function(layer$data)) {
+        # Reuse the source evaluation for identical rows. A different frame
+        # needs its own evaluation, with the same seed and quosure environment.
+        rows <- layer_rows[[i]]
+        if (is.null(rows)) {
           unreached <- union(unreached, a)
           next
         }
-        new_data <- layer$data
+        lv <- if (identical(rows, resolved$data)) v else {
+          try(with_fixed_seed(seed, eval_tidy(original, rows)), silent = TRUE)
+        }
+        if (inherits(lv, "try-error") || !length(lv) %in% c(1L, nrow(rows))) {
+          unreached <- union(unreached, a)
+          next
+        }
+        new_data <- rows
         new_data[[col]] <- lv
-        if (inherits_mapping) {
+        layer_rows[[i]] <- new_data
+        if (is.function(layer$data)) {
+          new_data <- pin_source_data(layer$data, original, col, seed)
+        }
+        if (inherits_mapping && pin_plot_mapping) {
           plot$layers[[i]] <- layer_with(layer, data = new_data)
         } else {
-          new_mapping <- layer$mapping
+          new_mapping <- layer$mapping %||% ggplot2::aes()
           new_mapping[[a]] <- pinned_quo
           plot$layers[[i]] <- layer_with(layer, mapping = new_mapping, data = new_data)
         }
+      } else if (!pin_plot_mapping) {
+        # This sibling really uses the plot's rows, but the selected source
+        # does not. Pin its own evaluation through a live data callback instead
+        # of requiring every layer to use one plot-level storage column.
+        rows <- layer_rows[[i]]
+        if (is.null(rows)) {
+          unreached <- union(unreached, a)
+          next
+        }
+        lv <- try(with_fixed_seed(seed, eval_tidy(original, rows)), silent = TRUE)
+        if (inherits(lv, "try-error") || !length(lv) %in% c(1L, nrow(rows))) {
+          unreached <- union(unreached, a)
+          next
+        }
+        new_mapping <- layer$mapping %||% ggplot2::aes()
+        new_mapping[[a]] <- pinned_quo
+        plot$layers[[i]] <- layer_with(
+          layer, mapping = new_mapping,
+          data = pin_source_data(identity, original, col, seed)
+        )
+        layer_rows[[i]][[col]] <- lv
       } else if (!inherits_mapping) {
         # a waiver() layer draws the plot's data; swapping only the mapping
         # is enough because the plot-level write below supplies the column
@@ -193,20 +255,33 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
         new_mapping[[a]] <- pinned_quo
         plot$layers[[i]] <- layer_with(layer, mapping = new_mapping)
       }
+      marked <- layer_with(plot$layers[[i]])
+      layer_tokens <- attr(marked, "coursekata_pin_tokens") %||% list()
+      layer_tokens[[a]] <- token
+      attr(marked, "coursekata_pin_tokens") <- layer_tokens
+      # Reading the binding directly avoids ggproto's freshly wrapped method
+      # on each `$data` access. Record the final frame/callback after every
+      # pin so later pins preserve provenance for earlier aesthetics too.
+      attr(marked, "coursekata_pin_data_binding") <- get("data", envir = marked)
+      if (isTRUE(attr(layer, "coursekata_source_seed")) &&
+          identical(get("data", envir = layer), attr(layer, "coursekata_source_data_binding"))) {
+        # Pin wrappers preserve the stabilized callback inside them. Carry
+        # that identity forward without blessing an unrelated replacement.
+        attr(marked, "coursekata_source_data_binding") <- get("data", envir = marked)
+      }
+      plot$layers[[i]] <- marked
     }
 
-    owner_layer <- if (identical(resolved$owner, "layer")) {
-      plot$layers[[resolved$layer_index]]
-    } else {
-      NULL
-    }
-    owner_uses_plot_data <- !is.null(owner_layer) &&
-      !is.data.frame(owner_layer$data)
-    if (is.data.frame(plot$data) && (plot_owned || owner_uses_plot_data)) {
-      plot$data[[col]] <- v
+    if (is.data.frame(plot$data) && pin_plot_mapping) {
+      plot$data[[col]] <- if (identical(plot_rows, resolved$data)) v else {
+        with_fixed_seed(seed, eval_tidy(original, plot_rows))
+      }
+      data_tokens <- attr(plot$data, "coursekata_pin_tokens") %||% list()
+      data_tokens[[a]] <- token
+      attr(plot$data, "coursekata_pin_tokens") <- data_tokens
     }
 
-    if (plot_owned) {
+    if (pin_plot_mapping) {
       plot$mapping[[a]] <- pinned_quo
     }
     # the pin's spelling is a fallback, not an override: ggplot2 derives an
@@ -219,16 +294,36 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
       plot$labels[[a]] <- as_label(expr)
     }
     pins[[a]] <- original
+    columns[[a]] <- col
+    provenance[[a]] <- list(token = token, quo = pinned_quo)
   })
 
   attr(plot, "coursekata_pins") <- pins
+  attr(plot, "coursekata_pin_columns") <- columns
+  attr(plot, "coursekata_pin_provenance") <- provenance
   list(plot = plot, pins = pins, unreached = unreached)
+}
+
+#' Pin a callback's values after it selects or constructs its rows
+#' @noRd
+pin_source_data <- function(data_fun, original, column, seed) {
+  force(data_fun)
+  force(original)
+  force(column)
+  force(seed)
+  function(data) {
+    rows <- with_random_seed_restored(data_fun(data))
+    rows[[column]] <- with_fixed_seed(seed, eval_tidy(original, rows))
+    rows
+  }
 }
 
 #' Read the pins `pin_plot_values()` recorded on a plot
 #'
 #' The accessor for `attr(p, "coursekata_pins")`, so nothing outside this file
 #' reaches for the attribute by name.
+#' A pin is valid only while its mapping and data source retain its provenance;
+#' an unrelated column with the same spelling must not inherit an old label.
 #'
 #' @param p A ggplot object.
 #'
@@ -237,5 +332,27 @@ pin_plot_values <- function(plot, aes = c("x", "y"), call = caller_env()) {
 #'
 #' @noRd
 plot_pins <- function(p) {
-  attr(p, "coursekata_pins") %||% list()
+  pins <- attr(p, "coursekata_pins") %||% list()
+  columns <- attr(p, "coursekata_pin_columns") %||% list()
+  provenance <- attr(p, "coursekata_pin_provenance") %||% list()
+  source <- plot_source(p, resolve.data = FALSE)
+  mapping <- source$mapping
+  pins[vapply(names(pins), function(a) {
+    column <- columns[[a]] %||% paste0(".coursekata_pin_", a)
+    origin <- provenance[[a]]
+    layer <- source$layer
+    uses_plot_data <- is.null(layer) || is.null(layer$data) || inherits(layer$data, "waiver")
+    source_token <- if (uses_plot_data) {
+      (attr(p$data, "coursekata_pin_tokens") %||% list())[[a]]
+    } else {
+      (attr(layer, "coursekata_pin_tokens") %||% list())[[a]]
+    }
+    binding_matches <- uses_plot_data || identical(
+      get("data", envir = layer), attr(layer, "coursekata_pin_data_binding")
+    )
+    !is.null(origin) && !is.null(mapping[[a]]) &&
+      identical(mapping[[a]], origin$quo) &&
+      identical(quo_get_expr(mapping[[a]]), sym(column)) &&
+      identical(source_token, origin$token) && binding_matches
+  }, logical(1))]
 }

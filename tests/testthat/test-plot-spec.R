@@ -53,12 +53,12 @@ test_that("resolve_aes falls back to a layer's mapping and its own data", {
   expect_identical(x$layer_index, 1L)
 })
 
-test_that("resolve_aes prefers the plot's mapping when both plot and layer map it", {
+test_that("resolve_aes uses the layer's mapping when it overrides the plot", {
   p <- ggplot2::ggplot(Fingers, ggplot2::aes(x = Thumb)) +
     ggplot2::geom_histogram(ggplot2::aes(x = Height))
   x <- plot_spec(p)$resolve_aes("x")
 
-  expect_equal(rlang::as_name(x$quo), "Thumb")
+  expect_equal(rlang::as_name(x$quo), "Height")
 })
 
 test_that("resolve_aes returns NULL when an aesthetic is mapped nowhere", {
@@ -75,11 +75,11 @@ test_that("plot_spec reads axes a plot maps only on its first layer", {
   expect_identical(spec$data, er)
 })
 
-test_that("plot_spec prefers the plot's mapping over the layer's", {
+test_that("plot_spec uses the layer's mapping over the plot's", {
   p <- ggplot2::ggplot(Fingers, ggplot2::aes(x = Thumb)) +
     ggplot2::geom_histogram(ggplot2::aes(x = Height), bins = 30)
 
-  expect_equal(unname(plot_spec(p)$axes), "Thumb")
+  expect_equal(unname(plot_spec(p)$axes), "Height")
 })
 
 test_that("plot_spec falls back to the first layer's data", {

@@ -126,7 +126,7 @@ position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcom
 #' The position a residual has to be drawn with, and the plot to draw it on
 #'
 #' An unseeded jitter cannot be reproduced by another layer. When needed, this
-#' function gives the plot's first layer a seed and returns the matching
+#' function gives the selected observation layer a seed and returns the matching
 #' endpoint-preserving position for the residual layer.
 #'
 #' @param plot The plot the residual is being drawn on.
@@ -137,20 +137,22 @@ position_resid_jitter <- function(width = NULL, height = NULL, seed = NA, outcom
 #'
 #' @noRd
 resid_jitter <- function(plot, outcome = NULL) {
+  plot <- stabilize_source_data(plot)
   plain <- list(plot = plot, position = "identity")
-  if (length(plot$layers) == 0) {
+  index <- plot_source_index(plot)
+  if (is.na(index)) {
     return(plain)
   }
-  pos <- plot$layers[[1]]$position
+  pos <- plot$layers[[index]]$position
   if (!inherits(pos, "PositionJitter")) {
     return(plain)
   }
 
   seed <- pos$seed
   if (!isTRUE(is.finite(seed))) {
-    seed <- sample.int(.Machine$integer.max, 1L)
-    plot$layers[[1]] <- layer_with_position(
-      plot$layers[[1]],
+    seed <- with_random_seed_restored(sample.int(.Machine$integer.max, 1L))
+    plot$layers[[index]] <- layer_with_position(
+      plot$layers[[index]],
       ggplot2::position_jitter(width = pos$width, height = pos$height, seed = seed)
     )
   }
@@ -399,7 +401,7 @@ check_resid_plot <- function(object, fn, call = caller_env()) {
 #' @param fn The name to refuse in, e.g. `"gf_resid"`.
 #' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `data` (the plot's own data plus `.fitted`) and
+#' @return A list with `data` (the selected source rows plus `.fitted`) and
 #'   `aesthetics`.
 #'
 #' @noRd
@@ -435,7 +437,7 @@ resid_spec <- function(object, model, fn = "gf_resid", call = caller_env()) {
 #' @param fn The name to refuse in, e.g. `"gf_resid_fun"`.
 #' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `data` (the plot's own data plus `.fitted`) and
+#' @return A list with `data` (the selected source rows plus `.fitted`) and
 #'   `aesthetics`.
 #'
 #' @noRd
@@ -469,7 +471,7 @@ resid_fun_spec <- function(object, fun, fn = "gf_resid_fun", call = caller_env()
 #' @param fn The name to refuse in, e.g. `"gf_reduce"`.
 #' @param call The calling environment, for error reporting.
 #'
-#' @return A list with `data` (the plot's own data plus `.fitted` and
+#' @return A list with `data` (the selected source rows plus `.fitted` and
 #'   `.grand`) and `aesthetics`.
 #'
 #' @noRd

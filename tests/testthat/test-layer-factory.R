@@ -27,7 +27,7 @@ test_that("generated front doors bind private pre helpers without changing ggfor
     gf_squaresid = c("resid_jitter", "resid_spec", "resid_layer_fun"),
     gf_square_resid_fun = c("resid_jitter", "resid_fun_spec", "resid_layer_fun"),
     gf_squareplot = "squareplot_check",
-    gf_sd_ruler = c("check_ruler_where", "sd_ruler_inherited")
+    gf_sd_ruler = "check_ruler_where"
   )
   coursekata_namespace <- rlang::ns_env("coursekata")
   ggformula_namespace <- rlang::ns_env("ggformula")
