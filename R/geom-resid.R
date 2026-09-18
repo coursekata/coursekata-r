@@ -486,17 +486,15 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
   }
   spec <- plot_spec(object)
   check_resid_axes(spec, call = call)
-  layer <- resid_layer_spec(
+  resid_layer_spec(
     spec$data, spec$mapping[c("x", "y")], model,
     orientation = if (identical(resid_end(spec, model, call = call), "xend")) "y" else "x",
-    reduction = TRUE, call = call
+    reduction = TRUE, call = call,
+    validate = function() {
+      check_decomposable(model, fn, call = call)
+      warn_empty_reduction(model, fn)
+    }
   )
-
-  check_decomposable(model, fn, call = call)
-
-  warn_empty_reduction(model, fn)
-
-  layer
 }
 
 #' Adapt the shared residual layer builder to `layer_factory()`
