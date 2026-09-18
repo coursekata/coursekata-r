@@ -12,6 +12,8 @@
 #' gf_boxplot(Thumb ~ RaceEthnic, data = Fingers, fill = ~RaceEthnic)
 theme_coursekata <- function() {
   ggplot2::theme_bw() + ggplot2::theme(
+    palette.colour.discrete = coursekata_palette_provider(),
+    palette.fill.discrete = coursekata_palette_provider(),
     # Fonts
     plot.title = ggplot2::element_text(face = "bold", size = 13),
     axis.title = ggplot2::element_text(size = 11),
@@ -247,16 +249,15 @@ coursekata_load_theme <- function() {
     }
   }
 
-  ggplot2::theme_set(theme_coursekata())
-
   options(
     repr.plot.width = 6,
     repr.plot.height = 4,
-    ggplot2.discrete.fill = scale_discrete_coursekata,
-    ggplot2.discrete.colour = scale_discrete_coursekata,
+    ggplot2.discrete.fill = NULL,
+    ggplot2.discrete.colour = NULL,
     ggplot2.continuous.fill = "viridis",
     ggplot2.continuous.colour = "viridis"
   )
+  ggplot2::theme_set(theme_coursekata())
 
   invisible()
 }

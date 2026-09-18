@@ -26,8 +26,6 @@
 #' @param color Marker/line color. Default `"#1e3a8a"`.
 #' @param size Marker size. Default `4`.
 #' @param show_labels Whether to annotate the cutoffs. Default `FALSE`.
-#' @param plot Deprecated alias for `object`.
-#' @param labels Deprecated alias for `show_labels`.
 #'
 #' @return A ggplot object with cutoff markers and optional labels.
 #'
@@ -44,27 +42,9 @@
 #' gf_histogram(~Thumb, data = Fingers, binwidth = 5, fill = ~middle(Thumb, .95)) %>%
 #'   show_cutoffs(middle(Thumb, .99))
 show_cutoffs <- function(object = NULL, part, color = "#1e3a8a", size = 4,
-                         show_labels = FALSE,
-                         plot = lifecycle::deprecated(),
-                         labels = lifecycle::deprecated()) {
+                         show_labels = FALSE) {
   lifecycle::signal_stage("experimental", "show_cutoffs()")
 
-  object_missing <- missing(object)
-  part_missing <- missing(part)
-  plot_missing <- missing(plot)
-  show_labels_missing <- missing(show_labels)
-  labels_missing <- missing(labels)
-  shape <- normalize_cutoff_call_shape(
-    enquo(object), enquo(part), object_missing, part_missing, plot_missing,
-    user_call = sys.call()
-  )
-  object_value <- if (shape$object_missing) NULL else eval_tidy(shape$object)
-  object <- normalize_plot_argument(
-    object_value, plot, shape$object_missing, plot_missing, "show_cutoffs"
-  )
-  show_labels <- normalize_show_labels_argument(
-    show_labels, labels, show_labels_missing, labels_missing
-  )
   if (!is.logical(show_labels) || length(show_labels) != 1L || is.na(show_labels)) {
     abort("`show_cutoffs()`'s `show_labels` must be `TRUE` or `FALSE`")
   }
@@ -81,8 +61,8 @@ show_cutoffs <- function(object = NULL, part, color = "#1e3a8a", size = 4,
   object <- stabilize_source_data(object)
   distribution <- distribution_plot_spec(object, "show_cutoffs")
   spec <- distribution$plot
-  has_part <- !shape$part_missing
-  part_quo <- if (has_part) shape$part else NULL
+  has_part <- !missing(part)
+  part_quo <- if (has_part) enquo(part) else NULL
 
   source <- if (has_part) "argument" else "fill"
   fill_like <- if (has_part) list(quo = part_quo, data = spec$data) else spec$resolve_aes("fill")

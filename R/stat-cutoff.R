@@ -31,7 +31,6 @@
 #'   for this lower-level stat.
 #' @param greedy Whether a fractional observation is included in the selected
 #'   region.
-#' @param func Deprecated alias for `part`.
 #' @param na.rm If `FALSE`, the default, missing values are removed with a
 #'   warning. If `TRUE`, missing values are silently removed.
 #' @param show.legend Logical. Should this layer be included in the legends?
@@ -47,25 +46,11 @@
 StatCutoff <- ggplot2::ggproto(
   "StatCutoff", ggplot2::Stat,
   required_aes = "x",
+  extra_params = c("na.rm", "func"),
   setup_params = function(data, params) {
     check_panel_stat_aesthetics(data, "stat_cutoff", "x")
-    has_part <- !is.null(params$part)
-    has_func <- !is.null(params$func)
-
-    if (has_part && has_func) {
-      abort(c(
-        "`stat_cutoff()` received both `part` and deprecated `func`",
-        i = "Supply the distribution part once with `part =`."
-      ))
-    }
-
-    if (has_func) {
-      lifecycle::deprecate_warn(
-        "0.21.0", "stat_cutoff(func)", "stat_cutoff(part)",
-        id = "coursekata-stat-cutoff-func"
-      )
-      params$part <- params$func
-      params$func <- NULL
+    if ("func" %in% names(params)) {
+      abort("`stat_cutoff()` no longer takes `func`; use `part` instead.")
     }
 
     part <- params$part %||% "middle"
@@ -91,11 +76,7 @@ StatCutoff <- ggplot2::ggproto(
     params
   },
   compute_panel = function(data, scales, part = "middle", prop = .95,
-                           greedy = TRUE, na.rm = TRUE, func = NULL) {
-    # Keep direct calls to the ggproto method compatible during the `func` to
-    # `part` transition. Layers normalize this alias in setup_params().
-    if (!is.null(func)) part <- func
-
+                           greedy = TRUE, na.rm = TRUE) {
     has_transformation <- !is.null(scales$x) && is.function(scales$x$get_transformation)
     transformation <- if (has_transformation) scales$x$get_transformation() else NULL
     values <- if (is.null(transformation)) data$x else transformation$inverse(data$x)
@@ -113,20 +94,10 @@ StatCutoff <- ggplot2::ggproto(
 #' @export
 stat_cutoff <- function(mapping = NULL, data = NULL, geom = "cutoff",
                         position = "identity", ..., part = "middle", prop = 0.95,
-                        greedy = TRUE, func = lifecycle::deprecated(),
+                        greedy = TRUE,
                         na.rm = FALSE, show.legend = NA, inherit.aes = TRUE) {
-  if (!missing(func)) {
-    if (!missing(part)) {
-      abort(c(
-        "`stat_cutoff()` received both `part` and deprecated `func`",
-        i = "Supply the distribution part once with `part =`."
-      ))
-    }
-    lifecycle::deprecate_warn(
-      "0.21.0", "stat_cutoff(func)", "stat_cutoff(part)",
-      id = "coursekata-stat-cutoff-func"
-    )
-    part <- func
+  if ("func" %in% names(rlang::enquos(...))) {
+    abort("`stat_cutoff()` no longer takes `func`; use `part` instead.")
   }
 
   ggplot2::layer(

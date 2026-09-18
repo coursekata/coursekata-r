@@ -1,5 +1,15 @@
 # coursekata (development version)
 
+- Plot helpers now require `object =`, `show_cutoffs()` requires `show_labels =`,
+  and `stat_cutoff()` requires `part =`. The retired `plot`, `labels`, and `func`
+  arguments are no longer translated. Intentional `gf_*()` function aliases remain.
+- Discrete palette defaults now use ggplot2 4 theme settings. Override a plot's
+  palette with `theme(palette.colour.discrete = ..., palette.fill.discrete = ...)`.
+  Add `scale_discrete_coursekata()` when colour and fill should share one scale.
+  Loading and unloading the CourseKata theme still restores the caller's settings.
+- Line layers translate `size` to `linewidth` before building the ggplot2 layer,
+  with diagnostics naming the public function. Explicit `linewidth` takes precedence.
+  Point, text, and annotation marker sizes retain their meanings.
 - Add `geom_squareplot()` and `stat_squareplot()` as x-only ggplot2 constructors
   for the same countable squareplot as `gf_squareplot()`. They preserve its
   binning, discrete counting, scales, warnings, and display behavior.

@@ -451,8 +451,8 @@ model_layer_plan <- function(spec, args, facts, call = caller_env()) {
   # `size` is the pre-3.4 spelling of `linewidth`; leaving it in args sends both to
   # the layer and ggplot2 deprecation-warns, naming coursekata as the culprit
   width_given <- !is.null(args$linewidth) || !is.null(args$size)
-  args$linewidth <- args$linewidth %||% args$size %||% 1
-  args$size <- NULL
+  args <- normalize_linewidth(args, geom, "gf_model", warn_size = FALSE)
+  args$linewidth <- args$linewidth %||% 1
 
   remap <- spec$variables[
     purrr::map_lgl(facts$columns_by_variable, ~ any(.x %in% facts$predictor_columns))

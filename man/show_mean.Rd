@@ -8,8 +8,7 @@ show_mean(
   object = NULL,
   color = "#E60000",
   linetype = "longdash",
-  linewidth = 0.7,
-  plot = lifecycle::deprecated()
+  linewidth = 0.7
 )
 }
 \arguments{
@@ -20,8 +19,6 @@ show_mean(
 \item{linetype}{Line type. Default \code{"longdash"}.}
 
 \item{linewidth}{Line width. Default \code{0.7}.}
-
-\item{plot}{Deprecated alias for \code{object}.}
 }
 \value{
 The plot, with a tagged mean line added.

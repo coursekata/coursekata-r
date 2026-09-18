@@ -148,7 +148,10 @@ gf_resid <- named_layer_factory(
       # needs the mapping this call computed and because a factory-level
       # `layer_fun` is called while the package is being built, which would tie
       # this file's collation order to `geom-resid.R`'s
-      layer_fun <- resid_layer_fun("resid", resid$aesthetics)
+      layer_fun <- resid_layer_fun(
+        "resid", resid$aesthetics, .coursekata_function_name,
+        linewidth_given = !missing(linewidth)
+      )
     }
   }
 )
@@ -196,7 +199,7 @@ gf_square_resid_layer_factory <- function(function_name) {
         stat <- coursekata::StatResid
         position <- jitter$position
 
-        layer_fun <- resid_layer_fun("square_resid", resid$aesthetics)
+        layer_fun <- resid_layer_fun("square_resid", resid$aesthetics, .coursekata_function_name)
       }
     })
   )

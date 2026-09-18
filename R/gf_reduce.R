@@ -116,7 +116,10 @@ gf_reduce <- named_layer_factory(
       stat <- coursekata::StatReduce
       position <- jitter$position
 
-      layer_fun <- resid_layer_fun("reduce", reduce$aesthetics)
+      layer_fun <- resid_layer_fun(
+        "reduce", reduce$aesthetics, .coursekata_function_name,
+        linewidth_given = !missing(linewidth)
+      )
     }
   }
 )
@@ -168,7 +171,7 @@ gf_square_reduce_layer_factory <- function(function_name) {
         stat <- coursekata::StatReduce
         position <- jitter$position
 
-        layer_fun <- resid_layer_fun("square_reduce", reduce$aesthetics)
+        layer_fun <- resid_layer_fun("square_reduce", reduce$aesthetics, .coursekata_function_name)
       }
     })
   )

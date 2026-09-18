@@ -4,13 +4,7 @@
 \alias{show_dgp}
 \title{Frame a Sampling Distribution With Its Data Generating Process}
 \usage{
-show_dgp(
-  object = NULL,
-  color = "#003d70",
-  null_color = "#E60000",
-  size = 4,
-  plot = lifecycle::deprecated()
-)
+show_dgp(object = NULL, color = "#003d70", null_color = "#E60000", size = 4)
 }
 \arguments{
 \item{object}{A plot of one distribution of estimates.}
@@ -20,8 +14,6 @@ show_dgp(
 \item{null_color}{Color of the null hypothesis marker. Default \code{"#E60000"}.}
 
 \item{size}{Size of the null hypothesis marker. Default \code{4}.}
-
-\item{plot}{Deprecated alias for \code{object}.}
 }
 \value{
 The plot, with population and estimate guides added.

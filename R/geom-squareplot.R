@@ -286,8 +286,8 @@ geom_squareplot <- function(mapping = NULL, data = NULL, stat = "squareplot",
                             closed = NULL, breaks = NULL, bars = "none",
                             na.rm = TRUE, show.legend = NA,
                             inherit.aes = TRUE) {
-  squareplot_check_na_rm(na.rm, "geom_squareplot", call = caller_env())
-  squareplot_check_data(data, "geom_squareplot", call = caller_env())
+  squareplot_check_na_rm(na.rm, "geom_squareplot", call = quote(geom_squareplot()))
+  squareplot_check_data(data, "geom_squareplot", call = quote(geom_squareplot()))
   params <- rlang::list2(
     binwidth = binwidth, bins = bins, center = center,
     boundary = boundary, closed = closed, breaks = breaks,
@@ -310,8 +310,8 @@ stat_squareplot <- function(mapping = NULL, data = NULL, geom = "squareplot",
                             closed = NULL, breaks = NULL, bars = "none",
                             na.rm = TRUE, show.legend = NA,
                             inherit.aes = TRUE) {
-  squareplot_check_na_rm(na.rm, "stat_squareplot", call = caller_env())
-  squareplot_check_data(data, "stat_squareplot", call = caller_env())
+  squareplot_check_na_rm(na.rm, "stat_squareplot", call = quote(stat_squareplot()))
+  squareplot_check_data(data, "stat_squareplot", call = quote(stat_squareplot()))
   params <- rlang::list2(
     binwidth = binwidth, bins = bins, center = center,
     boundary = boundary, closed = closed, breaks = breaks,

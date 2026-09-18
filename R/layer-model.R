@@ -24,7 +24,9 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
                         stat = StatModel, position = "identity", params = list(),
                         model = NULL, orientation = NA, show.legend = NA,
                         inherit.aes = TRUE, tag = "model", prepared = FALSE,
-                        fn = "geom_model", call = caller_env(), constructor = NULL, ...) {
+                        fn = "geom_model", call = call2(fn), ...) {
+  rlang::local_error_call(call2(fn))
+  params <- normalize_linewidth(params, geom, fn, warn_size = fn != "gf_model")
   orientation <- model_orientation(orientation, call = call)
   if (!prepared && !is.null(model)) {
     if (is_formula(model) && is.null(f_lhs(model))) {
@@ -44,11 +46,12 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
       position = position, params = params, inherit.aes = inherit.aes,
       show.legend = show.legend, ...
     )
+    layer <- public_layer_constructor(layer, fn)
     attr(layer, "model_spec") <- list(
       model = model, mapping = mapping, data = data, geom = geom, stat = stat,
       position = position, params = params, orientation = orientation,
       inherit.aes = inherit.aes, show.legend = show.legend, tag = tag,
-      fn = fn, call = call, constructor = constructor, dots = list(...)
+      fn = fn, call = call, dots = list(...)
     )
     class(layer) <- c("coursekata_model_layer", class(layer))
     return(layer)
@@ -61,7 +64,7 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
     position = position, params = params, inherit.aes = inherit.aes,
     show.legend = show.legend, ...
   )
-  if (!is.null(constructor)) layer$constructor <- constructor
+  layer <- public_layer_constructor(layer, fn)
   layer <- if (is.null(tag)) layer else tag_layer(layer, tag)
   if (!prepared && is.null(model)) {
     source_layer(layer, inherit.data = is.null(data) || ggplot2::is_waiver(data))
@@ -124,7 +127,7 @@ ggplot_add.coursekata_model_layer <- function(object, plot, ...) {
     params = spec$params, orientation = spec$orientation,
     inherit.aes = binding$inherit.aes && spec$inherit,
     show.legend = request$show.legend, tag = request$tag, prepared = TRUE,
-    fn = request$fn, call = request$call, constructor = request$constructor,
+    fn = request$fn, call = request$call,
     !!!request$dots
   )
   ggplot2::ggplot_add(layer, plot, ...)
@@ -202,8 +205,7 @@ geom_model <- function(mapping = NULL, data = NULL, stat = "model",
     mapping = mapping, data = data, geom = GeomModel, stat = stat,
     position = position, params = rlang::list2(na.rm = na.rm, ...),
     model = model, orientation = orientation, show.legend = show.legend,
-    inherit.aes = inherit.aes, fn = "geom_model", call = rlang::current_env(),
-    constructor = sys.call()
+    inherit.aes = inherit.aes, fn = "geom_model"
   )
 }
 
@@ -217,7 +219,6 @@ stat_model <- function(mapping = NULL, data = NULL, geom = "model",
     mapping = mapping, data = data, geom = geom, stat = StatModel,
     position = position, params = rlang::list2(na.rm = na.rm, ...),
     model = model, orientation = orientation, show.legend = show.legend,
-    inherit.aes = inherit.aes, fn = "stat_model", call = rlang::current_env(),
-    constructor = sys.call()
+    inherit.aes = inherit.aes, fn = "stat_model"
   )
 }

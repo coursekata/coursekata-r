@@ -57,9 +57,9 @@ square_vertices <- function(data, x_range, y_range, aspect) {
 #' Exactly one of the two arrives, on the axis the plot put the model's
 #' outcome on.
 #'
-#' `compute_layer` is overridden to a pass-through, the same shape
-#' [ggplot2::StatIdentity] uses, so an observation with an `NA` on it (a
-#' predictor the model dropped) survives the stat instead of being removed
+#' `compute_layer` checks the required aesthetics, then returns every row
+#' unchanged. An observation with an `NA` on it (a predictor the model dropped)
+#' survives the stat instead of being removed
 #' before the position runs. The residual's jitter is a function of the seed
 #' and the rows it is handed, exactly as the point layer's is, so losing a row
 #' here would hand it a different sequence of draws and the segment would land
@@ -72,8 +72,20 @@ square_vertices <- function(data, x_range, y_range, aspect) {
 StatResid <- ggplot2::ggproto(
   "StatResid", ggplot2::Stat,
   required_aes = c("x", "y", "xend|yend"),
-  extra_params = c("na.rm", "orientation"),
-  compute_layer = function(self, data, params, layout) data,
+  # Fixed aesthetics reach the stat through params before the geom merges them.
+  extra_params = c("na.rm", "orientation", "x", "y", "xend", "yend"),
+  compute_layer = function(self, data, params, layout) {
+    supplied <- union(names(data), names(params))
+    missing <- setdiff(c("x", "y"), supplied)
+    if (!any(c("xend", "yend") %in% supplied)) {
+      missing <- c(missing, "xend or yend")
+    }
+    if (length(missing) > 0L) {
+      fn <- if (inherits(self, "StatReduce")) "stat_reduce" else "stat_resid"
+      abort(glue("`{fn}()` requires the following missing aesthetics: {collapse(missing)}."))
+    }
+    data
+  },
   compute_panel = function(data, scales, ...) data
 )
 
@@ -518,14 +530,18 @@ reduce_spec <- function(object, model, fn = "gf_reduce", call = caller_env()) {
 #'   `...`.
 #'
 #' @noRd
-resid_layer_fun <- function(tag, aesthetics) {
+resid_layer_fun <- function(tag, aesthetics, fn = paste0("gf_", tag),
+                            linewidth_given = TRUE) {
   force(tag)
   force(aesthetics)
+  force(fn)
+  force(linewidth_given)
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL,
            check.aes = TRUE, check.param = FALSE, show.legend = NA,
            inherit.aes = TRUE, ...) {
     params[["model"]] <- NULL
     params[["fun"]] <- NULL
+    if (!linewidth_given && !is.null(params$size)) params$linewidth <- NULL
     mapping <- mapping %||% ggplot2::aes()
     mapping[names(aesthetics)] <- aesthetics
     orientation <- if ("xend" %in% names(aesthetics)) "y" else "x"
@@ -540,10 +556,11 @@ resid_layer_fun <- function(tag, aesthetics) {
       reduction = tag %in% c("reduce", "square_reduce"),
       show.legend = show.legend,
       inherit.aes = inherit.aes,
-      call = caller_env(),
       tag = tag,
       check.aes = check.aes,
       check.param = check.param,
+      fn = fn,
+      call = call2(fn),
       ...
     )
   }

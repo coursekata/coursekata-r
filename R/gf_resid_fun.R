@@ -111,7 +111,10 @@ gf_resid_fun <- named_layer_factory(
 
       # here rather than at the factory: it needs this call's mapping, and a
       # factory-level `layer_fun` would tie this file's collation order to geom-resid.R's
-      layer_fun <- resid_layer_fun("resid", resid$aesthetics)
+      layer_fun <- resid_layer_fun(
+        "resid", resid$aesthetics, .coursekata_function_name,
+        linewidth_given = !missing(linewidth)
+      )
     }
   }
 )

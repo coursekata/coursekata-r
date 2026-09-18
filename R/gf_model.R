@@ -227,7 +227,7 @@ model_layer_fun <- function(plan_params, tag, orientation, plan_mapping) {
     model_layer(
       geom = geom, stat = stat, position = position,
       mapping = plan_mapping, data = data, params = plan_params,
-      orientation = orientation, tag = tag, prepared = TRUE, ...
+      orientation = orientation, tag = tag, prepared = TRUE, fn = "gf_model", ...
     )
   }
 }

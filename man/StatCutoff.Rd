@@ -19,7 +19,6 @@ stat_cutoff(
   part = "middle",
   prop = 0.95,
   greedy = TRUE,
-  func = lifecycle::deprecated(),
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
@@ -45,8 +44,6 @@ for this lower-level stat.}
 
 \item{greedy}{Whether a fractional observation is included in the selected
 region.}
-
-\item{func}{Deprecated alias for \code{part}.}
 
 \item{na.rm}{If \code{FALSE}, the default, missing values are removed with a
 warning. If \code{TRUE}, missing values are silently removed.}

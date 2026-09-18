@@ -292,53 +292,21 @@ test_that("show_cutoffs plans exactly once", {
   expect_identical(plan_calls, 1L)
 })
 
-test_that("public plot and labels aliases keep the legacy call shape", {
-  withr::local_options(lifecycle_verbosity = "default")
-  cache <- get("deprecation_env", asNamespace("lifecycle"))
-  ids <- c("coursekata-show_cutoffs-plot", "coursekata-show_cutoffs-labels")
-  clear <- function() {
-    present <- ids[vapply(ids, exists, logical(1), envir = cache, inherits = FALSE)]
-    if (length(present) > 0L) rlang::env_unbind(cache, present)
-  }
-  clear()
-  withr::defer(clear())
-
+test_that("retired cutoff arguments are refused without evaluating a legacy part", {
   base <- gf_histogram(~Thumb, data = Fingers, binwidth = 5)
-  legacy_plot <- NULL
-  expect_warning(
-    legacy_plot <- suppressMessages(
-      show_cutoffs(plot = base, middle(Thumb, .95))
-    ),
-    class = "lifecycle_warning_deprecated"
+  expect_error(
+    show_cutoffs(plot = base, middle(Thumb, .95)),
+    "unused argument.*plot"
   )
-  expect_s3_class(legacy_plot, "ggplot")
-  expect_equal(
-    cutoff_test_layers(legacy_plot)[[1]]$data$xintercept,
-    cutoff_test_expected("middle", .95, Fingers$Thumb)
-  )
-
-  clear()
-  legacy_labels <- NULL
-  expect_warning(
-    legacy_labels <- suppressMessages(
-      show_cutoffs(base, middle(Thumb, .95), labels = TRUE)
-    ),
-    class = "lifecycle_warning_deprecated"
-  )
-  expect_equal(
-    cutoff_test_layers(legacy_labels)[[1]]$data$label,
-    c(".025 of\nvalues below", ".025 of\nvalues above")
-  )
-
   expect_error(
     show_cutoffs(object = base, plot = base, part = middle(Thumb, .95)),
-    "both `object` and deprecated `plot`"
+    "unused argument.*plot"
   )
   expect_error(
     show_cutoffs(
       base, middle(Thumb, .95), show_labels = FALSE, labels = TRUE
     ),
-    "both `show_labels` and deprecated `labels`"
+    "unused argument.*labels"
   )
 })
 

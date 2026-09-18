@@ -238,6 +238,8 @@ squareplot_warn_binning <- function(params) {
 #' @noRd
 squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
                              data = NULL, ..., .fn = "gf_squareplot") {
+  rlang::local_error_call(call2(.fn))
+  params <- normalize_linewidth(params, geom, .fn)
   params <- params[!vapply(params, is.null, logical(1))]
   square_geom <- squareplot_default_geom(geom)
   if (!square_geom && identical(params$bars, "none")) params$bars <- NULL
@@ -256,6 +258,7 @@ squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
       mapping = mapping, data = data, !!!dots
     )
   )
+  layer <- public_layer_constructor(layer, .fn)
   attr(layer, "squareplot_spec") <- list(
     geom = geom, stat = stat, position = position, params = params,
     mapping = mapping, data = data, dots = dots, fn = .fn
@@ -278,6 +281,7 @@ squareplot_layer <- function(geom, stat, position, params, mapping = NULL,
 ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
   plot <- stabilize_source_data(plot)
   spec <- attr(object, "squareplot_spec")
+  rlang::local_error_call(call2(spec$fn))
   binding <- source_layer_binding(
     plot, spec$mapping, spec$data, spec$dots$inherit.aes %||% TRUE
   )
@@ -322,6 +326,7 @@ ggplot_add.coursekata_squareplot_layer <- function(object, plot, ...) {
     params = spec$params, mapping = spec$mapping, data = data,
     !!!spec$dots
   )
+  layer <- public_layer_constructor(layer, spec$fn)
   parts <- list(layer)
   if (scale_plan$add_y) parts <- c(parts, list(scale_y_count()))
   if (scale_plan$add_x && discrete) {

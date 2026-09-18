@@ -40,8 +40,10 @@ test_that("loading applies the CourseKata plotting defaults", {
   expect_identical(ggplot2::theme_get(), theme_coursekata())
   expect_identical(getOption("repr.plot.width"), 6)
   expect_identical(getOption("repr.plot.height"), 4)
-  expect_identical(
-    getOption("ggplot2.discrete.fill"), scale_discrete_coursekata
+  expect_null(getOption("ggplot2.discrete.fill"))
+  expect_null(getOption("ggplot2.discrete.colour"))
+  expect_equal(
+    ggplot2::theme_get()$palette.fill.discrete(3), coursekata_palette_provider()(3)
   )
   expect_identical(getOption("ggplot2.continuous.colour"), "viridis")
 
@@ -125,4 +127,55 @@ test_that("a new load cycle snapshots a new caller state", {
 
   expect_identical(ggplot2::theme_get(), next_theme)
   expect_identical(getOption("repr.plot.height"), 13)
+})
+
+test_that("theme palettes allow per-plot overrides and explicit shared scales", {
+  local_theme_lifecycle_state()
+  coursekata_load_theme()
+  data <- data.frame(x = 1:4, group = factor(c("a", "b", "a", "b")))
+  base <- ggplot2::ggplot(data, ggplot2::aes(x, x, colour = group, fill = group)) +
+    ggplot2::geom_point(shape = 21)
+  drawn <- ggplot2::ggplot_build(base)$data[[1]]
+  expected <- coursekata_palette_provider()(2)[as.integer(data$group)]
+  expect_equal(drawn$colour, expected)
+  expect_equal(drawn$fill, expected)
+
+  custom <- function(n) c("red", "blue")[seq_len(n)]
+  expect_no_warning(
+    overridden <- ggplot2::ggplot_build(base + ggplot2::theme(
+      palette.colour.discrete = custom, palette.fill.discrete = custom
+    ))
+  )
+  expect_equal(overridden$data[[1]]$colour, custom(2)[as.integer(data$group)])
+  expect_equal(overridden$data[[1]]$fill, custom(2)[as.integer(data$group)])
+
+  shared <- ggplot2::ggplot_build(base + scale_discrete_coursekata())
+  expect_identical(
+    shared$plot$scales$get_scales("colour"), shared$plot$scales$get_scales("fill")
+  )
+  expect_equal(shared$data[[1]]$colour, expected)
+  expect_equal(shared$data[[1]]$fill, expected)
+})
+
+test_that("default colour and fill scales train on their own category sets", {
+  local_theme_lifecycle_state()
+  coursekata_load_theme()
+  data <- data.frame(
+    x = 1:4, colour = c("a", "b", "a", "b"), fill = c("c", "d", "e", "c")
+  )
+  p <- ggplot2::ggplot(data, ggplot2::aes(x, x, colour = colour, fill = fill)) +
+    ggplot2::geom_point(shape = 21)
+  built <- ggplot2::ggplot_build(p)
+  colour <- built$plot$scales$get_scales("colour")
+  fill <- built$plot$scales$get_scales("fill")
+  expect_false(identical(colour, fill))
+  expect_identical(colour$get_limits(), c("a", "b"))
+  expect_identical(fill$get_limits(), c("c", "d", "e"))
+  palette <- coursekata_palette_provider()
+  expect_equal(built$data[[1]]$colour, palette(2)[c(1, 2, 1, 2)])
+  expect_equal(built$data[[1]]$fill, palette(3)[c(1, 2, 3, 1)])
+
+  shared <- ggplot2::ggplot_build(p + scale_discrete_coursekata())
+  expect_identical(shared$plot$scales$get_scales("colour")$get_limits(), letters[1:5])
+  expect_equal(shared$data[[1]]$fill, palette(5)[c(3, 4, 5, 3)])
 })
