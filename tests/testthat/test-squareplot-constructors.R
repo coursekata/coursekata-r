@@ -99,7 +99,7 @@ test_that("both native constructors preserve square and bar settings", {
   expect_identical(settings$stat, settings$formula)
 })
 
-test_that("plot-level fill and colour mappings retain gf_squareplot's fixed defaults", {
+test_that("plot-level fill and colour mappings reach the squares and legend", {
   d <- data.frame(x = c(1, 1, 2), g = c("a", "b", "a"))
   make_base <- function() {
     ggplot2::ggplot(d, ggplot2::aes(x, fill = g, colour = g))
@@ -110,9 +110,9 @@ test_that("plot-level fill and colour mappings retain gf_squareplot's fixed defa
     native <- make_base() + constructor()
     expect_squareplot_contract(native, formula)
     layer <- ggplot2::layer_data(native)
-    expect_identical(unique(layer$fill), "#7fcecc")
-    expect_identical(unique(layer$colour), "white")
-    expect_length(ggplot2::ggplot_build(native)$plot$guides$guides, 0)
+    expect_length(unique(layer$fill), 2)
+    expect_length(unique(layer$colour), 2)
+    expect_length(ggplot2::ggplot_build(native)$plot$guides$guides, 1)
   }
 })
 

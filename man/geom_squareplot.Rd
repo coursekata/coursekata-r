@@ -45,7 +45,9 @@ stat_squareplot(
 \item{mapping}{Aesthetic mappings created by \code{\link[ggplot2:aes]{ggplot2::aes()}}.}
 
 \item{data}{A data frame for this layer, or \code{NULL} to inherit the plot's
-data. Function-valued and formula-valued layer data are not supported.}
+data. If x is mapped only on the plot's first layer, its data and mapping
+are used together. Function-valued and formula-valued layer data are not
+supported.}
 
 \item{stat}{The statistical transformation used by \code{geom_squareplot()}.}
 
@@ -76,6 +78,13 @@ as one square. Continuous x values use \code{ggplot2::stat_bin()}'s binning rule
 factors, characters, and logicals use \code{ggplot2::stat_count()}'s columns.
 Both constructors retain \code{gf_squareplot()}'s defaults, warnings, factor-level
 handling, and count scale.
+Counts must be finite, nonnegative whole numbers. Integer frequency weights
+are supported; use a histogram or bar plot for fractional weighted counts.
+Fill and separator colour inherit mappings, with teal and white defaults
+when no mapping or fixed value is supplied.
+Put a staged \code{linewidth = after_scale(...)} mapping on this layer to keep
+its width fixed. Plot-level \code{after_scale()} linewidth mappings use automatic
+border fitting: ggplot2 evaluates them after the geom's setup.
 }
 \details{
 A squareplot is x-only, as it is through \code{gf_squareplot()}. Map the

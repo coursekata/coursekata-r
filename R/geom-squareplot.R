@@ -124,15 +124,23 @@ GeomSquareplot <- ggplot2::ggproto(
   # and required aesthetics are checked before that runs, so GeomRect's four
   # corners are the wrong requirement to inherit
   required_aes = "x",
-  extra_params = c("na.rm"),
-  # record whether linewidth was supplied before the theme default fills it in
-  use_defaults = function(self, data, params = list(), ...) {
-    supplied <- !is.null(data$linewidth) || !is.null(params$linewidth)
-    data <- ggplot2::ggproto_parent(ggplot2::GeomRect, self)$use_defaults(data, params, ...)
-    if (nrow(data) > 0) data$fit_border <- !supplied
-    data
-  },
+  default_aes = ggplot2::aes(
+    colour = "white", fill = "#7fcecc",
+    linewidth = ggplot2::from_theme(borderwidth),
+    linetype = ggplot2::from_theme(bordertype), alpha = NA
+  ),
+  extra_params = c("na.rm", "fit_border"),
   setup_data = function(data, params) {
+    count <- data$count
+    if (!is.numeric(count) || any(!is.finite(count) | count < 0 |
+        abs(count - round(count)) > 1e-7)) {
+      abort(c(
+        "A squareplot needs nonnegative whole counts.",
+        i = "Each square represents one count; use a histogram or bar plot for fractional weights."
+      ), class = "coursekata_squareplot_count")
+    }
+    data$fit_border <- rep(params$fit_border %||%
+      (is.null(data$linewidth) && is.null(params$linewidth)), nrow(data))
     # StatBin supplies xmin/xmax itself -- a bin's edges -- and those are honored
     # untouched. StatCount supplies neither, only a level's position and a column
     # width, so a counted x needs the same derivation stat_bin's own bin_out()
@@ -142,7 +150,7 @@ GeomSquareplot <- ggplot2::ggproto(
       data$xmin <- data$x - half
       data$xmax <- data$x + half
     }
-    data <- data[rep(seq_len(nrow(data)), data$count), , drop = FALSE]
+    data <- data[rep(seq_len(nrow(data)), round(count)), , drop = FALSE]
     if (nrow(data) == 0) {
       return(data)
     }
@@ -204,16 +212,12 @@ GeomSquareplot <- ggplot2::ggproto(
       data, panel_params, coord, lineend = lineend, linejoin = linejoin
     )
     # a square's rendered size is not known until the device is; defer to draw time
+    dimensions <- squareplot_drawn_dimensions(data, panel_params, coord)
     squares <- grid::gTree(
       children = grid::gList(rects),
-      width_frac = (data$xmax[[1]] - data$xmin[[1]]) / diff(panel_params$x.range),
-      # one height per square, not one for the layer. A non-linear coord draws
-      # the same one-count square shorter the higher it sits, and it does that
-      # after this hook runs -- `data` here is still in count space -- so ask
-      # the coord where these corners land before measuring them. A border
-      # fitted to the bottom square would swallow every square above it.
-      height_frac = squareplot_drawn_heights(data, panel_params, coord),
-      linewidth = data$linewidth[[1]], fit = fit, n = nrow(data),
+      width_frac = dimensions$width,
+      height_frac = dimensions$height,
+      linewidth = data$linewidth, fit = fit, n = nrow(data),
       cl = "coursekata_squares"
     )
     if (is.null(bar_grob)) squares else grid::grobTree(squares, bar_grob)
@@ -229,6 +233,13 @@ GeomSquareplot <- ggplot2::ggproto(
 #' factors, characters, and logicals use `ggplot2::stat_count()`'s columns.
 #' Both constructors retain `gf_squareplot()`'s defaults, warnings, factor-level
 #' handling, and count scale.
+#' Counts must be finite, nonnegative whole numbers. Integer frequency weights
+#' are supported; use a histogram or bar plot for fractional weighted counts.
+#' Fill and separator colour inherit mappings, with teal and white defaults
+#' when no mapping or fixed value is supplied.
+#' Put a staged `linewidth = after_scale(...)` mapping on this layer to keep
+#' its width fixed. Plot-level `after_scale()` linewidth mappings use automatic
+#' border fitting: ggplot2 evaluates them after the geom's setup.
 #'
 #' A squareplot is x-only, as it is through `gf_squareplot()`. Map the
 #' distribution to x. If the plot already maps y for another layer, set
@@ -236,7 +247,9 @@ GeomSquareplot <- ggplot2::ggproto(
 #'
 #' @param mapping Aesthetic mappings created by [ggplot2::aes()].
 #' @param data A data frame for this layer, or `NULL` to inherit the plot's
-#'   data. Function-valued and formula-valued layer data are not supported.
+#'   data. If x is mapped only on the plot's first layer, its data and mapping
+#'   are used together. Function-valued and formula-valued layer data are not
+#'   supported.
 #' @param position,show.legend,inherit.aes See [ggplot2::geom_histogram()].
 #' @param stat The statistical transformation used by `geom_squareplot()`.
 #' @param geom The geometric object used by `stat_squareplot()`.
@@ -358,7 +371,7 @@ fit_square_border <- function(width_pt, height_pt, linewidth, fit = TRUE) {
   pmin(requested, pmin(width_pt, height_pt) / 4)
 }
 
-#' How tall each square is once the coord has had its say
+#' Measure each square after coordinate placement
 #'
 #' `draw_panel()` runs before the coord distorts anything, so a square's corners
 #' arrive in count space and every square looks one count tall. Under a linear
@@ -371,22 +384,15 @@ fit_square_border <- function(width_pt, height_pt, linewidth, fit = TRUE) {
 #' @param panel_params The panel's parameters.
 #' @param coord The plot's coord.
 #'
-#' @return One height per square, as a fraction of the panel.
+#' @return A list of widths and heights, as fractions of the panel.
 #'
 #' @noRd
-squareplot_drawn_heights <- function(data, panel_params, coord) {
-  placed <- tryCatch(
-    coord$transform(data[c("x", "y", "ymin", "ymax")], panel_params),
-    error = function(cnd) NULL
+squareplot_drawn_dimensions <- function(data, panel_params, coord) {
+  placed <- coord$transform(data[c("x", "y", "xmin", "xmax", "ymin", "ymax")], panel_params)
+  list(
+    width = abs(placed$xmax - placed$xmin),
+    height = abs(placed$ymax - placed$ymin)
   )
-  # a coord that will not place bare corners (or has no y to place) leaves the
-  # count-space height, which is what a linear coord would have answered anyway
-  if (is.null(placed) || is.null(placed$ymin) || is.null(placed$ymax)) {
-    return((data$ymax - data$ymin) / diff(panel_params$y.range))
-  }
-  # every coord places corners in npc, so the heights come back as panel
-  # fractions already -- which is exactly what the border fit wants
-  placed$ymax - placed$ymin
 }
 
 #' Size a squareplot's borders once the device is known
