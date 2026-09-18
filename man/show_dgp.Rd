@@ -35,6 +35,12 @@ finite visible value on that scale; it is never moved to a boundary.
 An x position scale can be added before or after \code{show_dgp()}; the final scale
 supplies the limits and breaks for both guides. A later \code{\link[ggplot2:guides]{ggplot2::guides()}}
 call can replace either guide in the usual ggplot2 way.
+The plot's x label is retained when a later guide replaces the estimate
+frame. Existing plot theme settings, including inherited \code{axis.text},
+\code{axis.title}, and \code{axis.line} settings, take precedence over the frame's
+default axis styling. Later themes follow ggplot2's usual inheritance:
+change \code{axis.text.x}, \code{axis.title.x}, or \code{axis.line.x}/\code{axis.line.y} to
+override the frame's axis-specific settings.
 }
 \examples{
 # with only ten shuffles the mean of the distribution can land well away

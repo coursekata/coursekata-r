@@ -199,6 +199,12 @@ show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
 #' An x position scale can be added before or after `show_dgp()`; the final scale
 #' supplies the limits and breaks for both guides. A later [ggplot2::guides()]
 #' call can replace either guide in the usual ggplot2 way.
+#' The plot's x label is retained when a later guide replaces the estimate
+#' frame. Existing plot theme settings, including inherited `axis.text`,
+#' `axis.title`, and `axis.line` settings, take precedence over the frame's
+#' default axis styling. Later themes follow ggplot2's usual inheritance:
+#' change `axis.text.x`, `axis.title.x`, or `axis.line.x`/`axis.line.y` to
+#' override the frame's axis-specific settings.
 #'
 #' @param object A plot of one distribution of estimates.
 #' @param color Color of the axes, equations and titles. Default `"#003d70"`.
@@ -239,17 +245,13 @@ show_dgp <- function(object = NULL, color = "#003d70", null_color = "#E60000",
   }
   check_distribution_x_scale(spec, "show_dgp")
   x_scale <- spec$x_scale
-  guide_sources <- c(
-    position_guide_matches(x_scale$guide %||% ggplot2::waiver(), "GuideDgp"),
-    if (is.null(x_scale)) list() else {
-      position_guide_matches(x_scale$secondary.axis, "GuideDgp")
-    }
-  )
-  if (length(guide_sources) > 0L) {
-    abort("This plot already has a data generating process drawn on it")
-  }
-  for (name in names(object$guides$guides)) {
-    if (length(position_guide_matches(object$guides$guides[[name]], "GuideDgp")) > 0L) {
+  # Plot-level overrides own the effective guide, including explicit NULL or
+  # "none". A replaced scale guide is no longer part of the composition.
+  guides <- list(x = x_scale$guide, x.sec = x_scale$secondary.axis)
+  overrides <- object$guides$guides
+  for (name in names(guides)) {
+    guide <- if (name %in% names(overrides)) overrides[[name]] else guides[[name]]
+    if (length(position_guide_matches(guide, "GuideDgp")) > 0L) {
       abort("This plot already has a data generating process drawn on it")
     }
   }
@@ -263,12 +265,22 @@ show_dgp <- function(object = NULL, color = "#003d70", null_color = "#E60000",
   ))
 
   out <- add_dgp_position_guides(object, estimate, population)
-  out +
-    ggplot2::labs(x = "") +
-    ggplot2::theme(
-      axis.line.x = ggplot2::element_line(color = color),
-      axis.line.y = ggplot2::element_blank(),
-      axis.text.x = ggplot2::element_text(color = color),
-      axis.title.x = ggplot2::element_text(color = color)
-    )
+  defaults <- list(
+    axis.line.x = ggplot2::element_line(color = color),
+    axis.line.y = ggplot2::element_blank(),
+    axis.text.x = ggplot2::element_text(color = color),
+    axis.title.x = ggplot2::element_text(color = color)
+  )
+  # Omit defaults that compete with the caller's inherited styling. Leave
+  # those elements in their original place: copying a parent's rel() size
+  # into a child would apply the same multiplier again during inheritance.
+  for (name in names(defaults)) {
+    inherited <- ggplot2::calc_element(name, object$theme)
+    if (is.null(inherited)) next
+    if (inherits(inherited, "element_blank") || name == "axis.line.y" ||
+        !is.null(inherited$colour)) {
+      defaults[[name]] <- NULL
+    }
+  }
+  out + (do.call(ggplot2::theme, defaults) + object$theme)
 }

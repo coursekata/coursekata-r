@@ -320,6 +320,64 @@ test_that("directional markers stay inside their measured rail", {
   expect_equal(marker("bottom")$vp$just, c(0.5, 0.5))
 })
 
+test_that("rendered guide triangles point toward the panel on every side", {
+  base <- ggplot2::ggplot(
+    data.frame(x = c(-2, 6), y = c(-2, 6)), ggplot2::aes(x, y)
+  ) + ggplot2::geom_point()
+  positions <- c(bottom = "b", top = "t", left = "l", right = "r")
+  expected_x <- list(
+    bottom = c(.5, 0, 1), top = c(.5, 0, 1),
+    left = c(1, 0, 0), right = c(0, 1, 1)
+  )
+  expected_y <- list(
+    bottom = c(1, 0, 0), top = c(0, 1, 1),
+    left = c(.5, 0, 1), right = c(.5, 0, 1)
+  )
+  for (constructor in list(guide_cutoff, guide_dgp)) {
+    for (position in names(positions)) {
+      guide <- constructor(value = 0, size = 6, position = position)
+      horizontal <- position %in% c("bottom", "top")
+      scale <- if (horizontal) {
+        ggplot2::scale_x_continuous(guide = guide)
+      } else {
+        ggplot2::scale_y_continuous(guide = guide)
+      }
+      plot <- base + scale
+      grob <- ggplot2::ggplotGrob(plot)
+      expect_no_error(grid::grid.force(grob))
+      markers <- cutoff_test_grobs(
+        grob$grobs[[which(grob$layout$name == paste0("axis-", positions[[position]]))]],
+        "polygon"
+      )
+      expect_length(markers, 1L)
+      marker <- markers[[1L]]
+      expect_equal(as.numeric(marker$x), expected_x[[position]])
+      expect_equal(as.numeric(marker$y), expected_y[[position]])
+      along <- if (horizontal) "x" else "y"
+      key <- ggplot2::get_guide_data(plot, along)
+      expect_equal(as.numeric(marker$vp[[along]]), key[[along]][[1L]])
+      # Physical dimensions must hold on the device, independently of the
+      # panel's aspect ratio and of the axis's measured label space.
+      grid::pushViewport(marker$vp)
+      width <- diff(range(grid::convertX(marker$x, "mm", valueOnly = TRUE)))
+      height <- diff(range(grid::convertY(marker$y, "mm", valueOnly = TRUE)))
+      grid::popViewport()
+      expect_equal(width, 6)
+      expect_equal(height, 6)
+    }
+  }
+})
+
+test_that("cutoff and DGP guide triangles render on all four sides", {
+  plot <- ggplot2::ggplot(
+    data.frame(x = c(-2, 6), y = c(-2, 6)), ggplot2::aes(x, y)
+  ) + ggplot2::geom_point() + ggplot2::guides(
+    x = guide_cutoff(0), x.sec = guide_dgp(0),
+    y = guide_cutoff(0), y.sec = guide_dgp(0)
+  )
+  vdiffr::expect_doppelganger("position guide triangles on four sides", plot)
+})
+
 test_that("a y-position cutoff guide keeps native horizontal text", {
   label_theme <- ggplot2::theme(
     axis.text.x = ggplot2::element_text(

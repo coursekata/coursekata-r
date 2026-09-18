@@ -510,3 +510,27 @@ test_that("a later non-cartesian coordinate drops protected stems cleanly", {
   expect_no_error(ggplot2::ggplotGrob(polar))
   expect_s3_class(ggplot2::layer_grob(polar, length(polar$layers))[[1]], "zeroGrob")
 })
+
+test_that("native cutoff stems use the same scale edge as helper stems", {
+  base <- ggplot2::ggplot(data.frame(x = 1:10), ggplot2::aes(x)) +
+    ggplot2::geom_histogram(binwidth = 1, boundary = 0.5)
+  for (flip in c(FALSE, TRUE)) {
+    for (position in c("bottom", "top")) {
+      plot <- base + ggplot2::scale_x_continuous(position = position)
+      if (flip) plot <- plot + ggplot2::coord_flip()
+      helper <- show_cutoffs(plot, middle(x, .5))
+      anchors <- as.numeric(helper$layers[[2L]]$data$xintercept)
+      native <- plot + geom_cutoff(
+        ggplot2::aes(xintercept = anchor), data = data.frame(anchor = anchors),
+        inherit.aes = FALSE
+      )
+      stat <- plot + stat_cutoff(part = "middle", prop = .5)
+      expected <- cutoff_draw(helper)$children[[1L]]
+      for (actual in list(cutoff_draw(native), cutoff_draw(stat))) {
+        for (name in c("x0", "x1", "y0", "y1")) {
+          expect_equal(as.numeric(actual[[name]]), as.numeric(expected[[name]]))
+        }
+      }
+    }
+  }
+})
