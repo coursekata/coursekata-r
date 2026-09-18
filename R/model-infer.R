@@ -157,7 +157,7 @@ implied_layer_fun <- function(defaults, tag) {
   force(tag)
   authoritative <- intersect("orientation", names(defaults))
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL, ...) {
-    supplied <- params %||% list()
+    supplied <- normalize_linewidth(params %||% list(), geom, "gf_model", warn_size = FALSE)
     # `color` and `colour` are one parameter spelled two ways, and
     # `modifyList()` matches names literally: without this, a default stated as
     # `colour` outranks the caller's own `color =` instead of being replaced by
@@ -174,7 +174,7 @@ implied_layer_fun <- function(defaults, tag) {
     model_layer(
       geom = geom, stat = stat, position = position,
       mapping = mapping, data = data, params = merged,
-      orientation = orientation, tag = tag, prepared = TRUE, ...
+      orientation = orientation, tag = tag, prepared = TRUE, fn = "gf_model", ...
     )
   }
 }

@@ -3,9 +3,9 @@
 #' ggplot2 scales and guide collections are ggproto objects. Copying only the
 #' plot would therefore let a guide edit leak back into the plot the caller
 #' still holds. This helper clones the scale collection, materializes an
-#' ordinary continuous position scale when none is explicit, and copies the
-#' guide collection before removing an override that will be recomposed at the
-#' plot level.
+#' ordinary continuous position scale when none is explicit, and reads the
+#' effective guide. The caller replaces the guide through `+ guides()`, which
+#' lets ggplot2 copy the guide collection and replace the override.
 #'
 #' @param plot A ggplot object.
 #' @param aesthetic The mapped position aesthetic, `"x"` or `"y"`.
@@ -36,23 +36,11 @@ position_guide_state <- function(plot, aesthetic = "x") {
   } else {
     aesthetic
   }
+  # ggplot2 has no public accessor for per-aesthetic guide overrides.
+  # Adding the composed guide through + guides() detaches this container.
   overrides <- out$guides$guides
   from_override <- physical %in% names(overrides)
   guide <- if (from_override) overrides[[physical]] else scale$guide
-
-  if (from_override) {
-    overrides[physical] <- NULL
-    # A Guides object produced by repeated `+ guides()` calls may have one or
-    # more instance layers above the Guides prototype. Cloning from the
-    # instance itself creates a self-referential parent chain, so walk to the
-    # prototype before installing the copied override list.
-    guides_super <- out$guides
-    while (is.function(guides_super$super)) {
-      guides_super <- guides_super$super()
-    }
-    detached <- ggplot2::ggproto(NULL, guides_super, guides = overrides)
-    out@guides <- detached
-  }
 
   list(
     plot = out, scale = scale, guide = guide, physical = physical,

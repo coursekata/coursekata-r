@@ -204,7 +204,10 @@ resid_layer <- function(mapping = NULL, data = NULL, geom, stat,
                         inherit.aes = TRUE, check.aes = TRUE,
                         check.param = TRUE, show.legend = NA,
                         tag = NULL, orientation = NA, reduction = FALSE,
-                        call = caller_env(), ...) {
+                        call = caller_env(), fn = "geom_resid", ...) {
+  rlang::local_error_call(call2(fn))
+  params <- normalize_linewidth(params, geom, fn)
+  params <- resid_geom_defaults(params, geom, mapping)
   orientation <- resid_orientation(orientation, call = call)
   position <- resid_layer_position(
     position, orientation = orientation, reduction = reduction, call = call
@@ -224,13 +227,14 @@ resid_layer <- function(mapping = NULL, data = NULL, geom, stat,
     show.legend = show.legend,
     ...
   )
+  layer <- public_layer_constructor(layer, fn)
   if (is.null(tag)) layer else tag_layer(layer, tag)
 }
 
-resid_geom_defaults <- function(params, geom) {
+resid_geom_defaults <- function(params, geom, mapping = NULL) {
   is_line <- identical(geom, "resid") || inherits(geom, "GeomResid")
   is_square <- identical(geom, "square_resid") || inherits(geom, "GeomSquareResid")
-  if (is_line && is.null(params$linewidth)) {
+  if (is_line && is.null(params$linewidth) && is.null(mapping$linewidth)) {
     params$linewidth <- 0.2
   }
   if (is_square && is.null(params$alpha)) {
@@ -241,7 +245,7 @@ resid_geom_defaults <- function(params, geom) {
 
 model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
                               model, orientation, reduction, show.legend,
-                              inherit.aes, call) {
+                              inherit.aes, call = call2(fn)) {
   if (is.null(model)) {
     abort(glue("`{fn}()` needs a fitted `model`."), call = call)
   }
@@ -280,7 +284,8 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     },
     orientation = orientation,
     reduction = reduction,
-    call = call
+    call = call,
+    fn = fn
   ), inherit.data = is.null(data))
 }
 
@@ -362,13 +367,14 @@ geom_resid <- function(mapping = NULL, data = NULL, stat = "resid",
     geom = GeomResid,
     stat = stat,
     position = position,
-    params = rlang::list2(na.rm = na.rm, linewidth = linewidth, ...),
+    params = rlang::list2(
+      na.rm = na.rm, linewidth = if (missing(linewidth)) NULL else linewidth, ...
+    ),
     model = model,
     orientation = orientation,
     reduction = FALSE,
     inherit.aes = inherit.aes,
-    show.legend = show.legend,
-    call = caller_env()
+    show.legend = show.legend
   )
 }
 
@@ -391,8 +397,7 @@ geom_square_resid <- function(mapping = NULL, data = NULL, stat = "resid",
     orientation = orientation,
     reduction = FALSE,
     inherit.aes = inherit.aes,
-    show.legend = show.legend,
-    call = caller_env()
+    show.legend = show.legend
   )
 }
 
@@ -409,13 +414,14 @@ geom_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
     geom = GeomResid,
     stat = stat,
     position = position,
-    params = rlang::list2(na.rm = na.rm, linewidth = linewidth, ...),
+    params = rlang::list2(
+      na.rm = na.rm, linewidth = if (missing(linewidth)) NULL else linewidth, ...
+    ),
     model = model,
     orientation = orientation,
     reduction = TRUE,
     inherit.aes = inherit.aes,
-    show.legend = show.legend,
-    call = caller_env()
+    show.legend = show.legend
   )
 }
 
@@ -438,8 +444,7 @@ geom_square_reduce <- function(mapping = NULL, data = NULL, stat = "reduce",
     orientation = orientation,
     reduction = TRUE,
     inherit.aes = inherit.aes,
-    show.legend = show.legend,
-    call = caller_env()
+    show.legend = show.legend
   )
 }
 
@@ -449,7 +454,7 @@ stat_resid <- function(mapping = NULL, data = NULL, geom = "resid",
                        position = "identity", ..., model = NULL,
                        orientation = NA, na.rm = FALSE, show.legend = NA,
                        inherit.aes = TRUE) {
-  params <- resid_geom_defaults(rlang::list2(na.rm = na.rm, ...), geom)
+  params <- rlang::list2(na.rm = na.rm, ...)
   model_resid_layer(
     fn = "stat_resid",
     mapping = mapping,
@@ -462,8 +467,7 @@ stat_resid <- function(mapping = NULL, data = NULL, geom = "resid",
     orientation = orientation,
     reduction = FALSE,
     inherit.aes = inherit.aes,
-    show.legend = show.legend,
-    call = caller_env()
+    show.legend = show.legend
   )
 }
 
@@ -473,7 +477,7 @@ stat_reduce <- function(mapping = NULL, data = NULL, geom = "resid",
                         position = "identity", ..., model = NULL,
                         orientation = NA, na.rm = FALSE, show.legend = NA,
                         inherit.aes = TRUE) {
-  params <- resid_geom_defaults(rlang::list2(na.rm = na.rm, ...), geom)
+  params <- rlang::list2(na.rm = na.rm, ...)
   model_resid_layer(
     fn = "stat_reduce",
     mapping = mapping,
@@ -486,7 +490,6 @@ stat_reduce <- function(mapping = NULL, data = NULL, geom = "resid",
     orientation = orientation,
     reduction = TRUE,
     inherit.aes = inherit.aes,
-    show.legend = show.legend,
-    call = caller_env()
+    show.legend = show.legend
   )
 }

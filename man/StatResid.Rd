@@ -16,9 +16,9 @@ Exactly one of the two arrives, on the axis the plot put the model's
 outcome on.
 }
 \details{
-\code{compute_layer} is overridden to a pass-through, the same shape
-\link[ggplot2:StatIdentity]{ggplot2::StatIdentity} uses, so an observation with an \code{NA} on it (a
-predictor the model dropped) survives the stat instead of being removed
+\code{compute_layer} checks the required aesthetics, then returns every row
+unchanged. An observation with an \code{NA} on it (a predictor the model dropped)
+survives the stat instead of being removed
 before the position runs. The residual's jitter is a function of the seed
 and the rows it is handed, exactly as the point layer's is, so losing a row
 here would hand it a different sequence of draws and the segment would land

@@ -147,7 +147,6 @@ check_distribution_x_scale <- function(spec, fn, call = caller_env()) {
 #' @param color Line color. Default `"#E60000"`.
 #' @param linetype Line type. Default `"longdash"`.
 #' @param linewidth Line width. Default `0.7`.
-#' @param plot Deprecated alias for `object`.
 #'
 #' @return The plot, with a tagged mean line added.
 #'
@@ -161,11 +160,8 @@ check_distribution_x_scale <- function(spec, fn, call = caller_env()) {
 #' # a facet is a region with its own subset, so each panel gets its own mean
 #' gf_histogram(~Thumb | Sex, data = Fingers, binwidth = 5) %>% show_mean()
 show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
-                      linewidth = 0.7, plot = lifecycle::deprecated()) {
+                      linewidth = 0.7) {
   lifecycle::signal_stage("experimental", "show_mean()")
-  object <- normalize_plot_argument(
-    object, plot, missing(object), missing(plot), "show_mean"
-  )
   object <- stabilize_source_data(object)
   spec <- distribution_plot_spec(object, "show_mean")
 
@@ -208,7 +204,6 @@ show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
 #' @param color Color of the axes, equations and titles. Default `"#003d70"`.
 #' @param null_color Color of the null hypothesis marker. Default `"#E60000"`.
 #' @param size Size of the null hypothesis marker. Default `4`.
-#' @param plot Deprecated alias for `object`.
 #'
 #' @return The plot, with population and estimate guides added.
 #'
@@ -232,11 +227,8 @@ show_mean <- function(object = NULL, color = "#E60000", linetype = "longdash",
 #'   show_mean() %>%
 #'   show_dgp()
 show_dgp <- function(object = NULL, color = "#003d70", null_color = "#E60000",
-                     size = 4, plot = lifecycle::deprecated()) {
+                     size = 4) {
   lifecycle::signal_stage("experimental", "show_dgp()")
-  object <- normalize_plot_argument(
-    object, plot, missing(object), missing(plot), "show_dgp"
-  )
   spec <- distribution_plot_spec(object, "show_dgp")
 
   if (inherits(object$coordinates, "CoordFlip")) {

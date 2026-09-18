@@ -12,14 +12,13 @@ test_that("stat_cutoff has the conventional layer interface", {
   expect_identical(
     names(formals(stat_cutoff)),
     c("mapping", "data", "geom", "position", "...", "part", "prop",
-      "greedy", "func", "na.rm", "show.legend", "inherit.aes")
+      "greedy", "na.rm", "show.legend", "inherit.aes")
   )
   expect_identical(formals(stat_cutoff)$geom, "cutoff")
   expect_identical(formals(stat_cutoff)$position, "identity")
   expect_identical(formals(stat_cutoff)$part, "middle")
   expect_identical(formals(stat_cutoff)$prop, 0.95)
   expect_identical(formals(stat_cutoff)$greedy, TRUE)
-  expect_identical(deparse1(formals(stat_cutoff)$func), "lifecycle::deprecated()")
   expect_identical(formals(stat_cutoff)$na.rm, FALSE)
   expect_identical(formals(stat_cutoff)$show.legend, NA)
   expect_identical(formals(stat_cutoff)$inherit.aes, TRUE)
@@ -151,26 +150,14 @@ test_that("stat_cutoff refuses mapped styling aesthetics", {
   expect_error(ggplot2::ggplot_build(plot), "colour.*can't be mapped")
 })
 
-test_that("func remains a deprecated alias at both public and direct-layer boundaries", {
+test_that("retired func is refused at public and direct-layer boundaries", {
   values <- data.frame(x = 1:10)
-  cache <- get("deprecation_env", asNamespace("lifecycle"))
-  clear_deprecation <- function() {
-    id <- "coursekata-stat-cutoff-func"
-    if (exists(id, envir = cache, inherits = FALSE)) rlang::env_unbind(cache, id)
-  }
-  clear_deprecation()
-  withr::defer(clear_deprecation())
-
-  lifecycle::expect_deprecated(
-    aliased <- stat_cutoff(
+  expect_error(
+    stat_cutoff(
       mapping = ggplot2::aes(x = x), data = values, geom = "vline",
       func = "upper", prop = .2, na.rm = TRUE
     ),
-    "func"
-  )
-  expect_equal(
-    cutoff_layer_data(ggplot2::ggplot() + aliased)$xintercept,
-    planned_intercepts("upper", .2, values$x)
+    "no longer takes `func`; use `part`"
   )
 
   direct <- ggplot2::layer(
@@ -178,16 +165,14 @@ test_that("func remains a deprecated alias at both public and direct-layer bound
     mapping = ggplot2::aes(x = x), data = values,
     params = list(func = "lower", prop = .2, na.rm = TRUE)
   )
-  clear_deprecation()
-  lifecycle::expect_deprecated(
-    built <- cutoff_layer_data(ggplot2::ggplot() + direct),
-    "func"
+  expect_error(
+    cutoff_layer_data(ggplot2::ggplot() + direct),
+    "no longer takes `func`; use `part`"
   )
-  expect_equal(built$xintercept, planned_intercepts("lower", .2, values$x))
 
   expect_error(
     stat_cutoff(geom = "vline", part = "middle", func = "tails"),
-    "both `part` and deprecated `func`"
+    "no longer takes `func`; use `part`"
   )
 })
 

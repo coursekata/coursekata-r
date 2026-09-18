@@ -9,9 +9,7 @@ show_cutoffs(
   part,
   color = "#1e3a8a",
   size = 4,
-  show_labels = FALSE,
-  plot = lifecycle::deprecated(),
-  labels = lifecycle::deprecated()
+  show_labels = FALSE
 )
 }
 \arguments{
@@ -26,10 +24,6 @@ it, the part is read off the plot's fill aesthetic.}
 \item{size}{Marker size. Default \code{4}.}
 
 \item{show_labels}{Whether to annotate the cutoffs. Default \code{FALSE}.}
-
-\item{plot}{Deprecated alias for \code{object}.}
-
-\item{labels}{Deprecated alias for \code{show_labels}.}
 }
 \value{
 A ggplot object with cutoff markers and optional labels.

@@ -127,11 +127,14 @@ stat_sd_ruler <- function(mapping = NULL, data = NULL, geom = "segment",
 #' @return A ggplot2 layer.
 #' @noRd
 sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
-                           data = NULL, ...) {
-  ggplot2::layer(
+                           data = NULL, ..., .fn = "stat_sd_ruler") {
+  rlang::local_error_call(call2(.fn))
+  params <- normalize_linewidth(params, geom, .fn)
+  layer <- ggplot2::layer(
     geom = geom, stat = stat, position = position, params = params,
     mapping = mapping, data = data, ...
   )
+  public_layer_constructor(layer, .fn)
 }
 
 #' Adapt the shared ruler layer to the ggformula front door
@@ -147,14 +150,7 @@ sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
 #' @noRd
 gf_sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
                               data = NULL, ...) {
-  if (!is.null(params$size)) {
-    warn(c(
-      "`size` is now `linewidth` in `gf_sd_ruler()`",
-      glue("write `linewidth = {deparse(params$size)}` instead")
-    ))
-    params$linewidth <- params$linewidth %||% params$size
-    params$size <- NULL
-  }
+  params <- normalize_linewidth(params, geom, "gf_sd_ruler")
 
   mapped <- setdiff(names(mapping), c("x", "y"))
   if (length(mapped) > 0) {
@@ -171,7 +167,7 @@ gf_sd_ruler_layer <- function(geom, stat, position, params, mapping = NULL,
   source_layer(tag_layer(
     sd_ruler_layer(
       geom = geom, stat = stat, position = position, params = params,
-      mapping = mapping, data = data, ...
+      mapping = mapping, data = data, .fn = "gf_sd_ruler", ...
     ),
     "sd_ruler"
   ), inherit.data = is.null(data))
