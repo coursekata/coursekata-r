@@ -189,19 +189,10 @@ test_that("the model stat receives the outcome on the plot's outcome axis", {
     axes <- plot_spec(shape[[1]])$axes
     outcome_axis <- names(axes)[axes == outcome]
     mapping <- model_layer_of(shape[[1]] %>% gf_model(shape[[2]]))$mapping
-    is_intercept <- name %in% c("hline", "vline")
-
-    if (is_intercept) {
-      expect_equal(
-        rlang::as_label(mapping[[outcome_axis]]), outcome,
-        label = paste(name, "maps", outcome_axis)
-      )
-    } else {
-      expect_equal(
-        rlang::as_label(mapping[[outcome_axis]]), ".model_outcome",
-        label = paste(name, "names its own value on", outcome_axis)
-      )
-    }
+    expect_equal(
+      rlang::as_label(mapping[[outcome_axis]]), ".model_outcome",
+      label = paste(name, "names its own value on", outcome_axis)
+    )
     expect_equal(rlang::as_label(mapping$.model_kind), ".model_kind")
   }
 })
@@ -344,7 +335,7 @@ test_that("every guard fires at the call, not at the draw", {
   expect_error(
     gf_point(later_anxiety ~ base_anxiety, color = ~condition, shape = ~provider, data = er) %>%
       gf_model(lm(later_anxiety ~ condition + provider, data = er)),
-    "multiple variables mapped"
+    "unambiguous model predictor"
   )
 })
 
@@ -356,23 +347,17 @@ test_that("a one-sided formula is refused rather than guessed at", {
   expect_s3_class(p %>% gf_model(later_anxiety ~ NULL), "ggplot")
 })
 
-test_that("a shape that inherits the outcome refuses a plot that maps it on a layer", {
-  # the fit line and the group mark leave the outcome's axis free and inherit it,
-  # so the outcome has to be on the plot; without this they die at build time in
-  # ggplot2's words instead of at the call in ours
+test_that("prepared model positions support a plot that maps only on a layer", {
   scatter <- ggplot2::ggplot() +
     ggplot2::geom_point(data = er, mapping = ggplot2::aes(base_anxiety, later_anxiety))
   groups <- ggplot2::ggplot() +
     ggplot2::geom_point(data = er, mapping = ggplot2::aes(condition, later_anxiety))
 
-  expect_error(
-    scatter %>% gf_model(lm(later_anxiety ~ base_anxiety, data = er)),
-    "mapped by a layer rather than by the plot"
-  )
-  expect_error(
-    groups %>% gf_model(lm(later_anxiety ~ condition, data = er)),
-    "mapped by a layer rather than by the plot"
-  )
+  line <- built_model(scatter %>% gf_model(lm(later_anxiety ~ base_anxiety, data = er)))
+  expect_equal(line$y, unname(predict(lm(later_anxiety ~ base_anxiety, data = er),
+                                     data.frame(base_anxiety = line$x))))
+  marks <- built_model(groups %>% gf_model(lm(later_anxiety ~ condition, data = er)))
+  expect_equal(sort(marks$y), sort(as.vector(tapply(er$later_anxiety, er$condition, mean))))
 })
 
 test_that("an intercept draws on a plot that maps only on its layer", {

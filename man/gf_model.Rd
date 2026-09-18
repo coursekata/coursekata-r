@@ -45,6 +45,11 @@ vocabulary \code{\link[ggformula:gf_lm]{ggformula::gf_lm()}} uses: \code{se = TR
 tokens \code{x} and \code{y} rather than the plot's own variable names -- a one-sided \code{formula = ~x}
 would instead be read as a mapping, so it is not this.
 
+With a supplied model, \code{n} controls the prediction grid and \code{se = TRUE}
+is refused. One additional predictor may be present in the data without
+being mapped: its categories, or its mean and mean plus or minus one
+standard deviation, define separate model traces.
+
 \code{\link[ggplot2:stat_smooth]{ggplot2::stat_smooth()}}'s \code{fullrange = TRUE} reaches it too, and draws the line past the
 data. Whether that is honest is yours to decide and not something this function will decide
 for you: inside the range the model was fit on, every point the line interpolates has

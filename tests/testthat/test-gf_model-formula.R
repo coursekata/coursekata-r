@@ -111,10 +111,10 @@ test_that("a formula fit over a flipped scatter draws over the data, not beside 
 
 # What a formula may not be ----------------------------------------------------------------------
 
-test_that("a formula naming a variable the plot does not have is refused by name", {
+test_that("a formula needs a predictor on the displayed predictor axis", {
   # the formula door reaches the same validation the fitted-model door does
   p <- gf_point(body_mass_kg ~ flipper_length_m, data = penguins)
-  expect_error(gf_model(p, body_mass_kg ~ bill_length_cm), "missing in plot: bill_length_cm")
+  expect_error(gf_model(p, body_mass_kg ~ bill_length_cm), "unambiguous model predictor")
 })
 
 test_that("a one-sided formula does not draw a model nobody described", {

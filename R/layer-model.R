@@ -12,208 +12,19 @@ model_orientation <- function(orientation, call = caller_env()) {
   orientation
 }
 
-#' Find the model predictor carried by the displayed axis
-#'
-#' A local axis mapping is authoritative. Without one, the native layer uses
-#' the only predictor, or the only numeric predictor in a mixed model. More
-#' ambiguous arrangements need a local mapping because a ggplot2 layer cannot
-#' inspect the plot mapping that it will later inherit.
-#'
-#' @noRd
-model_axis_column <- function(mspec, mapping, orientation,
-                              fn = "geom_model", call = caller_env()) {
-  predictors <- label_columns(mspec$predictors)
-  if (length(predictors) == 0L) return(NULL)
-
-  axis <- if (identical(orientation, "x")) "x" else "y"
-  mapped <- mapping[[axis]]
-  if (!is.null(mapped)) {
-    columns <- intersect(label_columns(as_label(quo_get_expr(mapped))), predictors)
-    if (length(columns) == 1L) return(columns)
-    abort(
-      c(
-        glue("`{fn}()` cannot identify one model predictor in the `{axis}` mapping."),
-        i = "Map the displayed predictor directly in this layer."
-      ),
-      call = call
-    )
-  }
-
-  if (length(predictors) == 1L) return(predictors)
-  abort(
-    c(
-      glue("`{fn}()` cannot choose which model predictor belongs on the axis."),
-      i = glue("Model predictors: {collapse(predictors)}"),
-      i = glue("Map the displayed predictor in this layer with `aes({axis} = ...)`.")
-    ),
-    call = call
-  )
-}
-
-#' Values used to build a model prediction grid
-#'
-#' A numeric predictor on the displayed axis spans its observed range. An
-#' off-axis numeric predictor uses its mean and mean plus or minus one standard
-#' deviation. Factors retain their levels and ordering.
-#'
-#' @noRd
-model_grid_values <- function(values, dense = FALSE, n = 80L) {
-  if (is.logical(values)) return(c(TRUE, FALSE))
-  if (!is.numeric(values)) {
-    observed <- levels(factor(values))
-    if (is.factor(values)) {
-      return(factor(
-        observed,
-        levels = levels(values),
-        ordered = is.ordered(values)
-      ))
-    }
-    return(observed)
-  }
-  if (dense) {
-    range <- range(values, na.rm = TRUE)
-    return(seq(range[[1]], range[[2]], length.out = n))
-  }
-  middle <- mean(values, na.rm = TRUE)
-  spread <- stats::sd(values, na.rm = TRUE)
-  unique(c(middle - spread, middle, middle + spread))
-}
-
-#' Prepare a named model for the shared model stat and geom
-#'
-#' @noRd
-prepare_model_layer_data <- function(data, model, mapping, orientation,
-                                     n = NULL, fn = "geom_model",
-                                     call = caller_env()) {
-  mspec <- model_spec(data, model, call = call)
-  model_columns <- label_columns(mspec$terms)
-  missing <- setdiff(model_columns, names(data))
-  if (length(missing) > 0L) {
-    abort(
-      c(
-        "The model uses variables that do not exist in the layer data.",
-        i = glue("Missing: {collapse(missing)}")
-      ),
-      call = call
-    )
-  }
-  if (length(mspec$outcome) != 1L || !is.name(str2lang(mspec$outcome))) {
-    abort(
-      c(
-        glue("`{fn}()` supports one untransformed outcome variable."),
-        i = "Create the transformed outcome as a column before fitting the model."
-      ),
-      call = call
-    )
-  }
-  check_numeric_outcome(mspec$outcome, data[[mspec$outcome]], call)
-
-  points <- if (is.null(n)) {
-    min(max(nrow(data), 80L), model_grid_max_points)
-  } else {
-    if (!is.numeric(n) || length(n) != 1L || !is.finite(n) || n < 2 || n != as.integer(n)) {
-      abort("`n` must be one integer greater than 1.", call = call)
-    }
-    as.integer(n)
-  }
-
-  focal <- model_axis_column(
-    mspec, mapping, orientation, fn = fn, call = call
-  )
-  predictors <- label_columns(mspec$predictors)
-  secondary <- setdiff(predictors, focal %||% character())
-  if (length(secondary) > 1L) {
-    abort(
-      c(
-        glue("`{fn}()` supports at most one predictor away from the displayed axis."),
-        i = glue("Off-axis predictors: {collapse(secondary)}")
-      ),
-      call = call
-    )
-  }
-
-  values <- lapply(predictors, function(column) {
-    model_grid_values(data[[column]], dense = identical(column, focal), n = points)
-  })
-  names(values) <- predictors
-  grid <- if (length(values)) {
-    do.call(
-      expand.grid,
-      c(values, list(KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE))
-    )
-  } else {
-    data.frame(.model_dummy = 1L)
-  }
-
-  prediction <- stats::predict(mspec$fit, newdata = grid)
-  grid$.model_outcome <- unname(prediction)
-  grid$.model_group <- if (length(secondary)) {
-    interaction(grid[secondary], drop = TRUE, lex.order = TRUE)
-  } else {
-    1L
-  }
-  grid$.model_kind <- if (is.null(focal)) {
-    if (identical(orientation, "x")) "hline" else "vline"
-  } else if (is.numeric(data[[focal]])) {
-    "line"
-  } else {
-    "segment"
-  }
-  grid
-}
-
-#' Compose a model layer's data callback
-#'
-#' @noRd
-model_layer_data <- function(data, model, mapping, orientation, n = NULL,
-                             fn = "geom_model", call = caller_env()) {
-  prepare <- function(rows) {
-    prepare_model_layer_data(
-      rows, model, mapping = mapping, orientation = orientation,
-      n = n, fn = fn, call = call
-    )
-  }
-  if (is.null(data)) return(prepare)
-  if (is.function(data) || is_formula(data)) {
-    data_fun <- as_function(data)
-    return(function(plot_data) prepare(data_fun(plot_data)))
-  }
-  prepare(data)
-}
-
-#' Install the positional mappings owned by an explicit model layer
-#'
-#' @noRd
-model_layer_mapping <- function(mapping, orientation) {
-  mapping <- mapping %||% ggplot2::aes()
-  outcome <- if (identical(orientation, "x")) {
-    ggplot2::aes(y = .data$.model_outcome)
-  } else {
-    ggplot2::aes(x = .data$.model_outcome)
-  }
-  mapping[names(outcome)] <- outcome
-
-  if (is.null(mapping[["group"]])) {
-    mapping[["group"]] <- new_quosure(expr(.data$.model_group), base_env())
-  }
-  mapping[[".model_kind"]] <- new_quosure(
-    expr(.data$.model_kind), base_env()
-  )
-  mapping
-}
 
 #' Build the ggplot2 layer shared by native and formula interfaces
 #'
-#' Unless `prepared` is `TRUE`, a supplied model is evaluated against the layer
-#' data before ggplot2 computes its stat. The ggformula adapter sets `prepared`
-#' after doing that work from the plot it wraps.
+#' Supplied models are planned when the layer is added to a plot, where both
+#' inherited and local mappings are available. Prepared rows and inferred models
+#' go straight to the shared stat and geom.
 #'
 #' @noRd
 model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
                         stat = StatModel, position = "identity", params = list(),
                         model = NULL, orientation = NA, show.legend = NA,
                         inherit.aes = TRUE, tag = "model", prepared = FALSE,
-                        fn = "geom_model", call = caller_env(), ...) {
+                        fn = "geom_model", call = caller_env(), constructor = NULL, ...) {
   orientation <- model_orientation(orientation, call = call)
   if (!prepared && !is.null(model)) {
     if (is_formula(model) && is.null(f_lhs(model))) {
@@ -225,18 +36,22 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
         call = call
       )
     }
-    resolved_orientation <- if (is.na(orientation)) "x" else orientation
-    formula <- stats::formula(model)
-    has_predictors <- length(attr(stats::terms(formula), "term.labels")) > 0L
-    user_mapping <- mapping %||% ggplot2::aes()
-    data <- model_layer_data(
-      data, model, mapping = user_mapping,
-      orientation = resolved_orientation, n = params[["n"]], fn = fn,
-      call = call
+    if (isTRUE(params$se)) {
+      abort(glue("`{fn}()` supports `se = TRUE` only without a supplied `model`."), call = call)
+    }
+    layer <- ggplot2::layer(
+      geom = geom, stat = stat, data = data, mapping = mapping,
+      position = position, params = params, inherit.aes = inherit.aes,
+      show.legend = show.legend, ...
     )
-    mapping <- model_layer_mapping(user_mapping, resolved_orientation)
-    if (!has_predictors) inherit.aes <- FALSE
-    orientation <- resolved_orientation
+    attr(layer, "model_spec") <- list(
+      model = model, mapping = mapping, data = data, geom = geom, stat = stat,
+      position = position, params = params, orientation = orientation,
+      inherit.aes = inherit.aes, show.legend = show.legend, tag = tag,
+      fn = fn, call = call, constructor = constructor, dots = list(...)
+    )
+    class(layer) <- c("coursekata_model_layer", class(layer))
+    return(layer)
   }
   params[["model"]] <- NULL
   params[["orientation"]] <- orientation
@@ -246,7 +61,62 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
     position = position, params = params, inherit.aes = inherit.aes,
     show.legend = show.legend, ...
   )
+  if (!is.null(constructor)) layer$constructor <- constructor
   if (is.null(tag)) layer else tag_layer(layer, tag)
+}
+
+#' Resolve an explicit model against its destination plot
+#'
+#' @noRd
+#' @importFrom ggplot2 ggplot_add
+#' @export
+ggplot_add.coursekata_model_layer <- function(object, plot, ...) {
+  request <- attr(object, "model_spec")
+  mapping <- if (request$inherit.aes) {
+    inherited <- model_plot_spec(plot)$mapping
+    inherited[names(plot$mapping)]
+  } else {
+    ggplot2::aes()
+  }
+  local <- request$mapping %||% ggplot2::aes()
+  mapping[names(local)] <- local
+  if (!any(c("x", "y") %in% names(mapping))) {
+    abort(glue("`{request$fn}()` needs a positional mapping; map its predictor with `aes()`."),
+          call = request$call)
+  }
+  data <- request$data
+  if (is.null(data) || ggplot2::is_waiver(data)) {
+    data <- plot$data
+  } else if (is.function(data) || is_formula(data)) {
+    data <- as_function(data)(plot$data)
+  }
+  data <- ggplot2::fortify(data)
+
+  # An explicit local predictor is sufficient for a standalone fitted layer.
+  # An existing outcome mapping, however, must name this model's outcome.
+  outcome <- all.vars(stats::formula(request$model)[[2L]])
+  axis <- if (identical(request$orientation, "y")) "x" else "y"
+  if (is.null(mapping[[axis]]) && length(outcome) == 1L &&
+      !any(outcome %in% label_columns(vapply(mapping, as_label, character(1))))) {
+    mapping[[axis]] <- new_quosure(sym(outcome), base_env())
+  }
+  context <- ggplot2::ggplot(data, mapping)
+  spec <- model_layer_spec(context, request$model, request$params,
+                           fn = request$fn, call = request$call)
+  if (!is.na(request$orientation) && !identical(request$orientation, spec$orientation)) {
+    abort(glue("`{request$fn}()`'s `orientation` conflicts with the model's outcome axis."),
+          call = request$call)
+  }
+  layer <- rlang::exec(
+    model_layer, mapping = spec$aesthetics, data = spec$data,
+    geom = request$geom, stat = request$stat, position = request$position,
+    params = spec$params, orientation = spec$orientation,
+    inherit.aes = request$inherit.aes && spec$inherit,
+    show.legend = request$show.legend, tag = request$tag, prepared = TRUE,
+    fn = request$fn, call = request$call, constructor = request$constructor,
+    !!!request$dots
+  )
+  ggplot2::ggplot_add(layer, plot, ...)
 }
 
 #' Draw fitted and implied models with ggplot2
@@ -264,12 +134,16 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
 #' A supplied model is one fixed claim evaluated on a prediction grid built
 #' from the layer data.
 #'
-#' A layer cannot inspect mappings on sibling layers. For a supplied model with
-#' more than one predictor, map the displayed predictor in the model layer
-#' itself. Single-predictor plot mappings, including transformations, are
-#' inherited normally. Set `orientation = "y"` when a supplied model's outcome
-#' is on x. Override unrelated inherited aesthetics locally or set
-#' `inherit.aes = FALSE`.
+#' The displayed predictor is read from the plot mapping or this layer's local
+#' mapping. One additional predictor may be present in the data: categories
+#' produce separate traces, and numeric values use the mean and mean plus or
+#' minus one standard deviation. Outcome-axis expressions such as `log(y)` are
+#' applied to the predictions. A supplied model is prepared once when added to
+#' the plot, including when `data` is a function or formula.
+#'
+#' Override unrelated inherited aesthetics locally, or set `inherit.aes = FALSE`
+#' and supply a predictor mapping such as `aes(x = Height)`. A layer does not
+#' borrow mappings or data from sibling layers.
 #'
 #' @param mapping,data,position,show.legend,inherit.aes See
 #'   [ggplot2::geom_smooth()]. `data` may be a data frame, a function, or a
@@ -278,16 +152,17 @@ model_layer <- function(mapping = NULL, data = NULL, geom = GeomModel,
 #' @param geom The geometric object. `stat_model()` defaults to `"model"`.
 #' @param model A fitted `lm` or `aov`, a two-sided model formula, or `NULL` to
 #'   draw the model implied by the mapped positions.
-#' @param orientation Layer orientation. With a supplied `model`, `NA` and
-#'   `"x"` put its outcome on y; `"y"` puts it on x. With no `model`, `NA`
-#'   infers the orientation from a one-axis mapping.
+#' @param orientation Layer orientation. `"x"` puts the outcome on y; `"y"`
+#'   puts it on x. `NA` uses the mapped model outcome for a supplied model, and
+#'   ggplot2's orientation rules for an inferred model.
 #' @param na.rm If `FALSE`, missing values are removed with a warning. If
 #'   `TRUE`, they are removed silently.
 #' @param ... Fixed aesthetics and other layer parameters. For an inferred
 #'   continuous model these include `formula`, `se`, `n`, `fullrange`, `level`,
 #'   and `method.args`, with the meanings used by [ggplot2::stat_smooth()].
 #'   `width` controls categorical model marks. With a supplied model, `n`
-#'   controls the prediction grid.
+#'   controls the prediction grid. `se = TRUE` requires an inferred continuous
+#'   model; it is refused when `model` is supplied.
 #'
 #' @return A ggplot2 layer.
 #'
@@ -315,7 +190,8 @@ geom_model <- function(mapping = NULL, data = NULL, stat = "model",
     mapping = mapping, data = data, geom = GeomModel, stat = stat,
     position = position, params = rlang::list2(na.rm = na.rm, ...),
     model = model, orientation = orientation, show.legend = show.legend,
-    inherit.aes = inherit.aes, fn = "geom_model", call = caller_env()
+    inherit.aes = inherit.aes, fn = "geom_model", call = rlang::current_env(),
+    constructor = sys.call()
   )
 }
 
@@ -329,6 +205,7 @@ stat_model <- function(mapping = NULL, data = NULL, geom = "model",
     mapping = mapping, data = data, geom = geom, stat = StatModel,
     position = position, params = rlang::list2(na.rm = na.rm, ...),
     model = model, orientation = orientation, show.legend = show.legend,
-    inherit.aes = inherit.aes, fn = "stat_model", call = caller_env()
+    inherit.aes = inherit.aes, fn = "stat_model", call = rlang::current_env(),
+    constructor = sys.call()
   )
 }

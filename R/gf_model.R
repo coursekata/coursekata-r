@@ -47,6 +47,11 @@
 #'   tokens `x` and `y` rather than the plot's own variable names -- a one-sided `formula = ~x`
 #'   would instead be read as a mapping, so it is not this.
 #'
+#'   With a supplied model, `n` controls the prediction grid and `se = TRUE`
+#'   is refused. One additional predictor may be present in the data without
+#'   being mapped: its categories, or its mean and mean plus or minus one
+#'   standard deviation, define separate model traces.
+#'
 #'   [ggplot2::stat_smooth()]'s `fullrange = TRUE` reaches it too, and draws the line past the
 #'   data. Whether that is honest is yours to decide and not something this function will decide
 #'   for you: inside the range the model was fit on, every point the line interpolates has
@@ -189,108 +194,12 @@ gf_model <- named_layer_factory(
       layer_fun <- if (inferred) {
         implied_layer_fun(spec$params, spec$tag)
       } else {
-        model_layer_fun(spec$params, spec$tag, spec$orientation)
+        model_layer_fun(spec$params, spec$tag, spec$orientation, spec$aesthetics)
       }
     }
   }
 )
 
-#' Translate a model into the pieces a ggformula layer is built from
-#'
-#' The prepared prediction owns the outcome position. Lines and group marks may
-#' inherit a compatible predictor mapping and model grouping from the plot;
-#' intercepts stand alone. Plot expressions such as `shuffle()` are evaluated
-#' once while the prediction grid is prepared, so rebuilding the layer cannot
-#' scramble the model claim.
-#'
-#' @param object The plot the layer is being added to.
-#' @param model A model fit by `lm()` or `aov()`, or the formula for one. An
-#'   outcome axis written as neither a plain permutation nor a plain
-#'   transformation of the model's outcome -- `shuffle(Thumb) + 1`,
-#'   `sqrt(shuffle(Thumb))` -- draws the transformed permutation: nobody writes
-#'   these, so naming the behavior is cheaper than guarding it.
-#' @param args Named list of user arguments, from `...`.
-#' @param call The calling environment, for error reporting.
-#'
-#' @return A list with `geom`, `data`, `aesthetics`, `params`, `inherit`,
-#'   `orientation`, and `tag`.
-#'   The layer function is composed by the caller in `pre`, from `params` and
-#'   `tag`, because the inferred path builds a different one -- see
-#'   `implied_layer_fun()`.
-#'
-#' @noRd
-model_layer_spec <- function(object, model, args = list(), call = caller_env()) {
-  if (!inherits(object, c("gg", "ggplot"))) {
-    abort(
-      c(
-        "`gf_model()` needs to be layered on top of a plot.",
-        i = "start one: `gf_point(Thumb ~ Height, data = Fingers) %>% gf_model()`"
-      ),
-      call = call
-    )
-  }
-
-  if (is_formula(model) && is.null(f_lhs(model))) {
-    abort(
-      c(
-        "`gf_model()` needs to be told what the model predicts",
-        x = glue("`{deparse1(model)}` names predictors but no outcome"),
-        i = "write the outcome on the left: `body_mass_kg ~ species`",
-        i = "a model with no predictors is written `body_mass_kg ~ NULL`"
-      ),
-      call = call
-    )
-  }
-
-  spec <- plot_spec(object)
-  mspec <- model_spec(spec$data, model, call = call)
-  plan <- model_plan(spec, mspec, args, call = call)
-
-  # The fit line and group mark use the plot's outcome axis to decide where the
-  # prepared predictions belong, so that mapping must live on the plot rather
-  # than on a sibling layer. An intercept spans the panel and does not care.
-  inherits_outcome <- plan$kind %in% c("line", "segment")
-  # the reader's own spelling, not the pinned quosure's -- a pinned plot's
-  # `mapping` reads `.coursekata_pin_y`, which is not what the reader wrote
-  plot_level <- spec$labels[names(object$mapping)]
-  if (inherits_outcome && mspec$outcome %in% label_columns(plot_level) == FALSE) {
-    abort(
-      c(
-        glue("`{mspec$outcome}` is mapped by a layer rather than by the plot"),
-        paste0(
-          "gf_model() draws the fit line along the plot's own aesthetics, so the outcome ",
-          "has to be mapped on the plot for the line to inherit it"
-        ),
-        i = "map it in ggplot(data, aes(...)), or build the plot with ggformula"
-      ),
-      call = call
-    )
-  }
-
-  if (identical(plan$kind, "hline")) {
-    plan$args$y <- plan$args$yintercept
-    plan$args$yintercept <- NULL
-  } else if (identical(plan$kind, "vline")) {
-    plan$args$x <- plan$args$xintercept
-    plan$args$xintercept <- NULL
-  }
-  plan$grid$.model_kind <- plan$kind
-  plan$args$.model_kind <- ~.model_kind
-  mapped <- purrr::map_lgl(plan$args, ~ is_formula(.x) && length(.x) == 2L)
-
-  list(
-    geom = GeomModel,
-    data = plan$grid,
-    aesthetics = do.call(ggplot2::aes, purrr::map(plan$args[mapped], f_rhs)),
-    params = plan$args[!mapped],
-    # An intercept carries the whole claim and spans the panel on its own.
-    # Lines and group marks still need compatible plot aesthetics, including
-    # the predictor position and any model grouping.
-    inherit = !(plan$kind %in% c("hline", "vline")),
-    orientation = plan$orientation,
-    tag = plan$tag
-  )
-}
 
 #' Build the layer function that draws a model
 #'
@@ -302,20 +211,22 @@ model_layer_spec <- function(object, model, args = list(), call = caller_env()) 
 #' @param plan_params The plan's static arguments.
 #' @param tag The tag to name the layer with.
 #' @param orientation The orientation resolved from the ggformula plot.
+#' @param plan_mapping The mappings accepted by the shared model planner.
 #'
 #' @return A function with the formals `layer_factory()` expects. It must name
 #'   `geom`, `stat`, `position` and `params`: a `...`-only shim is stripped of
 #'   all four by `create_formals()` and fails with a missing geom.
 #'
 #' @noRd
-model_layer_fun <- function(plan_params, tag, orientation) {
+model_layer_fun <- function(plan_params, tag, orientation, plan_mapping) {
   force(plan_params)
   force(tag)
   force(orientation)
+  force(plan_mapping)
   function(geom, stat, position, params = NULL, mapping = NULL, data = NULL, ...) {
     model_layer(
       geom = geom, stat = stat, position = position,
-      mapping = mapping, data = data, params = plan_params,
+      mapping = plan_mapping, data = data, params = plan_params,
       orientation = orientation, tag = tag, prepared = TRUE, ...
     )
   }
