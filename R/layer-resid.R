@@ -33,18 +33,24 @@ resid_orientation <- function(orientation, call = caller_env()) {
 #' @param call The public call to name in an error raised during a later build.
 #' @param fun An optional function of the mapped x values, instead of a model.
 #' @param mapping The positional mapping used to evaluate `fun`.
+#' @param after_prediction Validation to run after prediction, before the grand
+#'   mean.
 #'
 #' @return A data frame or a function from plot data to a data frame, matching
 #'   the form of `data` that [ggplot2::layer()] accepts.
 #'
 #' @noRd
 resid_layer_data <- function(data, model = NULL, reduction = FALSE,
-                             call = caller_env(), fun = NULL, mapping = NULL) {
+                             call = caller_env(), fun = NULL, mapping = NULL,
+                             after_prediction = NULL) {
   add_predictions <- function(rows) {
     rows$.fitted <- if (is.null(fun)) {
       resid_fitted(model, rows, call = call)
     } else {
       fun(eval_tidy(mapping$x, rows))
+    }
+    if (!is.null(after_prediction)) {
+      after_prediction()
     }
     if (reduction) {
       rows$.grand <- reduction_grand(model)
@@ -96,13 +102,22 @@ resid_layer_mapping <- function(mapping, orientation, reduction = FALSE) {
 #' orientation from its model. The native interface supplies a layer mapping
 #' and orientation directly. Prediction runs before orientation is forced, so
 #' the formula interface reports missing prediction variables before checking
-#' which axis carries the outcome. Function predictions use the same path.
+#' which axis carries the outcome. Reduction validation follows that check,
+#' before the grand mean is computed. Function predictions use the same path.
 #'
 #' @noRd
 resid_layer_spec <- function(data, mapping, model = NULL, orientation = "x",
-                             reduction = FALSE, fun = NULL, call = caller_env()) {
+                             reduction = FALSE, fun = NULL, call = caller_env(),
+                             validate = NULL) {
+  after_prediction <- function() {
+    force(orientation)
+    if (!is.null(validate)) {
+      validate()
+    }
+  }
   data <- resid_layer_data(
-    data, model, reduction = reduction, fun = fun, mapping = mapping, call = call
+    data, model, reduction = reduction, fun = fun, mapping = mapping, call = call,
+    after_prediction = after_prediction
   )
   list(
     data = data,
@@ -235,6 +250,9 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
     check_decomposable(model, fn, call = call)
     warn_empty_reduction(model, fn)
   }
+  position <- resid_layer_position(
+    position, orientation = orientation, reduction = reduction, call = call
+  )
   spec <- resid_layer_spec(
     data, mapping, model, orientation, reduction = reduction, call = call
   )

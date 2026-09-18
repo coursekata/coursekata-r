@@ -294,6 +294,36 @@ test_that("an unseeded jitter is refused before it can misalign an overlay", {
   )
 })
 
+test_that("native position guards precede prediction with explicit layer data", {
+  model <- lm(Thumb ~ Height + Sex, data = Fingers)
+  data <- Fingers[c("Height", "Thumb")]
+  constructors <- list(
+    geom_resid, geom_square_resid, stat_resid,
+    geom_reduce, geom_square_reduce, stat_reduce
+  )
+  positions <- list(
+    list("jitter", "fixed jitter seed"),
+    list(ggplot2::position_jitter(width = 0.1), "fixed jitter seed"),
+    list(ggplot2::position_jitterdodge(), "do not support")
+  )
+
+  for (constructor in constructors) {
+    for (position in positions) {
+      expect_error(
+        constructor(model = model, data = data, position = position[[1]]),
+        position[[2]]
+      )
+    }
+    expect_error(
+      constructor(
+        model = model, data = data,
+        position = ggplot2::position_jitter(width = 0.1, seed = 42)
+      ),
+      "missing from the plot's data: Sex"
+    )
+  }
+})
+
 test_that("complete layer data keeps facets and model predictions together", {
   data <- Fingers[!is.na(Fingers$Thumb) & !is.na(Fingers$Height), ]
   model <- lm(Thumb ~ Height, data = data)

@@ -214,6 +214,38 @@ test_that("a plot with no y refuses for its axes before anything is predicted", 
   expect_error(gf_reduce(p, model), "needs both an x and a y")
 })
 
+test_that("reduction axes are checked before decomposability", {
+  model <- lm(Thumb ~ Height - 1, data = Fingers)
+  p <- gf_histogram(~Thumb, data = Fingers)
+
+  for (constructor in list(gf_reduce, gf_square_reduce, gf_squareduce)) {
+    expect_error(
+      suppressMessages(constructor(p, model)),
+      "needs both an x and a y"
+    )
+  }
+})
+
+test_that("a reduction checks the outcome before attempting its grand mean", {
+  model <- lm(Thumb ~ Height, data = Fingers, model = FALSE)
+  p <- gf_point(Weight ~ Height, data = Fingers)
+
+  for (constructor in list(gf_reduce, gf_square_reduce, gf_squareduce)) {
+    warnings <- character()
+    expect_error(
+      withCallingHandlers(
+        suppressMessages(constructor(p, model)),
+        warning = function(cnd) {
+          warnings <<- c(warnings, conditionMessage(cnd))
+          invokeRestart("muffleWarning")
+        }
+      ),
+      "axis carrying the model's outcome"
+    )
+    expect_length(warnings, 0L)
+  }
+})
+
 test_that("gf_reduce() refuses anything but a plot before it looks at the model", {
   expect_error(gf_reduce(Fingers, lm(Thumb ~ Height, data = Fingers)), "layered on top of a plot")
 })
