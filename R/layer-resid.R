@@ -253,6 +253,7 @@ model_resid_layer <- function(fn, mapping, data, geom, stat, position, params,
   position <- resid_layer_position(
     position, orientation = orientation, reduction = reduction, call = call
   )
+  if (ggplot2::is_waiver(data)) data <- NULL
   spec <- resid_layer_spec(
     data, mapping, model, orientation, reduction = reduction, call = call
   )

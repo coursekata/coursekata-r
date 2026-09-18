@@ -75,6 +75,30 @@ test_that("outcome transforms are applied once to independently computed predict
   expect_equal(shared_model_rows(plot)$x, log(as.vector(tapply(Fingers$Thumb, Fingers$Sex, mean))))
 })
 
+test_that("explicit models restore collision-safe pin expressions", {
+  d <- data.frame(
+    x = 1:8, y = 2 * (1:8) + 5,
+    .coursekata_pin_x = 101:108,
+    .coursekata_pin_y = 201:208
+  )
+  clean <- d[c("x", "y")]
+  fit <- lm(y ~ x, data = d)
+  make_plot <- function(data) {
+    plot <- ggplot2::ggplot(data, ggplot2::aes(log(x), log(y))) +
+      ggplot2::geom_point()
+    pin_plot_values(plot)$plot
+  }
+  collided <- make_plot(d)
+  baseline <- make_plot(clean)
+
+  expect_match(rlang::as_label(plot_spec(collided)$mapping$x), "\\.1$")
+  expect_match(rlang::as_label(plot_spec(collided)$mapping$y), "\\.1$")
+  expect_equal(
+    shared_model_rows(collided + geom_model(model = fit, n = 11)),
+    shared_model_rows(baseline + geom_model(model = fit, n = 11))
+  )
+})
+
 test_that("secondary predictors use one grid and unused aesthetics do not multiply it", {
   fit <- lm(Thumb ~ Height + Sex, data = Fingers)
   base <- ggplot2::ggplot(Fingers, ggplot2::aes(Height, Thumb, shape = RaceEthnic)) +
