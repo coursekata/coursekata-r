@@ -39,6 +39,11 @@ in the data panel. Repeated labelled calls are measured and placed together.
 Their boxes stay separate when the panel has room, and their routed leaders
 remain tied to the exact cutoffs.
 
+In very small panels, leaders use a simple elbow connection if there is no
+room for an outward route. Labels keep their text and size, so they may
+overlap or be clipped. Enlarge the figure, use fewer facet columns, or set
+\code{show_labels = FALSE} when labels do not fit.
+
 By default the part is read off the plot's fill aesthetic, e.g.
 \code{fill = ~middle(Thumb, .95)}. Passing \code{part} overrides that reading: it marks
 whatever part is named there instead, and the fill (if any) is ignored --

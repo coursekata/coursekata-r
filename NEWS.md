@@ -10,6 +10,9 @@
 - Line layers translate `size` to `linewidth` before building the ggplot2 layer,
   with diagnostics naming the public function. Explicit `linewidth` takes precedence.
   Point, text, and annotation marker sizes retain their meanings.
+- Keep labelled cutoff plots drawing in very small panels and dense facets.
+  When a leader has no room for its usual route, it uses an elbow connection
+  to the same cutoff; labels can still overlap or be clipped.
 - Add `geom_squareplot()` and `stat_squareplot()` as x-only ggplot2 constructors
   for the same countable squareplot as `gf_squareplot()`. They preserve its
   binning, discrete counting, scales, warnings, and display behavior.

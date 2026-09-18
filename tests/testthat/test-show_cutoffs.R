@@ -625,6 +625,121 @@ test_that("one to three overlays lay out at default and narrow sizes", {
   expect_complete_cutoff_layout(tiny, 6L, allow_overlap = TRUE)
 })
 
+test_that("tiny panels keep every cutoff label and its exact stem connection", {
+  plot <- suppressMessages(
+    cutoff_test_histogram(1:100) |>
+      show_cutoffs(middle(x, .8), show_labels = TRUE) |>
+      show_cutoffs(middle(x, .95), show_labels = TRUE) |>
+      show_cutoffs(middle(x, .99), show_labels = TRUE)
+  )
+  labels <- vapply(cutoff_test_layers(plot), function(layer) {
+    paste(layer$data$label, collapse = " ")
+  }, character(1))
+  labels <- gsub("\n", " ", paste(labels, collapse = " "))
+
+  for (flipped in c(FALSE, TRUE)) {
+    oriented <- if (flipped) plot + ggplot2::coord_flip() else plot
+    for (size in list(c(18, 14), c(5, 5), c(0, 0))) {
+      layout <- cutoff_test_layout(oriented, width = size[1], height = size[2])
+      expect_length(layout$boxes, 6L)
+      expect_length(layout$routes, 6L)
+      expect_identical(
+        gsub("\n", " ", paste(layout$data$label, collapse = " ")), labels
+      )
+      for (i in seq_along(layout$routes)) {
+        route <- layout$routes[[i]]
+        source <- cutoff_stem_source(
+          layout$data[i, ], flipped, .2, size[1], size[2]
+        )
+        expect_true(all(is.finite(route)))
+        expect_equal(unname(route[1L, ]), source)
+        expect_equal(
+          unname(route[nrow(route), ]),
+          cutoff_nearest_box_port(source, layout$boxes[[i]])$point
+        )
+      }
+    }
+  }
+})
+
+test_that("resizing and dense facets render complete cutoff callouts", {
+  # Capture the children created during the real grid draw, after each panel
+  # has its device-dependent dimensions. Building a gtable alone misses this.
+  rendered <- list()
+  original_grobs <- cutoff_callout_grobs
+  local_mocked_bindings(
+    cutoff_callout_grobs = function(data, metrics, label_size, label_radius,
+                                    layout) {
+      children <- original_grobs(data, metrics, label_size, label_radius, layout)
+      rendered[[length(rendered) + 1L]] <<- list(
+        data = data, metrics = metrics, layout = layout,
+        labels = vapply(tail(children, nrow(data)), `[[`, character(1), "label")
+      )
+      children
+    },
+    .package = "coursekata"
+  )
+  values <- data.frame(x = rep(1:20, 16), panel = rep(1:16, each = 20))
+  base <- ggplot2::ggplot(values, ggplot2::aes(x)) +
+    ggplot2::geom_histogram(binwidth = 1)
+  marked <- suppressMessages(show_cutoffs(base, middle(x, .8), show_labels = TRUE))
+  expected <- cutoff_test_expected("middle", .8, values$x)
+
+  for (faceted in c(FALSE, TRUE)) {
+    plot <- if (faceted) marked + ggplot2::facet_wrap(~panel, ncol = 4) else marked
+    for (flipped in c(FALSE, TRUE)) {
+      oriented <- if (flipped) plot + ggplot2::coord_flip() else plot
+      table <- ggplot2::ggplotGrob(oriented)
+      anchors <- ggplot2::layer_data(oriented, length(oriented$layers))$xintercept
+      expect_equal(as.numeric(anchors), rep(expected, if (faceted) 16 else 1))
+      draws <- list()
+      sizes <- if (faceted) c(3, 8, 3) else c(1, 8, 1)
+      for (size in sizes) {
+        rendered <- list()
+        grDevices::pdf(NULL, width = size, height = size)
+        tryCatch({
+          grid::grid.newpage()
+          expect_no_error(grid::grid.draw(table))
+        }, finally = grDevices::dev.off())
+        expect_length(rendered, if (faceted) 16L else 1L)
+        for (panel in rendered) {
+          expect_length(panel$layout$routes, 2L)
+          expect_length(panel$layout$boxes, 2L)
+          expect_identical(panel$labels, panel$data$label)
+          expect_identical(
+            gsub("\n", " ", panel$labels),
+            c(".1 of values below", ".1 of values above")
+          )
+          expect_true(all(is.finite(unlist(panel$layout$routes))))
+        }
+        draws[[length(draws) + 1L]] <- rendered
+      }
+      expect_equal(draws[[1L]], draws[[3L]])
+      expect_false(identical(draws[[1L]][[1L]]$layout, draws[[2L]][[1L]]$layout))
+      expect_equal(
+        as.numeric(ggplot2::layer_data(oriented, length(oriented$layers))$xintercept),
+        as.numeric(anchors)
+      )
+    }
+  }
+})
+
+test_that("native cutoff layers also render labels on tiny devices", {
+  base <- cutoff_test_histogram(1:20)
+  plots <- list(
+    base + geom_cutoff(
+      ggplot2::aes(xintercept = cutoff, label = label),
+      data = data.frame(cutoff = 10, label = "a long cutoff label"),
+      inherit.aes = FALSE
+    ),
+    base + stat_cutoff(part = "upper", prop = .1, label = "a long cutoff label")
+  )
+  for (plot in plots) {
+    expect_true(cutoff_test_draw(plot, width = 1, height = 1))
+    expect_true(cutoff_test_draw(plot + ggplot2::coord_flip(), width = 1, height = 1))
+  }
+})
+
 test_that("adding calls does not mutate plots the caller retained", {
   base <- cutoff_test_histogram(1:100)
   once <- suppressMessages(show_cutoffs(

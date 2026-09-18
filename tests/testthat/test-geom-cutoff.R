@@ -377,6 +377,25 @@ test_that("callout route search stays bounded as obstacles grow", {
   }, logical(1))))
 })
 
+test_that("oversized callout boxes retain a route at every attachment port", {
+  box <- list(x1 = -5, x2 = 15, y1 = -5, y2 = 15, x = 5, y = 5)
+  sources <- list(c(10, 5), c(5, 10), c(0, 5), c(5, 0))
+
+  for (source in sources) {
+    routes <- cutoff_route_candidates(source, box, 10, 10)
+    expect_length(routes, 1L)
+    route <- choose_cutoff_route(routes, list(), list(), box)
+    expect_true(all(is.finite(route)))
+    expect_equal(unname(route[1L, ]), source)
+    expect_equal(
+      unname(route[nrow(route), ]), cutoff_nearest_box_port(source, box)$point
+    )
+    steps <- abs(route[-1L, ] - route[-nrow(route), ])
+    expect_true(all(steps[, 1L] == 0 | steps[, 2L] == 0))
+    expect_identical(routes, cutoff_route_candidates(source, box, 10, 10))
+  }
+})
+
 test_that("cutoff stems neither train the count axis nor change clipping", {
   base <- ggplot2::ggplot(data.frame(x = 1:5), ggplot2::aes(x)) +
     ggplot2::geom_histogram(binwidth = 1, boundary = 0.5) +
