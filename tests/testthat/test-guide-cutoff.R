@@ -375,7 +375,7 @@ test_that("cutoff and DGP guide triangles render on all four sides", {
     x = guide_cutoff(0), x.sec = guide_dgp(0),
     y = guide_cutoff(0), y.sec = guide_dgp(0)
   )
-  vdiffr::expect_doppelganger("position guide triangles on four sides", plot)
+  expect_doppelganger(plot, "position guide triangles on four sides")
 })
 
 test_that("a y-position cutoff guide keeps native horizontal text", {
