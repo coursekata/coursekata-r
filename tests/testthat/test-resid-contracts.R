@@ -72,7 +72,7 @@ test_that("native outcome guards use current local and inherited mappings", {
     flipped <- plot + ggplot2::aes(y, x)
     expect_equal(ggplot2::ggplot_build(flipped)$data[[2]]$xend, unname(predict(fit, d)))
     new <- transform(d, x = x + 10, y = y + 20)
-    expect_equal(ggplot2::ggplot_build(plot + new)$data[[2]]$yend,
+    expect_equal(ggplot2::ggplot_build(replace_plot_data(plot, new))$data[[2]]$yend,
                  unname(predict(fit, new)))
     expect_null(layer$computed_mapping)
     expect_null(base$layers[[1]]$mapping$y)
@@ -186,7 +186,7 @@ test_that("random expressions stay aligned without freezing native data or calle
   }
   shift <- 10
   new <- transform(d, x = x + 20)
-  built <- ggplot2::ggplot_build(native + new)$data
+  built <- ggplot2::ggplot_build(replace_plot_data(native, new))$data
   expect_equal(sort(built[[1]]$x), new$x + shift)
   expect_equal(built[[2]]$yend, built[[1]]$x^2)
 })

@@ -78,7 +78,7 @@ test_that("nested builds cannot replace the outer coefficient frame", {
                             position = "identity")
   out <- ggplot2::ggplot(rows, ggplot2::aes(x, y)) + ggplot2::geom_point() +
     geom_model() + trigger + geom_b(show_b0 = FALSE, run = 1)
-  inner <- out + transform(rows, y = y + 100)
+  inner <- replace_plot_data(out, transform(rows, y = y + 100))
   expect_no_warning(rise <- b_test_built_mark(out, "b1"))
   expect_equal(rise$y, 2 * rise$x)
   expect_equal(b_test_built_mark(inner, "b1")$y, rise$y + 100)
@@ -138,9 +138,9 @@ test_that("deferred placement follows replaced plot rows and local callbacks", {
     for (callback in list(NULL, function(d) d[seq_len(6), ])) {
       base <- ggplot2::ggplot(rows, ggplot2::aes(x, y)) + ggplot2::geom_point()
       original <- base + geom_b(data = callback, model = model, show_b0 = FALSE, run = 1)
-      changed <- original %+% replacement
-      early <- (base %+% replacement) + geom_b(data = callback, model = model,
-                                               show_b0 = FALSE, run = 1)
+      changed <- replace_plot_data(original, replacement)
+      early <- replace_plot_data(base, replacement) +
+        geom_b(data = callback, model = model, show_b0 = FALSE, run = 1)
       expect_no_warning(actual <- b_test_built_mark(changed, "b1"))
       expect_equal(actual, b_test_built_mark(early, "b1"))
       expect_gt(actual$x, 100)
@@ -148,7 +148,7 @@ test_that("deferred placement follows replaced plot rows and local callbacks", {
       expected_fit <- model %||% lm(y ~ x, used)
       expect_equal(actual$y, unname(predict(expected_fit, data.frame(x = actual$x))))
       expect_equal(b_test_built_mark(original, "b1")$x, b_test_mark(original, "b1")$data$x)
-      expect_equal(b_test_built_mark(original + replacement, "b1"), actual)
+      expect_equal(b_test_built_mark(replace_plot_data(original, replacement), "b1"), actual)
     }
   }
 })
@@ -165,7 +165,7 @@ test_that("deferred categorical components accept fewer, more, and reordered lev
     base <- ggplot2::ggplot(rows, ggplot2::aes(g, y)) + ggplot2::geom_point()
     original <- base + geom_b(data = callback, run_x = 1)
     for (replacement in replacements) {
-      out <- original %+% replacement
+      out <- replace_plot_data(original, replacement)
       expect_no_warning(built <- ggplot2::ggplot_build(out))
       tags <- vapply(out$layers, function(l) attr(l, "coursekata_layer") %||% "", character(1))
       arrows <- do.call(rbind, built$data[grepl("^bk_([0-9]+|more)$", tags)])

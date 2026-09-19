@@ -124,7 +124,7 @@ test_that("ordinary native inheritance survives post-add plot mutation", {
   model <- lm(y ~ x, d)
   p <- ggplot2::ggplot(d, ggplot2::aes(x, y)) + ggplot2::geom_point() +
     geom_resid(model = model)
-  q <- p + d[2:4, ]
+  q <- replace_plot_data(p, d[2:4, ])
   drawn <- ggplot2::ggplot_build(q)$data
   expect_equal(drawn[[2]]$y, drawn[[1]]$y)
   expect_equal(nrow(drawn[[2]]), 3L)
@@ -158,7 +158,7 @@ test_that("function-owned samples stay shared across builds and new plot data", 
   before <- .Random.seed
   q <- p + geom_resid(model = model)
   expect_identical(.Random.seed, before)
-  for (plot in list(q, q, q + d[1:20, ])) {
+  for (plot in list(q, q, replace_plot_data(q, d[1:20, ]))) {
     drawn <- ggplot2::ggplot_build(plot)$data
     expect_equal(drawn[[2]]$x, drawn[[1]]$x)
     expect_equal(drawn[[2]]$y, drawn[[1]]$y)
@@ -266,7 +266,7 @@ test_that("a plot-owned expression is pinned on rows a callback constructs", {
   expect_equal(plot_spec(q)$resolve_aes("y")$owner, "layer")
   expect_identical(ggplot2::layer_data(pin_plot_values(q)$plot), ggplot2::layer_data(q))
 
-  changed <- q + data.frame(x = 21:26)
+  changed <- replace_plot_data(q, data.frame(x = 21:26))
   expect_equal(plot_spec(changed)$labels[["y"]], "log(y)")
   expect_equal(ggplot2::layer_data(changed)$y, 2 + (21:26) / 4)
   # New drawers still receive the original expression and can construct their
@@ -302,7 +302,7 @@ test_that("implied models fit callback-created outcomes and rebuild consistently
   expect_equal(first[[2]]$y, 1 + first[[2]]$x / 3, tolerance = 1e-12)
   expect_equal(range(first[[2]]$x), range(first[[1]]$x))
   expect_identical(ggplot2::ggplot_build(native)$data, first)
-  changed <- native + data.frame(x = 31:50)
+  changed <- replace_plot_data(native, data.frame(x = 31:50))
   drawn <- ggplot2::ggplot_build(changed)$data
   expect_equal(drawn[[2]]$y, 1 + drawn[[2]]$x / 3, tolerance = 1e-12)
   expect_equal(range(drawn[[2]]$x), range(drawn[[1]]$x))
@@ -319,7 +319,7 @@ test_that("local source pins coexist with a sibling that uses the raw plot rows"
   drawn <- ggplot2::ggplot_build(q)$data
   expect_equal(drawn[[1]]$y, log(d$y[2:5] * 2))
   expect_equal(drawn[[2]]$y, log(d$y))
-  changed <- q + transform(d, y = y * 3)
+  changed <- replace_plot_data(q, transform(d, y = y * 3))
   drawn <- ggplot2::ggplot_build(changed)$data
   expect_equal(drawn[[1]]$y, log(d$y[2:5] * 6))
   expect_equal(drawn[[2]]$y, log(d$y * 3))
@@ -364,7 +364,7 @@ test_that("an unrelated source cannot claim a pin by its column's spelling", {
   replaced$layers <- list(new_source)
   prepended <- q
   prepended$layers <- c(list(new_source), q$layers)
-  replaced_data <- q + unrelated
+  replaced_data <- replace_plot_data(q, unrelated)
   for (plot in list(replaced, prepended, replaced_data)) {
     expect_null(plot_pins(plot)$y)
     expect_equal(plot_spec(plot)$labels[["y"]], ".coursekata_pin_y")

@@ -34,7 +34,7 @@ test_that("source callbacks remain live for native models and squareplots", {
   expect_equal(sum(ggplot2::layer_data(counted, 2)$count), nrow(select(d)))
 
   replacement <- transform(d, x = x + 100, y = y + 10)
-  replaced <- model + replacement
+  replaced <- replace_plot_data(model, replacement)
   replaced_rows <- ggplot2::layer_data(replaced, layer_index(replaced, "model"))
   expect_equal(range(replaced_rows$x), range(select(replacement)$x))
 })
