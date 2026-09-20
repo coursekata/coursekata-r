@@ -81,6 +81,20 @@ jobs:
         with:
           job-config: ${{ matrix.config.job-config }}
           token: ${{ secrets.RHUB_TOKEN }}
+      # Remove after https://github.com/r-lib/actions/pull/1108 is released.
+      - name: Install Flang for Apple-silicon R-devel
+        if: ${{ runner.os == 'macOS' && runner.arch == 'ARM64' && fromJson(matrix.config.job-config)['r-version'] == 'devel' }}
+        shell: bash
+        run: |
+          archive_path="$RUNNER_TEMP/flang-23.1.1-darwin22.6.0.tar.xz"
+          curl --fail --location --retry 3 \
+            --output "$archive_path" \
+            https://mac.cran.dev/tools/flang-23.1.1-darwin22.6.0.tar.xz
+          echo "392d4d01029d7891a7ac15bb1ef94d3c9f9d8cecb7c0104ffa71ca86498a8f85  $archive_path" |
+            shasum --algorithm 256 --check
+          sudo tar -xJf "$archive_path" -C /
+          echo "/opt/R/flang-23/bin" >> "$GITHUB_PATH"
+          echo "SDKROOT=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
       - uses: r-hub/actions/platform-info@v1
         with:
           token: ${{ secrets.RHUB_TOKEN }}
