@@ -122,8 +122,9 @@ ordinary `ggplot2` plots (for example, `geom_model()`, `geom_resid()`,
 and `geom_reduce()`). It also has functions for extracting estimates
 from fitted models for bootstrapping (`b0()`, `b1()`, and `pre()`),
 sectioning distributions (`middle()` and `tails()`), and quantifying
-model fit. Loading the package sets a `ggplot2` theme with colorblind-friendly
-palettes and other changes intended to make plots easier to read.
+model fit. Loading the package sets a `ggplot2` theme with
+colorblind-friendly palettes and other changes intended to make plots
+easier to read.
 
 Browse all of the functions and data sets, organized by what they are
 for, in the [package

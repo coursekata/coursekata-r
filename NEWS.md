@@ -1,63 +1,56 @@
 # coursekata (development version)
 
-- Plot helpers now require `object =`, `show_cutoffs()` requires `show_labels =`,
-  and `stat_cutoff()` requires `part =`. The retired `plot`, `labels`, and `func`
-  arguments are no longer translated. Intentional `gf_*()` function aliases remain.
-- Discrete palette defaults now use ggplot2 4 theme settings. Override a plot's
-  palette with `theme(palette.colour.discrete = ..., palette.fill.discrete = ...)`.
-  Add `scale_discrete_coursekata()` when colour and fill should share one scale.
-  Loading and unloading the CourseKata theme still restores the caller's settings.
-- Line layers translate `size` to `linewidth` before building the ggplot2 layer,
-  with diagnostics naming the public function. Explicit `linewidth` takes precedence.
-  Point, text, and annotation marker sizes retain their meanings.
-- Keep labelled cutoff plots drawing in very small panels and dense facets.
-  When a leader has no room for its usual route, it uses an elbow connection
-  to the same cutoff; labels can still overlap or be clipped.
-- Add `geom_squareplot()` and `stat_squareplot()` as x-only ggplot2 constructors
-  for the same countable squareplot as `gf_squareplot()`. They preserve its
-  binning, discrete counting, scales, warnings, and display behavior.
-- Add `stat_sd_ruler()` as the ggplot2 constructor for `StatSdRuler`. It uses
-  the same per-panel calculation as `gf_sd_ruler()`, completing the native
-  `stat_*()` surface for distribution means, standard deviations, and cutoffs.
-  Both front doors now use `na.rm = FALSE`, the ordinary segment defaults, and
-  one shared refusal for mapped styling aesthetics.
-- Add `geom_model()` and `stat_model()` as the ggplot2-native model layers,
-  backed by exported `GeomModel` and `StatModel` extensions. They draw fitted
-  models or infer the model represented by the layer's mappings. `gf_model()`
-  now uses the same stat, geom, and layer builder.
-- Add conventional ggplot2 layer functions for model residuals and reductions:
-  `geom_resid()`, `geom_square_resid()`, `geom_reduce()`,
-  `geom_square_reduce()`, `stat_resid()`, and `stat_reduce()`. They predict from
-  a fitted model over the layer's complete data, so facets and rows omitted by
-  the model stay aligned. The existing `gf_` functions use the same layer
-  constructor. A seeded `position_jitter()` now works for the
-  ggplot2 layers while keeping fitted endpoints and grand means fixed.
-- Require ggplot2 4.0.2 and ggformula 1.0.0 or later. Remove the compatibility
-  paths for the older graphics stack previously used in WebAssembly environments.
-- Keep residuals aligned with jittered points across facets when jitter width
-  or height is left at its default, by using ggplot2's per-panel jitter directly.
-- Resolve ggplot2's themed defaults when drawing models, including when
-  CourseKata is used through namespace-qualified calls without attaching it.
-- Add the conventional `StatDistMean`/`stat_dist_mean()` ggplot2 extension
-  surface beneath `show_mean()`. Rebuild `show_dgp()` with plot-level position
-  guides, keeping its population and estimate frames outside the data panel and
-  preserving them when an x position scale is added later. Fixed, transformed,
-  zoomed, and free count axes no longer need special handling.
-- Complete the cutoff extension surface with `StatCutoff`/`stat_cutoff()`,
-  `GeomCutoff`/`geom_cutoff()`, and `GuideCutoff`/`guide_cutoff()`.
-  `show_cutoffs()` now leaves ggplot2's numeric axis intact and draws its
-  scale-aligned triangles, leaders, and translucent callouts in the data panel.
-  Triangle tips touch the axis, labels stay clear of its tick text, and repeated
-  labelled calls use separate compact lanes instead of overlapping or warning.
-  Callouts retain the two-line legacy silhouette when it fits, then reflow from
-  the measured panel size when narrow or flipped layouts need more room.
-  The high-level helper keeps whole-distribution cutoffs across facets;
-  `stat_cutoff()` keeps ggplot2's conventional per-panel behavior. `part` is now
-  the stat's public parameter, with `func` retained as a deprecated alias.
-- Keep `gf_b()` and `gf_coef()` coefficient labels clear of their own arrows,
-  segments, and b0 marks. The labels retain their teaching roles and follow
-  predictor/outcome directions through transposed formulas, reversed scales,
-  and flipped coordinates.
+## Breaking changes
+
+- coursekata now requires ggplot2 4.0.2 and ggformula 1.0.0 or later. The
+  compatibility paths for the older graphics stack have been removed.
+- Plot helpers now require `object =`, `show_cutoffs()` requires
+  `show_labels =`, and `stat_cutoff()` uses `part =`. The retired `plot`,
+  `labels`, and `func` arguments are no longer translated. Intentional `gf_*()`
+  aliases remain.
+- Line layers use `linewidth` for line width. A supplied `size` is translated
+  for compatibility, and an explicit `linewidth` takes precedence. Point,
+  text, and annotation-marker sizes are unchanged.
+
+## Native ggplot2 layers
+
+- Add `geom_model()` and `stat_model()` for fitted and inferred models. The
+  exported `GeomModel` and `StatModel` extensions now also power `gf_model()`.
+- Add `geom_resid()`, `geom_square_resid()`, `geom_reduce()`,
+  `geom_square_reduce()`, `stat_resid()`, and `stat_reduce()`. The ggplot2 and
+  ggformula interfaces share model planning, prediction, and drawing. Facets,
+  omitted rows, inherited mappings, weights, orientation, and jitter now follow
+  the same contract through either interface.
+- Add `geom_b()` for annotating a ggplot2 model layer with its coefficients.
+  It uses the same coefficient planning as `gf_b()` and `gf_coef()`.
+- Add `geom_squareplot()` and `stat_squareplot()` for the countable squareplot
+  drawn by `gf_squareplot()`. Counts, mappings, delayed aesthetics, coordinates,
+  and layer data now pass through one ggplot2 lifecycle.
+- Add `stat_sd_ruler()` beneath `gf_sd_ruler()`, and complete the distribution
+  annotation surface with `stat_dist_mean()`, `stat_cutoff()`, `geom_cutoff()`,
+  `guide_cutoff()`, and their exported ggplot2 extension classes. Native and
+  formula interfaces now share their calculations and `na.rm = FALSE` default.
+
+## Plot annotations and themes
+
+- Rebuild `show_dgp()` with position guides. Population and estimate frames stay
+  outside the data panel and remain aligned after scale, coordinate, zoom, and
+  facet changes.
+- `show_cutoffs()` preserves the numeric axis and draws scale-aligned triangles,
+  leaders, and translucent callouts in the panel. Labels use compact lanes and
+  reflow in narrow or flipped panels; leaders fall back to elbow connections
+  when a direct route does not fit.
+- Coefficient labels avoid their arrows, segments, and b0 marks, including with
+  transposed formulas, reversed scales, and flipped coordinates.
+- Residuals stay aligned with jittered points across facets when jitter width or
+  height uses its default. Seeded `position_jitter()` is supported by the native
+  layers while fitted endpoints and grand means remain fixed.
+- Discrete palette defaults use ggplot2 4 theme settings. Set
+  `palette.colour.discrete` and `palette.fill.discrete` in `theme()`, or add
+  `scale_discrete_coursekata()` when colour and fill should share one scale.
+  Loading and unloading the CourseKata theme restores the caller's settings.
+- Model layers resolve ggplot2's themed defaults even when coursekata is used
+  through namespace-qualified calls without attaching the package.
 
 # coursekata 0.20.1
 
