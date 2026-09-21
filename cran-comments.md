@@ -20,11 +20,10 @@ ggformula 1.0.0 and removes compatibility code for the older graphics stack.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
-
-- The local and win-builder checks report `Version contains large components
-  (0.20.1.9000)`. This is caused by the development-version suffix and will not
-  apply to the 0.21.0 release tarball. All remaining checks passed.
+- The local 0.21.0 source tarball passed with 0 errors, 0 warnings, and 0 notes.
+- Win-builder checked the development version (0.20.1.9000) with 0 errors,
+  0 warnings, and 1 note for its large version component. The 0.21.0 release
+  version does not have that suffix.
 
 ## Reverse dependencies
 
