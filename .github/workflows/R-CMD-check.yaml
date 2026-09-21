@@ -88,6 +88,10 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Install XQuartz
+        if: runner.os == 'macOS'
+        run: brew install --cask xquartz
+
       - name: Read graphics dependency floors
         if: matrix.config.label == 'dependency floor'
         id: graphics-floors
